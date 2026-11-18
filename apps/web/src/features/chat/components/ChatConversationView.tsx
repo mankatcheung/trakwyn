@@ -19,14 +19,16 @@ import { ChatProposalCard } from '#/features/chat/components/ChatProposalCard';
 import { AiFeedbackControl } from '#/features/ai/components/AiFeedbackControl';
 import type { AiRating } from '#/features/ai/lib/aiFeedback';
 import {
-  CREATE_CONVERSATION,
-  chatHistoryQueryOptions,
-  conversationsQueryOptions,
   type ChatHistoryResult,
   type ChatMessage,
   type Conversation,
   type ConversationsResult,
 } from '#/features/chat/lib/shared';
+import {
+  CREATE_CONVERSATION,
+  chatHistoryQueryOptions,
+  conversationsQueryOptions,
+} from '#/features/chat/graphql/chatQueries';
 
 const LOADING_MESSAGE_INTERVAL_MS = 3000;
 const LOADING_MESSAGE_COUNT = 4;

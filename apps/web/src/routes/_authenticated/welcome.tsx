@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import { checkOnboarding } from '#/features/onboarding/lib/onboarding';
+import { checkOnboarding } from '#/features/onboarding/graphql/onboardingQueries';
 import { WelcomePage } from '../../features/onboarding/pages/WelcomePage';
 
 export const Route = createFileRoute('/_authenticated/welcome')({

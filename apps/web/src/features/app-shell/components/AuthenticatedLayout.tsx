@@ -3,6 +3,8 @@ import { Link, Outlet, useChildMatches, useNavigate, useRouterState } from '@tan
 import { useQuery } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { queryClient } from '#/lib/queryClient';
+import { LOGOUT_MUTATION } from '#/features/auth/graphql/authQueries';
+import { AVATAR_QUERY } from '#/features/app-shell/graphql/appShellQueries';
 import { useHotkeys, getKeyModifier } from '#/hooks/useHotkeys';
 import { LazyCommandPalette } from '#/features/app-shell/components/LazyCommandPalette';
 import {
@@ -37,9 +39,6 @@ import {
   NavItem,
 } from '#/features/app-shell/components/NavItems';
 import { MAIN_NAV, SETTINGS_NAV } from '#/features/app-shell/lib/navItems';
-
-const LOGOUT_MUTATION = `mutation { logout }`;
-const AVATAR_QUERY = `query AccountAvatar { me { avatarUrl } }`;
 
 export function AuthenticatedLayout() {
   const { t } = useLocale();
@@ -89,7 +88,8 @@ export function AuthenticatedLayout() {
 
   const { data: avatarData } = useQuery({
     queryKey: ['me', 'avatarUrl'],
-    queryFn: () => gqlClient.request<{ me: { avatarUrl: string | null } | null }>(AVATAR_QUERY),
+    queryFn: async () =>
+      (await gqlClient.request(AVATAR_QUERY)) as { me: { avatarUrl: string | null } | null },
   });
   const avatarUrl = avatarData?.me?.avatarUrl;
 

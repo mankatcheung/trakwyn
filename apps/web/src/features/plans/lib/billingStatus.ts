@@ -1,30 +1,76 @@
+import { graphql } from '#/graphql/generated';
 import { useQuery } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 
-const BILLING_STATUS_QUERY = `
+const BILLING_STATUS_QUERY = graphql(`
   query BillingStatus {
     billingStatus {
       enforced
       plan
       planExpiresAt
       planSource
-      features { notifications analytics offers shareLinks apiAccess mcpAccess }
-      limits { applications documentBytes aiCreditsPerMonth }
-      aiCredits { used limit bonusRemaining resetsAt costs { feature credits } }
-      catalogue {
-        free {
-          features { notifications analytics offers shareLinks apiAccess mcpAccess }
-          limits { applications documentBytes aiCreditsPerMonth }
-        }
-        pro {
-          features { notifications analytics offers shareLinks apiAccess mcpAccess }
-          limits { applications documentBytes aiCreditsPerMonth }
+      features {
+        notifications
+        analytics
+        offers
+        shareLinks
+        apiAccess
+        mcpAccess
+      }
+      limits {
+        applications
+        documentBytes
+        aiCreditsPerMonth
+      }
+      aiCredits {
+        used
+        limit
+        bonusRemaining
+        resetsAt
+        costs {
+          feature
+          credits
         }
       }
-      usage { applications documentBytes }
+      catalogue {
+        free {
+          features {
+            notifications
+            analytics
+            offers
+            shareLinks
+            apiAccess
+            mcpAccess
+          }
+          limits {
+            applications
+            documentBytes
+            aiCreditsPerMonth
+          }
+        }
+        pro {
+          features {
+            notifications
+            analytics
+            offers
+            shareLinks
+            apiAccess
+            mcpAccess
+          }
+          limits {
+            applications
+            documentBytes
+            aiCreditsPerMonth
+          }
+        }
+      }
+      usage {
+        applications
+        documentBytes
+      }
     }
   }
-`;
+`);
 
 export const billingStatusQueryKey = ['billingStatus'] as const;
 

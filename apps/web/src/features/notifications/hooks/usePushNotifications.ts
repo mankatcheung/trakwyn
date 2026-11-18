@@ -1,18 +1,10 @@
 import { useCallback, useState, useEffect } from 'react';
 import { gqlClient } from '#/graphql/client';
 import { getErrorMessage } from '#/lib/errors';
-
-const REGISTER_PUSH = `
-  mutation RegisterPushSubscription($endpoint: String!, $p256dh: String!, $auth: String!) {
-    registerPushSubscription(endpoint: $endpoint, p256dh: $p256dh, auth: $auth)
-  }
-`;
-
-const UNREGISTER_PUSH = `
-  mutation UnregisterPushSubscription($endpoint: String!) {
-    unregisterPushSubscription(endpoint: $endpoint)
-  }
-`;
+import {
+  REGISTER_PUSH,
+  UNREGISTER_PUSH,
+} from '#/features/notifications/graphql/notificationQueries';
 
 interface PushState {
   /** Whether the browser supports the Push API. */

@@ -43,7 +43,8 @@ import {
   AssistantNavConversations,
   type AssistantNavConversationsProps,
 } from '#/features/chat/components/AssistantNavConversations';
-import { SIDEBAR_CONVERSATION_LIMIT } from '#/features/chat/lib/shared';
+import { SIDEBAR_CONVERSATION_LIMIT } from '#/features/chat/graphql/chatQueries';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -75,7 +76,7 @@ describe('AssistantNavConversations (app-sidebar subitems)', () => {
     renderNav();
 
     await waitFor(() => expect(screen.getByText('conv-2 title')).toBeInTheDocument());
-    expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('RecentConversations'), {
+    expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('RecentConversations'), {
       limit: SIDEBAR_CONVERSATION_LIMIT,
     });
   });

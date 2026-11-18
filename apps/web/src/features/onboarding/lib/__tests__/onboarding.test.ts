@@ -1,11 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import { finishDestination, hasAiGoal, welcomeSteps } from '#/features/onboarding/lib/onboarding';
 import {
-  finishDestination,
-  hasAiGoal,
   needsWelcome,
-  welcomeSteps,
   type OnboardingState,
-} from '#/features/onboarding/lib/onboarding';
+} from '#/features/onboarding/graphql/onboardingQueries';
 
 const notOnboarded: OnboardingState = { onboardingCompletedAt: null, onboardingGoals: [] };
 const onboarded: OnboardingState = {

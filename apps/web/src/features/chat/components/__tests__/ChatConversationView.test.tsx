@@ -39,6 +39,7 @@ vi.mock('#/features/chat/lib/chatStream', async () => {
 
 import { ChatConversationView } from '#/features/chat/components/ChatConversationView';
 import { ChatStreamError } from '#/features/chat/lib/chatStream';
+import { gqlText } from '#/__tests__/helpers/gqlText';
 
 /**
  * `gqlClient.request` is called positionally (query, variables) for most
@@ -48,7 +49,7 @@ import { ChatStreamError } from '#/features/chat/lib/chatStream';
  * mock implementations don't need to care which one fired.
  */
 function documentOf(arg: unknown): string {
-  return typeof arg === 'string' ? arg : (arg as { document: string }).document;
+  return gqlText((arg as { document?: unknown })?.document ?? arg);
 }
 
 const makeClient = () =>
@@ -217,11 +218,11 @@ describe('ChatConversationView', () => {
     // text rendering live, and the callback firing with the new id.
     mockGqlRequest.mockImplementation((arg: unknown) => {
       const query = documentOf(arg);
-      if (query.includes('CreateConversation'))
+      if (gqlText(query).includes('CreateConversation'))
         return Promise.resolve({
           createConversation: { id: 'new-conv', title: null, createdAt: '', updatedAt: '' },
         });
-      if (query.includes('ChatHistory'))
+      if (gqlText(query).includes('ChatHistory'))
         return Promise.resolve({
           chatHistory: [
             { id: 'm1', role: 'user', content: 'What are my active applications?', createdAt: '' },
@@ -275,7 +276,7 @@ describe('ChatConversationView', () => {
   it('renders existing chat history for an active conversation', async () => {
     mockGqlRequest.mockImplementation((arg: unknown) => {
       const query = documentOf(arg);
-      if (query.includes('ChatHistory'))
+      if (gqlText(query).includes('ChatHistory'))
         return Promise.resolve({
           chatHistory: [
             { id: 'm1', role: 'user', content: 'hi', createdAt: '2024-01-01T00:00:00.000Z' },
@@ -316,7 +317,7 @@ describe('ChatConversationView', () => {
     let chatHistoryCallCount = 0;
     mockGqlRequest.mockImplementation((arg: unknown) => {
       const query = documentOf(arg);
-      if (query.includes('ChatHistory')) {
+      if (gqlText(query).includes('ChatHistory')) {
         chatHistoryCallCount++;
         return Promise.resolve(
           chatHistoryCallCount === 1

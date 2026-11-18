@@ -1,121 +1,13 @@
-import { queryOptions, type QueryClient } from '@tanstack/react-query';
-import { gqlClient } from '#/graphql/client';
+import type { QueryClient } from '@tanstack/react-query';
 import { showUndoToast } from '#/lib/undoToast';
 import { contentQuotaQueryKey } from '#/features/quota/lib/contentQuota';
 import type { AiRating } from '#/features/ai/lib/aiFeedback';
 import { toast } from 'sonner';
-
-// ── GraphQL queries & mutations ────────────────────────────────────────────
-
-export const CONVERSATIONS_QUERY = `
-  query Conversations {
-    conversations {
-      id
-      title
-      llmProvider
-      llmModel
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-/**
- * Bounded variant for the assistant sidebar: the ten most recent threads,
- * not the user's entire history (JEF-229).
- */
-export const RECENT_CONVERSATIONS_QUERY = `
-  query RecentConversations($limit: Int!) {
-    conversations(limit: $limit) {
-      id
-      title
-      llmProvider
-      llmModel
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-/** Server-side search over titles and message contents (JEF-229). */
-export const SEARCH_CONVERSATIONS_QUERY = `
-  query SearchConversations($query: String!) {
-    searchConversations(query: $query) {
-      id
-      title
-      llmProvider
-      llmModel
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-export const CHAT_HISTORY_QUERY = `
-  query ChatHistory($conversationId: ID!) {
-    chatHistory(conversationId: $conversationId) {
-      id
-      role
-      content
-      createdAt
-      myRating {
-        rating
-        reason
-      }
-      proposals {
-        id
-        toolName
-        summary
-        status
-        error
-      }
-    }
-  }
-`;
-
-/** Applies a write the assistant proposed (JEF-469). The server runs the saved arguments, never the client's. */
-export const CONFIRM_CHAT_ACTION = `
-  mutation ConfirmChatAction($id: ID!) {
-    confirmChatAction(id: $id) {
-      id
-      toolName
-      summary
-      status
-      error
-    }
-  }
-`;
-
-export const DISMISS_CHAT_ACTION = `
-  mutation DismissChatAction($id: ID!) {
-    dismissChatAction(id: $id) {
-      id
-      toolName
-      summary
-      status
-      error
-    }
-  }
-`;
-
-export const CREATE_CONVERSATION = `
-  mutation CreateConversation($provider: String, $model: String) {
-    createConversation(provider: $provider, model: $model) {
-      id
-      title
-      llmProvider
-      llmModel
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-export const DELETE_CONVERSATION = `
-  mutation DeleteConversation($id: ID!) {
-    deleteConversation(id: $id)
-  }
-`;
+import {
+  chatHistoryQueryOptions,
+  conversationsQueryOptions,
+  DELETE_CONVERSATION,
+} from '#/features/chat/graphql/chatQueries';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -164,40 +56,8 @@ export interface ConversationsResult {
   conversations: Conversation[];
 }
 
-// ── Query options ───────────────────────────────────────────────────────────
-
-export const conversationsQueryOptions = queryOptions({
-  queryKey: ['conversations'],
-  queryFn: () => gqlClient.request<ConversationsResult>(CONVERSATIONS_QUERY),
-});
-
-/** How many conversations the sidebar shows. */
-export const SIDEBAR_CONVERSATION_LIMIT = 10;
-
-export function recentConversationsQueryOptions(limit: number = SIDEBAR_CONVERSATION_LIMIT) {
-  return queryOptions({
-    queryKey: ['conversations', 'recent', limit],
-    queryFn: () => gqlClient.request<ConversationsResult>(RECENT_CONVERSATIONS_QUERY, { limit }),
-  });
-}
-
 export interface SearchConversationsResult {
   searchConversations: Conversation[];
-}
-
-export function searchConversationsQueryOptions(query: string) {
-  return queryOptions({
-    queryKey: ['conversations', 'search', query],
-    queryFn: () =>
-      gqlClient.request<SearchConversationsResult>(SEARCH_CONVERSATIONS_QUERY, { query }),
-  });
-}
-
-export function chatHistoryQueryOptions(conversationId: string) {
-  return queryOptions({
-    queryKey: ['chatHistory', conversationId],
-    queryFn: () => gqlClient.request<ChatHistoryResult>(CHAT_HISTORY_QUERY, { conversationId }),
-  });
 }
 
 // ── Shared delete-with-undo handler ─────────────────────────────────────────

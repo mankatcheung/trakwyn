@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import type { QueryClient } from '@tanstack/react-query';
 import { hasSessionCookie } from '#/graphql/client';
-import { needsWelcome } from '#/features/onboarding/lib/onboarding';
+import { needsWelcome } from '#/features/onboarding/graphql/onboardingQueries';
 import { checkSessionGate, type SessionGate } from '#/features/auth/lib/sessionGate';
 import { AuthenticatedLayout } from '../../features/app-shell/components/AuthenticatedLayout';
 import { prefetchDashboard } from '../../features/dashboard/graphql/dashboardQueries';

@@ -64,6 +64,7 @@ vi.mock('#/lib/queryClient', () => ({
 
 import { ThemeProvider } from '#/lib/theme';
 import { AuthenticatedLayout } from '#/features/app-shell/components/AuthenticatedLayout';
+import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -135,7 +136,7 @@ describe('AuthenticatedLayout', () => {
     fireEvent.click(screen.getAllByRole('button', { name: /sign out/i })[0]);
 
     await waitFor(() => {
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('logout'));
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('logout'));
       expect(mockNavigate).toHaveBeenCalledWith({ to: '/login' });
     });
   });
@@ -207,7 +208,7 @@ describe('AuthenticatedLayout', () => {
       mockPathname.mockReturnValue('/assistant');
       mockSearch.mockReturnValue({ conversation: 'conv-1' });
       mockGqlRequest.mockImplementation((query: string) => {
-        if (query.includes('RecentConversations')) return Promise.resolve(recent);
+        if (gqlText(query).includes('RecentConversations')) return Promise.resolve(recent);
         return Promise.resolve({ me: { avatarUrl: null } });
       });
       render(<AuthenticatedLayout />, { wrapper: Wrapper });
@@ -221,14 +222,14 @@ describe('AuthenticatedLayout', () => {
         .filter((el) => el.getAttribute('aria-current') === 'page');
       expect(activeRows.length).toBeGreaterThanOrEqual(1);
       // The bounded window, not the full history query.
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('RecentConversations'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('RecentConversations'), {
         limit: 10,
       });
     });
 
     it('does not render conversation subitems outside the assistant section', () => {
       mockGqlRequest.mockImplementation((query: string) => {
-        if (query.includes('RecentConversations')) return Promise.resolve(recent);
+        if (gqlText(query).includes('RecentConversations')) return Promise.resolve(recent);
         return Promise.resolve({ me: { avatarUrl: null } });
       });
       render(<AuthenticatedLayout />, { wrapper: Wrapper });

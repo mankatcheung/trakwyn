@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { MessageCircleIcon, XIcon } from 'lucide-react';
 import { useChatDock } from '#/features/chat/lib/chatDock';
 import { useLocale } from '#/lib/i18n';
-import { conversationsQueryOptions } from '#/features/chat/lib/shared';
+import { conversationsQueryOptions } from '#/features/chat/graphql/chatQueries';
 
 // The picker only shows once the launcher is clicked, so it loads then (JEF-537).
 const ChatDockConversationPicker = lazy(() =>

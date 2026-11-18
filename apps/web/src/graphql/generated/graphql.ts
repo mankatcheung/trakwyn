@@ -2378,6 +2378,32 @@ export type CancelAccountDeletionMutation = {
   cancelAccountDeletion?: boolean | null;
 };
 
+export type RateAiOutputMutationVariables = Exact<{
+  targetKind: AiFeedbackTarget;
+  targetId: Scalars['ID']['input'];
+  rating: AiFeedbackRating;
+  reason?: InputMaybe<AiFeedbackReason>;
+}>;
+
+export type RateAiOutputMutation = {
+  __typename?: 'Mutation';
+  rateAiOutput?: {
+    __typename?: 'AiRating';
+    rating?: AiFeedbackRating | null;
+    reason?: AiFeedbackReason | null;
+  } | null;
+};
+
+export type ClearAiOutputRatingMutationVariables = Exact<{
+  targetKind: AiFeedbackTarget;
+  targetId: Scalars['ID']['input'];
+}>;
+
+export type ClearAiOutputRatingMutation = {
+  __typename?: 'Mutation';
+  clearAiOutputRating?: boolean | null;
+};
+
 export type AnalyticsApplicationsQueryVariables = Exact<{ [key: string]: never }>;
 
 export type AnalyticsApplicationsQuery = {
@@ -2512,6 +2538,13 @@ export type ResponseTimeAnalyticsQuery = {
       sampleSize?: number | null;
     } | null;
   } | null;
+};
+
+export type AccountAvatarQueryVariables = Exact<{ [key: string]: never }>;
+
+export type AccountAvatarQuery = {
+  __typename?: 'Query';
+  me?: { __typename?: 'User'; avatarUrl?: string | null } | null;
 };
 
 export type UpdateApplicationMutationVariables = Exact<{
@@ -2794,31 +2827,6 @@ export type DeleteApplicationMutation = {
   deleteApplication?: boolean | null;
 };
 
-export type ApplicationsQueryVariables = Exact<{
-  status?: InputMaybe<ApplicationStatus>;
-}>;
-
-export type ApplicationsQuery = {
-  __typename?: 'Query';
-  applications?: Array<{
-    __typename?: 'JobApplication';
-    id?: string | null;
-    company?: string | null;
-    role?: string | null;
-    status?: ApplicationStatus | null;
-    jobUrl?: string | null;
-    location?: string | null;
-    salaryRange?: string | null;
-    appliedAt?: string | null;
-    starred?: boolean | null;
-    source?: string | null;
-    followUpAt?: string | null;
-    tags?: Array<string> | null;
-    createdAt?: string | null;
-    updatedAt?: string | null;
-  }> | null;
-};
-
 export type ApplicationsPageQueryVariables = Exact<{
   status?: InputMaybe<ApplicationStatus>;
   starred?: InputMaybe<Scalars['Boolean']['input']>;
@@ -3049,6 +3057,142 @@ export type CalendarEventsQuery = {
     date?: string | null;
     interviewRoundType?: InterviewRoundType | null;
   }> | null;
+};
+
+export type ConversationsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type ConversationsQuery = {
+  __typename?: 'Query';
+  conversations?: Array<{
+    __typename?: 'Conversation';
+    id?: string | null;
+    title?: string | null;
+    llmProvider?: string | null;
+    llmModel?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  }> | null;
+};
+
+export type RecentConversationsQueryVariables = Exact<{
+  limit: Scalars['Int']['input'];
+}>;
+
+export type RecentConversationsQuery = {
+  __typename?: 'Query';
+  conversations?: Array<{
+    __typename?: 'Conversation';
+    id?: string | null;
+    title?: string | null;
+    llmProvider?: string | null;
+    llmModel?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  }> | null;
+};
+
+export type SearchConversationsQueryVariables = Exact<{
+  query: Scalars['String']['input'];
+}>;
+
+export type SearchConversationsQuery = {
+  __typename?: 'Query';
+  searchConversations?: Array<{
+    __typename?: 'Conversation';
+    id?: string | null;
+    title?: string | null;
+    llmProvider?: string | null;
+    llmModel?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  }> | null;
+};
+
+export type ChatHistoryQueryVariables = Exact<{
+  conversationId: Scalars['ID']['input'];
+}>;
+
+export type ChatHistoryQuery = {
+  __typename?: 'Query';
+  chatHistory?: Array<{
+    __typename?: 'Message';
+    id?: string | null;
+    role?: string | null;
+    content?: string | null;
+    createdAt?: string | null;
+    myRating?: {
+      __typename?: 'AiRating';
+      rating?: AiFeedbackRating | null;
+      reason?: AiFeedbackReason | null;
+    } | null;
+    proposals?: Array<{
+      __typename?: 'ChatActionProposal';
+      id?: string | null;
+      toolName?: string | null;
+      summary?: string | null;
+      status?: string | null;
+      error?: string | null;
+    }> | null;
+  }> | null;
+};
+
+export type ConfirmChatActionMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+export type ConfirmChatActionMutation = {
+  __typename?: 'Mutation';
+  confirmChatAction?: {
+    __typename?: 'ChatActionProposal';
+    id?: string | null;
+    toolName?: string | null;
+    summary?: string | null;
+    status?: string | null;
+    error?: string | null;
+  } | null;
+};
+
+export type DismissChatActionMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+export type DismissChatActionMutation = {
+  __typename?: 'Mutation';
+  dismissChatAction?: {
+    __typename?: 'ChatActionProposal';
+    id?: string | null;
+    toolName?: string | null;
+    summary?: string | null;
+    status?: string | null;
+    error?: string | null;
+  } | null;
+};
+
+export type CreateConversationMutationVariables = Exact<{
+  provider?: InputMaybe<Scalars['String']['input']>;
+  model?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type CreateConversationMutation = {
+  __typename?: 'Mutation';
+  createConversation?: {
+    __typename?: 'Conversation';
+    id?: string | null;
+    title?: string | null;
+    llmProvider?: string | null;
+    llmModel?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  } | null;
+};
+
+export type DeleteConversationMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+export type DeleteConversationMutation = {
+  __typename?: 'Mutation';
+  deleteConversation?: boolean | null;
 };
 
 export type DashboardApplicationsQueryVariables = Exact<{ [key: string]: never }>;
@@ -3905,6 +4049,22 @@ export type RecordCookieConsentMutation = {
   recordCookieConsent?: boolean | null;
 };
 
+export type NotesQueryVariables = Exact<{
+  applicationId: Scalars['ID']['input'];
+}>;
+
+export type NotesQuery = {
+  __typename?: 'Query';
+  notes?: Array<{
+    __typename?: 'Note';
+    id?: string | null;
+    applicationId?: string | null;
+    content?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  }> | null;
+};
+
 export type CreateNoteMutationVariables = Exact<{
   applicationId: Scalars['ID']['input'];
   content: Scalars['String']['input'];
@@ -3945,20 +4105,65 @@ export type DeleteNoteMutationVariables = Exact<{
 
 export type DeleteNoteMutation = { __typename?: 'Mutation'; deleteNote?: boolean | null };
 
-export type NotesQueryVariables = Exact<{
-  applicationId: Scalars['ID']['input'];
+export type UnreadNotificationCountQueryVariables = Exact<{ [key: string]: never }>;
+
+export type UnreadNotificationCountQuery = {
+  __typename?: 'Query';
+  unreadNotificationCount?: number | null;
+};
+
+export type NotificationsPageQueryVariables = Exact<{
+  cursor?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
-export type NotesQuery = {
+export type NotificationsPageQuery = {
   __typename?: 'Query';
-  notes?: Array<{
-    __typename?: 'Note';
-    id?: string | null;
-    applicationId?: string | null;
-    content?: string | null;
-    createdAt?: string | null;
-    updatedAt?: string | null;
-  }> | null;
+  notificationsPage?: {
+    __typename?: 'NotificationConnection';
+    hasNextPage?: boolean | null;
+    nextCursor?: string | null;
+    items?: Array<{
+      __typename?: 'Notification';
+      id?: string | null;
+      type?: string | null;
+      title?: string | null;
+      body?: string | null;
+      url?: string | null;
+      read?: boolean | null;
+      createdAt?: string | null;
+    }> | null;
+  } | null;
+};
+
+export type MarkNotificationsReadMutationVariables = Exact<{
+  ids: Array<Scalars['ID']['input']> | Scalars['ID']['input'];
+  isRead: Scalars['Boolean']['input'];
+}>;
+
+export type MarkNotificationsReadMutation = {
+  __typename?: 'Mutation';
+  markNotificationsRead?: boolean | null;
+};
+
+export type RegisterPushSubscriptionMutationVariables = Exact<{
+  endpoint: Scalars['String']['input'];
+  p256dh: Scalars['String']['input'];
+  auth: Scalars['String']['input'];
+}>;
+
+export type RegisterPushSubscriptionMutation = {
+  __typename?: 'Mutation';
+  registerPushSubscription?: boolean | null;
+};
+
+export type UnregisterPushSubscriptionMutationVariables = Exact<{
+  endpoint: Scalars['String']['input'];
+}>;
+
+export type UnregisterPushSubscriptionMutation = {
+  __typename?: 'Mutation';
+  unregisterPushSubscription?: boolean | null;
 };
 
 export type OffersQueryVariables = Exact<{
@@ -4056,6 +4261,122 @@ export type CompareOffersMutation = {
       period?: string | null;
     } | null;
   }> | null;
+};
+
+export type OnboardingStateQueryVariables = Exact<{ [key: string]: never }>;
+
+export type OnboardingStateQuery = {
+  __typename?: 'Query';
+  me?: {
+    __typename?: 'User';
+    onboardingCompletedAt?: string | null;
+    onboardingGoals?: Array<OnboardingGoal> | null;
+  } | null;
+};
+
+export type CompleteOnboardingMutationVariables = Exact<{
+  goals: Array<OnboardingGoal> | OnboardingGoal;
+}>;
+
+export type CompleteOnboardingMutation = {
+  __typename?: 'Mutation';
+  completeOnboarding?: boolean | null;
+};
+
+export type CreateCheckoutSessionMutationVariables = Exact<{
+  plan: CheckoutPlan;
+}>;
+
+export type CreateCheckoutSessionMutation = {
+  __typename?: 'Mutation';
+  createCheckoutSession?: { __typename?: 'BillingRedirect'; url?: string | null } | null;
+};
+
+export type CreateBillingPortalSessionMutationVariables = Exact<{ [key: string]: never }>;
+
+export type CreateBillingPortalSessionMutation = {
+  __typename?: 'Mutation';
+  createBillingPortalSession?: { __typename?: 'BillingRedirect'; url?: string | null } | null;
+};
+
+export type BillingStatusQueryVariables = Exact<{ [key: string]: never }>;
+
+export type BillingStatusQuery = {
+  __typename?: 'Query';
+  billingStatus?: {
+    __typename?: 'BillingStatus';
+    enforced?: boolean | null;
+    plan?: Plan | null;
+    planExpiresAt?: string | null;
+    planSource?: PlanSource | null;
+    features?: {
+      __typename?: 'PlanFeatures';
+      notifications?: boolean | null;
+      analytics?: boolean | null;
+      offers?: boolean | null;
+      shareLinks?: boolean | null;
+      apiAccess?: boolean | null;
+      mcpAccess?: boolean | null;
+    } | null;
+    limits?: {
+      __typename?: 'PlanLimits';
+      applications?: number | null;
+      documentBytes?: number | null;
+      aiCreditsPerMonth?: number | null;
+    } | null;
+    aiCredits?: {
+      __typename?: 'AiCredits';
+      used?: number | null;
+      limit?: number | null;
+      bonusRemaining?: number | null;
+      resetsAt?: string | null;
+      costs: Array<{ __typename?: 'AiCreditCost'; feature: string; credits: number }>;
+    } | null;
+    catalogue?: {
+      __typename?: 'PlanCatalogue';
+      free?: {
+        __typename?: 'PlanTerms';
+        features?: {
+          __typename?: 'PlanFeatures';
+          notifications?: boolean | null;
+          analytics?: boolean | null;
+          offers?: boolean | null;
+          shareLinks?: boolean | null;
+          apiAccess?: boolean | null;
+          mcpAccess?: boolean | null;
+        } | null;
+        limits?: {
+          __typename?: 'PlanLimits';
+          applications?: number | null;
+          documentBytes?: number | null;
+          aiCreditsPerMonth?: number | null;
+        } | null;
+      } | null;
+      pro?: {
+        __typename?: 'PlanTerms';
+        features?: {
+          __typename?: 'PlanFeatures';
+          notifications?: boolean | null;
+          analytics?: boolean | null;
+          offers?: boolean | null;
+          shareLinks?: boolean | null;
+          apiAccess?: boolean | null;
+          mcpAccess?: boolean | null;
+        } | null;
+        limits?: {
+          __typename?: 'PlanLimits';
+          applications?: number | null;
+          documentBytes?: number | null;
+          aiCreditsPerMonth?: number | null;
+        } | null;
+      } | null;
+    } | null;
+    usage?: {
+      __typename?: 'PlanUsage';
+      applications?: number | null;
+      documentBytes?: number | null;
+    } | null;
+  } | null;
 };
 
 export type AwardsQueryVariables = Exact<{ [key: string]: never }>;
@@ -4497,6 +4818,41 @@ export type DeleteWorkExperienceMutationVariables = Exact<{
 export type DeleteWorkExperienceMutation = {
   __typename?: 'Mutation';
   deleteWorkExperience?: boolean | null;
+};
+
+export type ContentQuotaQueryVariables = Exact<{ [key: string]: never }>;
+
+export type ContentQuotaQuery = {
+  __typename?: 'Query';
+  contentQuota?: {
+    __typename?: 'ContentQuota';
+    limits?: {
+      __typename?: 'ContentQuotaLimits';
+      notesPerApplication?: number | null;
+      contactsPerApplication?: number | null;
+      interviewRoundsPerApplication?: number | null;
+      offersPerApplication?: number | null;
+      tagsPerApplication?: number | null;
+      documentDraftsPerApplication?: number | null;
+      conversationsPerUser?: number | null;
+      workExperiencesPerUser?: number | null;
+      educationsPerUser?: number | null;
+      skillsPerUser?: number | null;
+      shareLinksPerUser?: number | null;
+      apiTokensPerUser?: number | null;
+      pushSubscriptionsPerUser?: number | null;
+    } | null;
+    usage?: {
+      __typename?: 'ContentQuotaUsage';
+      conversations?: number | null;
+      workExperiences?: number | null;
+      educations?: number | null;
+      skills?: number | null;
+      shareLinks?: number | null;
+      apiTokens?: number | null;
+      pushSubscriptions?: number | null;
+    } | null;
+  } | null;
 };
 
 export type MeQueryVariables = Exact<{ [key: string]: never }>;
@@ -5127,6 +5483,134 @@ export const CancelAccountDeletionDocument = {
     },
   ],
 } as unknown as DocumentNode<CancelAccountDeletionMutation, CancelAccountDeletionMutationVariables>;
+export const RateAiOutputDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'RateAiOutput' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'targetKind' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'AiFeedbackTarget' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'targetId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'rating' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'AiFeedbackRating' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'reason' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'AiFeedbackReason' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'rateAiOutput' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'targetKind' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'targetKind' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'targetId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'targetId' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'rating' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'rating' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'reason' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'reason' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'rating' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'reason' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<RateAiOutputMutation, RateAiOutputMutationVariables>;
+export const ClearAiOutputRatingDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'ClearAiOutputRating' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'targetKind' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'AiFeedbackTarget' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'targetId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'clearAiOutputRating' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'targetKind' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'targetKind' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'targetId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'targetId' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ClearAiOutputRatingMutation, ClearAiOutputRatingMutationVariables>;
 export const AnalyticsApplicationsDocument = {
   kind: 'Document',
   definitions: [
@@ -5410,6 +5894,29 @@ export const ResponseTimeAnalyticsDocument = {
     },
   ],
 } as unknown as DocumentNode<ResponseTimeAnalyticsQuery, ResponseTimeAnalyticsQueryVariables>;
+export const AccountAvatarDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'AccountAvatar' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'me' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'avatarUrl' } }],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<AccountAvatarQuery, AccountAvatarQueryVariables>;
 export const UpdateApplicationDocument = {
   kind: 'Document',
   definitions: [
@@ -6362,58 +6869,6 @@ export const DeleteApplicationDocument = {
     },
   ],
 } as unknown as DocumentNode<DeleteApplicationMutation, DeleteApplicationMutationVariables>;
-export const ApplicationsDocument = {
-  kind: 'Document',
-  definitions: [
-    {
-      kind: 'OperationDefinition',
-      operation: 'query',
-      name: { kind: 'Name', value: 'Applications' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'status' } },
-          type: { kind: 'NamedType', name: { kind: 'Name', value: 'ApplicationStatus' } },
-        },
-      ],
-      selectionSet: {
-        kind: 'SelectionSet',
-        selections: [
-          {
-            kind: 'Field',
-            name: { kind: 'Name', value: 'applications' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'status' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'status' } },
-              },
-            ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'company' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'status' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'jobUrl' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'location' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'salaryRange' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'appliedAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'starred' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'source' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'followUpAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'tags' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
-              ],
-            },
-          },
-        ],
-      },
-    },
-  ],
-} as unknown as DocumentNode<ApplicationsQuery, ApplicationsQueryVariables>;
 export const ApplicationsPageDocument = {
   kind: 'Document',
   definitions: [
@@ -7260,6 +7715,382 @@ export const CalendarEventsDocument = {
     },
   ],
 } as unknown as DocumentNode<CalendarEventsQuery, CalendarEventsQueryVariables>;
+export const ConversationsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'Conversations' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'conversations' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'title' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'llmProvider' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'llmModel' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ConversationsQuery, ConversationsQueryVariables>;
+export const RecentConversationsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'RecentConversations' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'conversations' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'limit' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'title' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'llmProvider' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'llmModel' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<RecentConversationsQuery, RecentConversationsQueryVariables>;
+export const SearchConversationsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'SearchConversations' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'query' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'searchConversations' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'query' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'query' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'title' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'llmProvider' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'llmModel' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<SearchConversationsQuery, SearchConversationsQueryVariables>;
+export const ChatHistoryDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'ChatHistory' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'conversationId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'chatHistory' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'conversationId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'conversationId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'role' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'content' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'myRating' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'rating' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'reason' } },
+                    ],
+                  },
+                },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'proposals' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'toolName' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'summary' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'error' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ChatHistoryQuery, ChatHistoryQueryVariables>;
+export const ConfirmChatActionDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'ConfirmChatAction' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'confirmChatAction' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'toolName' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'summary' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'error' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ConfirmChatActionMutation, ConfirmChatActionMutationVariables>;
+export const DismissChatActionDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'DismissChatAction' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'dismissChatAction' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'toolName' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'summary' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'error' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DismissChatActionMutation, DismissChatActionMutationVariables>;
+export const CreateConversationDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'CreateConversation' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'provider' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'model' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'createConversation' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'provider' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'provider' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'model' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'model' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'title' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'llmProvider' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'llmModel' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<CreateConversationMutation, CreateConversationMutationVariables>;
+export const DeleteConversationDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'DeleteConversation' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'deleteConversation' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'id' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<DeleteConversationMutation, DeleteConversationMutationVariables>;
 export const DashboardApplicationsDocument = {
   kind: 'Document',
   definitions: [
@@ -9889,6 +10720,52 @@ export const RecordCookieConsentDocument = {
     },
   ],
 } as unknown as DocumentNode<RecordCookieConsentMutation, RecordCookieConsentMutationVariables>;
+export const NotesDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'Notes' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'notes' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'applicationId' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'content' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<NotesQuery, NotesQueryVariables>;
 export const CreateNoteDocument = {
   kind: 'Document',
   definitions: [
@@ -10043,20 +10920,114 @@ export const DeleteNoteDocument = {
     },
   ],
 } as unknown as DocumentNode<DeleteNoteMutation, DeleteNoteMutationVariables>;
-export const NotesDocument = {
+export const UnreadNotificationCountDocument = {
   kind: 'Document',
   definitions: [
     {
       kind: 'OperationDefinition',
       operation: 'query',
-      name: { kind: 'Name', value: 'Notes' },
+      name: { kind: 'Name', value: 'UnreadNotificationCount' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [{ kind: 'Field', name: { kind: 'Name', value: 'unreadNotificationCount' } }],
+      },
+    },
+  ],
+} as unknown as DocumentNode<UnreadNotificationCountQuery, UnreadNotificationCountQueryVariables>;
+export const NotificationsPageDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'NotificationsPage' },
       variableDefinitions: [
         {
           kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'cursor' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'notificationsPage' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'cursor' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'cursor' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'limit' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'limit' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'hasNextPage' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'nextCursor' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'items' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'title' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'body' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'url' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'read' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<NotificationsPageQuery, NotificationsPageQueryVariables>;
+export const MarkNotificationsReadDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'MarkNotificationsRead' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'ids' } },
           type: {
             kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+            type: {
+              kind: 'ListType',
+              type: {
+                kind: 'NonNullType',
+                type: { kind: 'NamedType', name: { kind: 'Name', value: 'ID' } },
+              },
+            },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'isRead' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'Boolean' } },
           },
         },
       ],
@@ -10065,30 +11036,129 @@ export const NotesDocument = {
         selections: [
           {
             kind: 'Field',
-            name: { kind: 'Name', value: 'notes' },
+            name: { kind: 'Name', value: 'markNotificationsRead' },
             arguments: [
               {
                 kind: 'Argument',
-                name: { kind: 'Name', value: 'applicationId' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'applicationId' } },
+                name: { kind: 'Name', value: 'ids' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'ids' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'isRead' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'isRead' } },
               },
             ],
-            selectionSet: {
-              kind: 'SelectionSet',
-              selections: [
-                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'applicationId' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'content' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'createdAt' } },
-                { kind: 'Field', name: { kind: 'Name', value: 'updatedAt' } },
-              ],
-            },
           },
         ],
       },
     },
   ],
-} as unknown as DocumentNode<NotesQuery, NotesQueryVariables>;
+} as unknown as DocumentNode<MarkNotificationsReadMutation, MarkNotificationsReadMutationVariables>;
+export const RegisterPushSubscriptionDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'RegisterPushSubscription' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'endpoint' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'p256dh' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'auth' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'registerPushSubscription' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'endpoint' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'endpoint' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'p256dh' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'p256dh' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'auth' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'auth' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  RegisterPushSubscriptionMutation,
+  RegisterPushSubscriptionMutationVariables
+>;
+export const UnregisterPushSubscriptionDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'UnregisterPushSubscription' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'endpoint' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'unregisterPushSubscription' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'endpoint' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'endpoint' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  UnregisterPushSubscriptionMutation,
+  UnregisterPushSubscriptionMutationVariables
+>;
 export const OffersDocument = {
   kind: 'Document',
   definitions: [
@@ -10371,6 +11441,317 @@ export const CompareOffersDocument = {
     },
   ],
 } as unknown as DocumentNode<CompareOffersMutation, CompareOffersMutationVariables>;
+export const OnboardingStateDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'OnboardingState' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'me' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'onboardingCompletedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'onboardingGoals' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<OnboardingStateQuery, OnboardingStateQueryVariables>;
+export const CompleteOnboardingDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'CompleteOnboarding' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'goals' } },
+          type: {
+            kind: 'NonNullType',
+            type: {
+              kind: 'ListType',
+              type: {
+                kind: 'NonNullType',
+                type: { kind: 'NamedType', name: { kind: 'Name', value: 'OnboardingGoal' } },
+              },
+            },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'completeOnboarding' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'goals' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'goals' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<CompleteOnboardingMutation, CompleteOnboardingMutationVariables>;
+export const CreateCheckoutSessionDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'CreateCheckoutSession' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'plan' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'CheckoutPlan' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'createCheckoutSession' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'plan' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'plan' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'url' } }],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<CreateCheckoutSessionMutation, CreateCheckoutSessionMutationVariables>;
+export const CreateBillingPortalSessionDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'CreateBillingPortalSession' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'createBillingPortalSession' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [{ kind: 'Field', name: { kind: 'Name', value: 'url' } }],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  CreateBillingPortalSessionMutation,
+  CreateBillingPortalSessionMutationVariables
+>;
+export const BillingStatusDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'BillingStatus' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'billingStatus' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'enforced' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'plan' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'planExpiresAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'planSource' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'features' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'notifications' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'analytics' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'offers' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'shareLinks' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'apiAccess' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'mcpAccess' } },
+                    ],
+                  },
+                },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'limits' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'applications' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'documentBytes' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'aiCreditsPerMonth' } },
+                    ],
+                  },
+                },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'aiCredits' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'used' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'limit' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'bonusRemaining' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'resetsAt' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'costs' },
+                        selectionSet: {
+                          kind: 'SelectionSet',
+                          selections: [
+                            { kind: 'Field', name: { kind: 'Name', value: 'feature' } },
+                            { kind: 'Field', name: { kind: 'Name', value: 'credits' } },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'catalogue' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'free' },
+                        selectionSet: {
+                          kind: 'SelectionSet',
+                          selections: [
+                            {
+                              kind: 'Field',
+                              name: { kind: 'Name', value: 'features' },
+                              selectionSet: {
+                                kind: 'SelectionSet',
+                                selections: [
+                                  { kind: 'Field', name: { kind: 'Name', value: 'notifications' } },
+                                  { kind: 'Field', name: { kind: 'Name', value: 'analytics' } },
+                                  { kind: 'Field', name: { kind: 'Name', value: 'offers' } },
+                                  { kind: 'Field', name: { kind: 'Name', value: 'shareLinks' } },
+                                  { kind: 'Field', name: { kind: 'Name', value: 'apiAccess' } },
+                                  { kind: 'Field', name: { kind: 'Name', value: 'mcpAccess' } },
+                                ],
+                              },
+                            },
+                            {
+                              kind: 'Field',
+                              name: { kind: 'Name', value: 'limits' },
+                              selectionSet: {
+                                kind: 'SelectionSet',
+                                selections: [
+                                  { kind: 'Field', name: { kind: 'Name', value: 'applications' } },
+                                  { kind: 'Field', name: { kind: 'Name', value: 'documentBytes' } },
+                                  {
+                                    kind: 'Field',
+                                    name: { kind: 'Name', value: 'aiCreditsPerMonth' },
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'pro' },
+                        selectionSet: {
+                          kind: 'SelectionSet',
+                          selections: [
+                            {
+                              kind: 'Field',
+                              name: { kind: 'Name', value: 'features' },
+                              selectionSet: {
+                                kind: 'SelectionSet',
+                                selections: [
+                                  { kind: 'Field', name: { kind: 'Name', value: 'notifications' } },
+                                  { kind: 'Field', name: { kind: 'Name', value: 'analytics' } },
+                                  { kind: 'Field', name: { kind: 'Name', value: 'offers' } },
+                                  { kind: 'Field', name: { kind: 'Name', value: 'shareLinks' } },
+                                  { kind: 'Field', name: { kind: 'Name', value: 'apiAccess' } },
+                                  { kind: 'Field', name: { kind: 'Name', value: 'mcpAccess' } },
+                                ],
+                              },
+                            },
+                            {
+                              kind: 'Field',
+                              name: { kind: 'Name', value: 'limits' },
+                              selectionSet: {
+                                kind: 'SelectionSet',
+                                selections: [
+                                  { kind: 'Field', name: { kind: 'Name', value: 'applications' } },
+                                  { kind: 'Field', name: { kind: 'Name', value: 'documentBytes' } },
+                                  {
+                                    kind: 'Field',
+                                    name: { kind: 'Name', value: 'aiCreditsPerMonth' },
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'usage' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'applications' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'documentBytes' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<BillingStatusQuery, BillingStatusQueryVariables>;
 export const AwardsDocument = {
   kind: 'Document',
   definitions: [
@@ -11671,6 +13052,74 @@ export const DeleteWorkExperienceDocument = {
     },
   ],
 } as unknown as DocumentNode<DeleteWorkExperienceMutation, DeleteWorkExperienceMutationVariables>;
+export const ContentQuotaDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'ContentQuota' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'contentQuota' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'limits' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'notesPerApplication' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'contactsPerApplication' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'interviewRoundsPerApplication' },
+                      },
+                      { kind: 'Field', name: { kind: 'Name', value: 'offersPerApplication' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'tagsPerApplication' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'documentDraftsPerApplication' },
+                      },
+                      { kind: 'Field', name: { kind: 'Name', value: 'conversationsPerUser' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'workExperiencesPerUser' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'educationsPerUser' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'skillsPerUser' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'shareLinksPerUser' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'apiTokensPerUser' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'pushSubscriptionsPerUser' } },
+                    ],
+                  },
+                },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'usage' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'conversations' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'workExperiences' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'educations' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'skills' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'shareLinks' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'apiTokens' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'pushSubscriptions' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ContentQuotaQuery, ContentQuotaQueryVariables>;
 export const MeDocument = {
   kind: 'Document',
   definitions: [

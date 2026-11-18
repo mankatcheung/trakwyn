@@ -7,7 +7,7 @@ import { ChevronDownIcon, Maximize2Icon, XIcon } from 'lucide-react';
 import { IconButton } from '@trakwyn/ui';
 import { useChatDock } from '#/features/chat/lib/chatDock';
 import { useLocale } from '#/lib/i18n';
-import { conversationsQueryOptions } from '#/features/chat/lib/shared';
+import { conversationsQueryOptions } from '#/features/chat/graphql/chatQueries';
 import { useChatRunsOn } from '#/features/chat/lib/runsOn';
 import { ChatConversationView } from '#/features/chat/components/ChatConversationView';
 

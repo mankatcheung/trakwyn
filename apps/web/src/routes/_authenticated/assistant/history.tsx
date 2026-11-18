@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { conversationsQueryOptions } from '#/features/chat/lib/shared';
+import { conversationsQueryOptions } from '#/features/chat/graphql/chatQueries';
 import { ConversationHistoryPage } from '../../../features/chat/pages/ConversationHistoryPage';
 
 export const Route = createFileRoute('/_authenticated/assistant/history')({

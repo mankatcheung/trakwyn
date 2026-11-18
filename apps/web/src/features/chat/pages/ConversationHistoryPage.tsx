@@ -4,13 +4,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeftIcon, MessageCircleIcon, PlusIcon, SearchIcon, Trash2Icon } from 'lucide-react';
 import { useLocale } from '#/lib/i18n';
 import { EmptyState, Skeleton } from '@trakwyn/ui';
+import { deleteConversationWithUndo, timeAgo, type Conversation } from '#/features/chat/lib/shared';
 import {
   conversationsQueryOptions,
-  deleteConversationWithUndo,
   searchConversationsQueryOptions,
-  timeAgo,
-  type Conversation,
-} from '#/features/chat/lib/shared';
+} from '#/features/chat/graphql/chatQueries';
 import { useChatRunsOn } from '#/features/chat/lib/runsOn';
 
 /** Keeps the server search from firing on every keystroke. */

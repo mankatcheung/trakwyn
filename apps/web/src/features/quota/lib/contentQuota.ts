@@ -1,21 +1,37 @@
+import { graphql } from '#/graphql/generated';
 import { useQuery } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 
-const CONTENT_QUOTA_QUERY = `
+const CONTENT_QUOTA_QUERY = graphql(`
   query ContentQuota {
     contentQuota {
       limits {
-        notesPerApplication contactsPerApplication interviewRoundsPerApplication
-        offersPerApplication tagsPerApplication documentDraftsPerApplication
-        conversationsPerUser workExperiencesPerUser educationsPerUser skillsPerUser
-        shareLinksPerUser apiTokensPerUser pushSubscriptionsPerUser
+        notesPerApplication
+        contactsPerApplication
+        interviewRoundsPerApplication
+        offersPerApplication
+        tagsPerApplication
+        documentDraftsPerApplication
+        conversationsPerUser
+        workExperiencesPerUser
+        educationsPerUser
+        skillsPerUser
+        shareLinksPerUser
+        apiTokensPerUser
+        pushSubscriptionsPerUser
       }
       usage {
-        conversations workExperiences educations skills shareLinks apiTokens pushSubscriptions
+        conversations
+        workExperiences
+        educations
+        skills
+        shareLinks
+        apiTokens
+        pushSubscriptions
       }
     }
   }
-`;
+`);
 
 export const contentQuotaQueryKey = ['contentQuota'] as const;
 

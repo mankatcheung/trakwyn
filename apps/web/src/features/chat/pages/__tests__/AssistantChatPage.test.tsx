@@ -62,6 +62,7 @@ vi.mock('#/lib/undoToast', () => ({
 }));
 
 import { AssistantPage } from '#/features/chat/pages/AssistantPage';
+import { gqlContaining, gqlText } from '#/__tests__/helpers/gqlText';
 
 /**
  * `gqlClient.request` is called positionally (query, variables) for most
@@ -71,7 +72,7 @@ import { AssistantPage } from '#/features/chat/pages/AssistantPage';
  * mock implementations don't need to care which one fired.
  */
 function documentOf(arg: unknown): string {
-  return typeof arg === 'string' ? arg : (arg as { document: string }).document;
+  return gqlText((arg as { document?: unknown })?.document ?? arg);
 }
 
 const makeClient = () =>
@@ -104,7 +105,7 @@ describe('AssistantPage (chat)', () => {
   it('does not render an embedded conversation list — recent chats live in the app sidebar', () => {
     mockGqlRequest.mockImplementation((arg: unknown) => {
       const query = documentOf(arg);
-      if (query.includes('Conversations'))
+      if (gqlText(query).includes('Conversations'))
         return Promise.resolve({
           conversations: [{ id: 'conv-1', title: 'Which applications have I applied to?' }],
         });
@@ -137,8 +138,8 @@ describe('AssistantPage (chat)', () => {
     mockSearch.mockReturnValue({ conversation: 'conv-1' });
     mockGqlRequest.mockImplementation((arg: unknown) => {
       const query = documentOf(arg);
-      if (query.includes('Conversations')) return noConversations();
-      if (query.includes('ChatHistory')) return Promise.resolve({ chatHistory: [] });
+      if (gqlText(query).includes('Conversations')) return noConversations();
+      if (gqlText(query).includes('ChatHistory')) return Promise.resolve({ chatHistory: [] });
       return Promise.resolve({});
     });
     render(<AssistantPage />, { wrapper: Wrapper });
@@ -150,11 +151,11 @@ describe('AssistantPage (chat)', () => {
     mockSearch.mockReturnValue({ conversation: 'conv-1' });
     mockGqlRequest.mockImplementation((arg: unknown) => {
       const query = documentOf(arg);
-      if (query.includes('Conversations'))
+      if (gqlText(query).includes('Conversations'))
         return Promise.resolve({
           conversations: [{ id: 'conv-1', title: 'Interview prep for Stripe' }],
         });
-      if (query.includes('ChatHistory')) return Promise.resolve({ chatHistory: [] });
+      if (gqlText(query).includes('ChatHistory')) return Promise.resolve({ chatHistory: [] });
       return Promise.resolve({});
     });
     render(<AssistantPage />, { wrapper: Wrapper });
@@ -166,9 +167,9 @@ describe('AssistantPage (chat)', () => {
     mockSearch.mockReturnValue({ conversation: 'conv-1' });
     mockGqlRequest.mockImplementation((arg: unknown) => {
       const query = documentOf(arg);
-      if (query.includes('Conversations'))
+      if (gqlText(query).includes('Conversations'))
         return Promise.resolve({ conversations: [{ id: 'conv-1', title: null }] });
-      if (query.includes('ChatHistory')) return Promise.resolve({ chatHistory: [] });
+      if (gqlText(query).includes('ChatHistory')) return Promise.resolve({ chatHistory: [] });
       return Promise.resolve({});
     });
     render(<AssistantPage />, { wrapper: Wrapper });
@@ -196,8 +197,8 @@ describe('AssistantPage (chat)', () => {
     mockSearch.mockReturnValue({ conversation: 'conv-1' });
     mockGqlRequest.mockImplementation((arg: unknown) => {
       const query = documentOf(arg);
-      if (query.includes('Conversations')) return noConversations();
-      if (query.includes('ChatHistory'))
+      if (gqlText(query).includes('Conversations')) return noConversations();
+      if (gqlText(query).includes('ChatHistory'))
         return Promise.resolve({
           chatHistory: [
             {
@@ -231,8 +232,8 @@ describe('AssistantPage (chat)', () => {
     let chatHistoryCallCount = 0;
     mockGqlRequest.mockImplementation((arg: unknown) => {
       const query = documentOf(arg);
-      if (query.includes('Conversations')) return noConversations();
-      if (query.includes('ChatHistory')) {
+      if (gqlText(query).includes('Conversations')) return noConversations();
+      if (gqlText(query).includes('ChatHistory')) {
         chatHistoryCallCount++;
         return Promise.resolve(
           chatHistoryCallCount === 1
@@ -291,12 +292,12 @@ describe('AssistantPage (chat)', () => {
   it('creates a conversation implicitly when sending with no active conversation', async () => {
     mockGqlRequest.mockImplementation((arg: unknown) => {
       const query = documentOf(arg);
-      if (query.includes('Conversations')) return noConversations();
-      if (query.includes('CreateConversation'))
+      if (gqlText(query).includes('Conversations')) return noConversations();
+      if (gqlText(query).includes('CreateConversation'))
         return Promise.resolve({
           createConversation: { id: 'new-conv', title: null, createdAt: '', updatedAt: '' },
         });
-      if (query.includes('ChatHistory')) return Promise.resolve({ chatHistory: [] });
+      if (gqlText(query).includes('ChatHistory')) return Promise.resolve({ chatHistory: [] });
       return Promise.resolve({});
     });
     mockStreamChatMessage.mockResolvedValue(undefined);
@@ -322,9 +323,9 @@ describe('AssistantPage (chat)', () => {
     mockSearch.mockReturnValue({ conversation: 'conv-1' });
     mockGqlRequest.mockImplementation((arg: unknown) => {
       const query = documentOf(arg);
-      if (query.includes('Conversations'))
+      if (gqlText(query).includes('Conversations'))
         return Promise.resolve({ conversations: [{ id: 'conv-1', title: 'Old chat' }] });
-      if (query.includes('DeleteConversation'))
+      if (gqlText(query).includes('DeleteConversation'))
         return Promise.resolve({ deleteConversation: true });
       return Promise.resolve({ chatHistory: [] });
     });
@@ -335,7 +336,7 @@ describe('AssistantPage (chat)', () => {
     fireEvent.click(screen.getByLabelText('Delete conversation'));
 
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('DeleteConversation'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('DeleteConversation'), {
         id: 'conv-1',
       }),
     );

@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { MessageCircleIcon, PlusIcon } from 'lucide-react';
 import { useLocale } from '#/lib/i18n';
-import { recentConversationsQueryOptions } from '#/features/chat/lib/shared';
+import { recentConversationsQueryOptions } from '#/features/chat/graphql/chatQueries';
 
 export interface AssistantNavConversationsProps {
   /** Conversation currently open in the chat pane, if any. */

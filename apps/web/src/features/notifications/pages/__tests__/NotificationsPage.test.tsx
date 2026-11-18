@@ -11,6 +11,7 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { NotificationsPage } from '#/features/notifications/pages/NotificationsPage';
+import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -42,7 +43,7 @@ describe('NotificationsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGqlRequest.mockImplementation((query: string) => {
-      if (query.includes('NotificationsPage')) {
+      if (gqlText(query).includes('NotificationsPage')) {
         return Promise.resolve({
           notificationsPage: {
             hasNextPage: false,
@@ -89,13 +90,10 @@ describe('NotificationsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Mark read' }));
 
     await waitFor(() => {
-      expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('MarkNotificationsRead'),
-        {
-          ids: ['n-1', 'n-2'],
-          isRead: true,
-        },
-      );
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('MarkNotificationsRead'), {
+        ids: ['n-1', 'n-2'],
+        isRead: true,
+      });
     });
   });
 
@@ -107,13 +105,10 @@ describe('NotificationsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Mark unread' }));
 
     await waitFor(() => {
-      expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('MarkNotificationsRead'),
-        {
-          ids: ['n-2'],
-          isRead: false,
-        },
-      );
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('MarkNotificationsRead'), {
+        ids: ['n-2'],
+        isRead: false,
+      });
     });
   });
 
@@ -127,13 +122,10 @@ describe('NotificationsPage', () => {
     fireEvent.click(screen.getByText('Upcoming interview: Acme'));
 
     await waitFor(() => {
-      expect(mockGqlRequest).toHaveBeenCalledWith(
-        expect.stringContaining('MarkNotificationsRead'),
-        {
-          ids: ['n-1'],
-          isRead: true,
-        },
-      );
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('MarkNotificationsRead'), {
+        ids: ['n-1'],
+        isRead: true,
+      });
     });
     expect(window.location.href).toBe('/applications/app-1');
     vi.unstubAllGlobals();
@@ -151,7 +143,7 @@ describe('NotificationsPage', () => {
       expect(window.location.href).toBe('/settings/security');
     });
     expect(mockGqlRequest).not.toHaveBeenCalledWith(
-      expect.stringContaining('MarkNotificationsRead'),
+      gqlContaining('MarkNotificationsRead'),
       expect.anything(),
     );
     vi.unstubAllGlobals();
