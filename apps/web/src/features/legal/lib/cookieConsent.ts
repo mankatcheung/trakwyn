@@ -1,4 +1,5 @@
 import { gqlClient } from '#/graphql/client';
+import { RECORD_COOKIE_CONSENT_MUTATION } from '#/features/legal/graphql/cookieConsentQueries';
 
 const STORAGE_KEY = 'trakwyn_cookie_consent';
 /** Dispatched by anything that wants to (re)open the preferences panel —
@@ -53,9 +54,3 @@ export function onOpenCookiePreferencesRequested(handler: () => void): () => voi
   window.addEventListener(OPEN_PREFERENCES_EVENT, handler);
   return () => window.removeEventListener(OPEN_PREFERENCES_EVENT, handler);
 }
-
-const RECORD_COOKIE_CONSENT_MUTATION = `
-  mutation RecordCookieConsent($analyticsAccepted: Boolean!) {
-    recordCookieConsent(analyticsAccepted: $analyticsAccepted)
-  }
-`;

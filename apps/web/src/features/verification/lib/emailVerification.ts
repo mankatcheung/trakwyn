@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { EMAIL_VERIFICATION_QUERY } from '#/features/verification/graphql/verificationQueries';
 import { gqlClient } from '#/graphql/client';
 import { queryClient } from '#/lib/queryClient';
 
@@ -9,10 +10,6 @@ import { queryClient } from '#/lib/queryClient';
  * before any child route loads (those loaders would only fail), and that
  * page is the full-page reminder.
  */
-export const EMAIL_VERIFICATION_QUERY = `query EmailVerification { me { email emailVerified deletionScheduledAt } }`;
-
-export const RESEND_VERIFICATION_EMAIL = `mutation ResendVerificationEmail { resendVerificationEmail }`;
-
 /** Query key shared by the route guards and the wall, so a check from any of them updates all. */
 export const EMAIL_VERIFICATION_KEY = ['me', 'emailVerification'] as const;
 
@@ -34,9 +31,9 @@ export interface EmailVerificationState {
 }
 
 async function fetchEmailVerification(): Promise<EmailVerificationState | null> {
-  const data = await gqlClient.request<{ me: EmailVerificationState | null }>(
-    EMAIL_VERIFICATION_QUERY,
-  );
+  const data = (await gqlClient.request(EMAIL_VERIFICATION_QUERY)) as {
+    me: EmailVerificationState | null;
+  };
   return data.me;
 }
 

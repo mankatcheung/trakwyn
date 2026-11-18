@@ -18,6 +18,7 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { VerifyEmailPage } from '#/features/verification/pages/VerifyEmailPage';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
 
 describe('VerifyEmailPage', () => {
   beforeEach(() => {
@@ -40,7 +41,7 @@ describe('VerifyEmailPage', () => {
     expect(screen.getByText('Verifying your email…')).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('VerifyEmail'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('VerifyEmail'), {
         token: 'valid-token',
       });
     });

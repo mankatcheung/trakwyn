@@ -33,6 +33,7 @@ import { LoginPage } from '#/features/auth/pages/LoginPage';
 import { RegisterPage } from '#/features/auth/pages/RegisterPage';
 import { ForgotPasswordPage } from '#/features/auth/pages/ForgotPasswordPage';
 import { ResetPasswordPage } from '#/features/auth/pages/ResetPasswordPage';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const apiError = (message: string) => ({
   response: { errors: [{ message, extensions: { code: 'UNAUTHORIZED' } }] },
@@ -248,7 +249,7 @@ describe('auth pages as form actions', () => {
       fill();
       submit();
       expect(await screen.findByText('Your password has been reset.')).toBeInTheDocument();
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('ResetPassword'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('ResetPassword'), {
         token: 'valid-token',
         newPassword: 'newPassword123',
       });

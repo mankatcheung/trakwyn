@@ -5,10 +5,8 @@ import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { queryClient } from '#/lib/queryClient';
 import { extractGqlError } from '#/features/settings/lib/gqlErrors';
-import {
-  CONFIRM_ACCOUNT_DELETION,
-  DELETION_DATE_FORMAT,
-} from '#/features/account-deletion/lib/accountDeletion';
+import { CONFIRM_ACCOUNT_DELETION } from '#/features/account-deletion/graphql/accountDeletionQueries';
+import { DELETION_DATE_FORMAT } from '#/features/account-deletion/lib/accountDeletion';
 import { AccountDeletionLayout } from '../components/AccountDeletionLayout';
 
 /**

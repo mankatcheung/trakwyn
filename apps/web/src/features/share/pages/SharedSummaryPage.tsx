@@ -3,22 +3,7 @@ import { useSearch } from '@tanstack/react-router';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { Alert } from '@trakwyn/ui';
-
-const SHARED_SUMMARY_QUERY = `
-  query SharedSummary($token: String!) {
-    sharedSummary(token: $token) {
-      statusCounts {
-        status
-        count
-      }
-      totalApplications
-      totalInterviews
-      upcomingInterviews
-      applicationsUpdatedLast7Days
-      generatedAt
-    }
-  }
-`;
+import { SHARED_SUMMARY_QUERY } from '#/features/share/graphql/sharedSummaryQueries';
 
 interface StatusCount {
   status: string;

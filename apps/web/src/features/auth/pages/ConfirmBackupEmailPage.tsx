@@ -3,12 +3,7 @@ import { useEffect, useState } from 'react';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { Alert } from '@trakwyn/ui';
-
-const CONFIRM_BACKUP_EMAIL = `
-  mutation ConfirmBackupEmail($token: String!) {
-    confirmBackupEmail(token: $token)
-  }
-`;
+import { CONFIRM_BACKUP_EMAIL_MUTATION } from '#/features/auth/graphql/authQueries';
 
 export function ConfirmBackupEmailPage() {
   const { t } = useLocale();
@@ -20,7 +15,7 @@ export function ConfirmBackupEmailPage() {
   useEffect(() => {
     if (!token) return;
     gqlClient
-      .request(CONFIRM_BACKUP_EMAIL, { token })
+      .request(CONFIRM_BACKUP_EMAIL_MUTATION, { token })
       .then(() => setStatus('success'))
       .catch(() => setStatus('error'));
   }, [token]);

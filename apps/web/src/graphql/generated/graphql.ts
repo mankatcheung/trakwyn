@@ -2353,6 +2353,31 @@ export type WorkExperience = {
   userId?: Maybe<Scalars['ID']['output']>;
 };
 
+export type RequestAccountDeletionMutationVariables = Exact<{ [key: string]: never }>;
+
+export type RequestAccountDeletionMutation = {
+  __typename?: 'Mutation';
+  requestAccountDeletion?: boolean | null;
+};
+
+export type ConfirmAccountDeletionMutationVariables = Exact<{
+  token: Scalars['String']['input'];
+}>;
+
+export type ConfirmAccountDeletionMutation = {
+  __typename?: 'Mutation';
+  confirmAccountDeletion?: string | null;
+};
+
+export type CancelAccountDeletionMutationVariables = Exact<{
+  token?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type CancelAccountDeletionMutation = {
+  __typename?: 'Mutation';
+  cancelAccountDeletion?: boolean | null;
+};
+
 export type UpdateApplicationMutationVariables = Exact<{
   id: Scalars['ID']['input'];
   input: UpdateApplicationInput;
@@ -2780,13 +2805,19 @@ export type EmptyTrashMutation = {
   } | null;
 };
 
-export type RegisterMutationVariables = Exact<{
-  email: Scalars['String']['input'];
-  password: Scalars['String']['input'];
-  captchaToken?: InputMaybe<Scalars['String']['input']>;
-}>;
+export type SessionGateQueryVariables = Exact<{ [key: string]: never }>;
 
-export type RegisterMutation = { __typename?: 'Mutation'; register?: string | null };
+export type SessionGateQuery = {
+  __typename?: 'Query';
+  me?: {
+    __typename?: 'User';
+    email?: string | null;
+    emailVerified?: boolean | null;
+    deletionScheduledAt?: string | null;
+    onboardingCompletedAt?: string | null;
+    onboardingGoals?: Array<OnboardingGoal> | null;
+  } | null;
+};
 
 export type LoginMutationVariables = Exact<{
   email: Scalars['String']['input'];
@@ -2812,13 +2843,61 @@ export type LoginWithTotpMutationVariables = Exact<{
 
 export type LoginWithTotpMutation = { __typename?: 'Mutation'; loginWithTotp?: string | null };
 
-export type RefreshTokenMutationVariables = Exact<{ [key: string]: never }>;
+export type RegisterMutationVariables = Exact<{
+  email: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+  captchaToken?: InputMaybe<Scalars['String']['input']>;
+}>;
 
-export type RefreshTokenMutation = { __typename?: 'Mutation'; refreshToken?: string | null };
+export type RegisterMutation = { __typename?: 'Mutation'; register?: string | null };
 
 export type LogoutMutationVariables = Exact<{ [key: string]: never }>;
 
 export type LogoutMutation = { __typename?: 'Mutation'; logout?: boolean | null };
+
+export type RequestPasswordResetMutationVariables = Exact<{
+  email: Scalars['String']['input'];
+  captchaToken?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+export type RequestPasswordResetMutation = {
+  __typename?: 'Mutation';
+  requestPasswordReset?: boolean | null;
+};
+
+export type RequestBackupEmailRecoveryMutationVariables = Exact<{
+  backupEmail: Scalars['String']['input'];
+}>;
+
+export type RequestBackupEmailRecoveryMutation = {
+  __typename?: 'Mutation';
+  requestBackupEmailRecovery?: boolean | null;
+};
+
+export type ResetPasswordMutationVariables = Exact<{
+  token: Scalars['String']['input'];
+  newPassword: Scalars['String']['input'];
+}>;
+
+export type ResetPasswordMutation = { __typename?: 'Mutation'; resetPassword?: boolean | null };
+
+export type ConfirmBackupEmailMutationVariables = Exact<{
+  token: Scalars['String']['input'];
+}>;
+
+export type ConfirmBackupEmailMutation = {
+  __typename?: 'Mutation';
+  confirmBackupEmail?: boolean | null;
+};
+
+export type ConfirmEmailChangeMutationVariables = Exact<{
+  token: Scalars['String']['input'];
+}>;
+
+export type ConfirmEmailChangeMutation = {
+  __typename?: 'Mutation';
+  confirmEmailChange?: boolean | null;
+};
 
 export type DashboardApplicationsQueryVariables = Exact<{ [key: string]: never }>;
 
@@ -3663,6 +3742,15 @@ export type GenerateMockTalkingPointsMutation = {
       updatedAt?: string | null;
     } | null;
   } | null;
+};
+
+export type RecordCookieConsentMutationVariables = Exact<{
+  analyticsAccepted: Scalars['Boolean']['input'];
+}>;
+
+export type RecordCookieConsentMutation = {
+  __typename?: 'Mutation';
+  recordCookieConsent?: boolean | null;
 };
 
 export type CreateNoteMutationVariables = Exact<{
@@ -4752,6 +4840,141 @@ export type VerifyStepUpCodeMutation = {
   verifyStepUpCode?: boolean | null;
 };
 
+export type SharedSummaryQueryVariables = Exact<{
+  token: Scalars['String']['input'];
+}>;
+
+export type SharedSummaryQuery = {
+  __typename?: 'Query';
+  sharedSummary?: {
+    __typename?: 'SharedSummary';
+    totalApplications?: number | null;
+    totalInterviews?: number | null;
+    upcomingInterviews?: number | null;
+    applicationsUpdatedLast7Days?: number | null;
+    generatedAt?: string | null;
+    statusCounts?: Array<{
+      __typename?: 'StatusCount';
+      status?: ApplicationStatus | null;
+      count?: number | null;
+    }> | null;
+  } | null;
+};
+
+export type EmailVerificationQueryVariables = Exact<{ [key: string]: never }>;
+
+export type EmailVerificationQuery = {
+  __typename?: 'Query';
+  me?: {
+    __typename?: 'User';
+    email?: string | null;
+    emailVerified?: boolean | null;
+    deletionScheduledAt?: string | null;
+  } | null;
+};
+
+export type ResendVerificationEmailMutationVariables = Exact<{ [key: string]: never }>;
+
+export type ResendVerificationEmailMutation = {
+  __typename?: 'Mutation';
+  resendVerificationEmail?: boolean | null;
+};
+
+export type VerifyEmailMutationVariables = Exact<{
+  token: Scalars['String']['input'];
+}>;
+
+export type VerifyEmailMutation = { __typename?: 'Mutation'; verifyEmail?: boolean | null };
+
+export const RequestAccountDeletionDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'RequestAccountDeletion' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [{ kind: 'Field', name: { kind: 'Name', value: 'requestAccountDeletion' } }],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  RequestAccountDeletionMutation,
+  RequestAccountDeletionMutationVariables
+>;
+export const ConfirmAccountDeletionDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'ConfirmAccountDeletion' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'token' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'confirmAccountDeletion' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'token' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'token' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  ConfirmAccountDeletionMutation,
+  ConfirmAccountDeletionMutationVariables
+>;
+export const CancelAccountDeletionDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'CancelAccountDeletion' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'token' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'cancelAccountDeletion' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'token' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'token' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<CancelAccountDeletionMutation, CancelAccountDeletionMutationVariables>;
 export const UpdateApplicationDocument = {
   kind: 'Document',
   definitions: [
@@ -6134,65 +6357,35 @@ export const EmptyTrashDocument = {
     },
   ],
 } as unknown as DocumentNode<EmptyTrashMutation, EmptyTrashMutationVariables>;
-export const RegisterDocument = {
+export const SessionGateDocument = {
   kind: 'Document',
   definitions: [
     {
       kind: 'OperationDefinition',
-      operation: 'mutation',
-      name: { kind: 'Name', value: 'Register' },
-      variableDefinitions: [
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
-          },
-        },
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
-          type: {
-            kind: 'NonNullType',
-            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
-          },
-        },
-        {
-          kind: 'VariableDefinition',
-          variable: { kind: 'Variable', name: { kind: 'Name', value: 'captchaToken' } },
-          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
-        },
-      ],
+      operation: 'query',
+      name: { kind: 'Name', value: 'SessionGate' },
       selectionSet: {
         kind: 'SelectionSet',
         selections: [
           {
             kind: 'Field',
-            name: { kind: 'Name', value: 'register' },
-            arguments: [
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'email' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
-              },
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'password' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
-              },
-              {
-                kind: 'Argument',
-                name: { kind: 'Name', value: 'captchaToken' },
-                value: { kind: 'Variable', name: { kind: 'Name', value: 'captchaToken' } },
-              },
-            ],
+            name: { kind: 'Name', value: 'me' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'email' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'emailVerified' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'deletionScheduledAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'onboardingCompletedAt' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'onboardingGoals' } },
+              ],
+            },
           },
         ],
       },
     },
   ],
-} as unknown as DocumentNode<RegisterMutation, RegisterMutationVariables>;
+} as unknown as DocumentNode<SessionGateQuery, SessionGateQueryVariables>;
 export const LoginDocument = {
   kind: 'Document',
   definitions: [
@@ -6322,20 +6515,65 @@ export const LoginWithTotpDocument = {
     },
   ],
 } as unknown as DocumentNode<LoginWithTotpMutation, LoginWithTotpMutationVariables>;
-export const RefreshTokenDocument = {
+export const RegisterDocument = {
   kind: 'Document',
   definitions: [
     {
       kind: 'OperationDefinition',
       operation: 'mutation',
-      name: { kind: 'Name', value: 'RefreshToken' },
+      name: { kind: 'Name', value: 'Register' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'captchaToken' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+      ],
       selectionSet: {
         kind: 'SelectionSet',
-        selections: [{ kind: 'Field', name: { kind: 'Name', value: 'refreshToken' } }],
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'register' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'email' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'password' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'password' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'captchaToken' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'captchaToken' } },
+              },
+            ],
+          },
+        ],
       },
     },
   ],
-} as unknown as DocumentNode<RefreshTokenMutation, RefreshTokenMutationVariables>;
+} as unknown as DocumentNode<RegisterMutation, RegisterMutationVariables>;
 export const LogoutDocument = {
   kind: 'Document',
   definitions: [
@@ -6350,6 +6588,212 @@ export const LogoutDocument = {
     },
   ],
 } as unknown as DocumentNode<LogoutMutation, LogoutMutationVariables>;
+export const RequestPasswordResetDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'RequestPasswordReset' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'captchaToken' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'requestPasswordReset' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'email' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'email' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'captchaToken' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'captchaToken' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<RequestPasswordResetMutation, RequestPasswordResetMutationVariables>;
+export const RequestBackupEmailRecoveryDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'RequestBackupEmailRecovery' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'backupEmail' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'requestBackupEmailRecovery' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'backupEmail' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'backupEmail' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  RequestBackupEmailRecoveryMutation,
+  RequestBackupEmailRecoveryMutationVariables
+>;
+export const ResetPasswordDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'ResetPassword' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'token' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'newPassword' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'resetPassword' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'token' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'token' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'newPassword' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'newPassword' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ResetPasswordMutation, ResetPasswordMutationVariables>;
+export const ConfirmBackupEmailDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'ConfirmBackupEmail' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'token' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'confirmBackupEmail' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'token' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'token' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ConfirmBackupEmailMutation, ConfirmBackupEmailMutationVariables>;
+export const ConfirmEmailChangeDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'ConfirmEmailChange' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'token' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'confirmEmailChange' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'token' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'token' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ConfirmEmailChangeMutation, ConfirmEmailChangeMutationVariables>;
 export const DashboardApplicationsDocument = {
   kind: 'Document',
   definitions: [
@@ -8943,6 +9387,42 @@ export const GenerateMockTalkingPointsDocument = {
   GenerateMockTalkingPointsMutation,
   GenerateMockTalkingPointsMutationVariables
 >;
+export const RecordCookieConsentDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'RecordCookieConsent' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'analyticsAccepted' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'Boolean' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'recordCookieConsent' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'analyticsAccepted' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'analyticsAccepted' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<RecordCookieConsentMutation, RecordCookieConsentMutationVariables>;
 export const CreateNoteDocument = {
   kind: 'Document',
   definitions: [
@@ -12534,3 +13014,140 @@ export const VerifyStepUpCodeDocument = {
     },
   ],
 } as unknown as DocumentNode<VerifyStepUpCodeMutation, VerifyStepUpCodeMutationVariables>;
+export const SharedSummaryDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'SharedSummary' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'token' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'sharedSummary' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'token' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'token' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'statusCounts' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'status' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+                    ],
+                  },
+                },
+                { kind: 'Field', name: { kind: 'Name', value: 'totalApplications' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'totalInterviews' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'upcomingInterviews' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'applicationsUpdatedLast7Days' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'generatedAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<SharedSummaryQuery, SharedSummaryQueryVariables>;
+export const EmailVerificationDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'EmailVerification' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'me' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'email' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'emailVerified' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'deletionScheduledAt' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<EmailVerificationQuery, EmailVerificationQueryVariables>;
+export const ResendVerificationEmailDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'ResendVerificationEmail' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [{ kind: 'Field', name: { kind: 'Name', value: 'resendVerificationEmail' } }],
+      },
+    },
+  ],
+} as unknown as DocumentNode<
+  ResendVerificationEmailMutation,
+  ResendVerificationEmailMutationVariables
+>;
+export const VerifyEmailDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'mutation',
+      name: { kind: 'Name', value: 'VerifyEmail' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'token' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'verifyEmail' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'token' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'token' } },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<VerifyEmailMutation, VerifyEmailMutationVariables>;

@@ -25,6 +25,7 @@ vi.mock('#/lib/analytics', () => ({
 import { CookieConsent } from '#/features/legal/components/CookieConsent';
 import { requestOpenCookiePreferences } from '#/features/legal/lib/cookieConsent';
 import type { ConsentRegion } from '#/features/legal/lib/consentRegion';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
 
 const region = (requiresConsent: boolean, country: string | null = null): ConsentRegion => ({
   requiresConsent,
@@ -108,7 +109,7 @@ describe('CookieConsent', () => {
     await waitFor(() => expect(mockInitAnalytics).toHaveBeenCalled());
     expect(screen.queryByRole('button', { name: /accept all/i })).not.toBeInTheDocument();
     await waitFor(() =>
-      expect(mockGqlRequest).toHaveBeenCalledWith(expect.stringContaining('recordCookieConsent'), {
+      expect(mockGqlRequest).toHaveBeenCalledWith(gqlContaining('recordCookieConsent'), {
         analyticsAccepted: true,
       }),
     );

@@ -3,12 +3,7 @@ import { Link, useSearch } from '@tanstack/react-router';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
 import { Alert } from '@trakwyn/ui';
-
-const VERIFY_EMAIL_MUTATION = `
-  mutation VerifyEmail($token: String!) {
-    verifyEmail(token: $token)
-  }
-`;
+import { VERIFY_EMAIL_MUTATION } from '#/features/verification/graphql/verificationQueries';
 
 type Status = 'verifying' | 'success' | 'error';
 

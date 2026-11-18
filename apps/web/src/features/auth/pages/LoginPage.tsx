@@ -19,6 +19,7 @@ import { oauthErrorKey } from '#/features/auth/lib/oauthError';
 import { safeReturnTo } from '#/features/auth/lib/returnTo';
 import { useFormAction } from '#/hooks/useFormAction';
 import { Alert, Button, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
+import { LOGIN_MUTATION, LOGIN_WITH_TOTP_MUTATION } from '#/features/auth/graphql/authQueries';
 
 const schema = z.object({
   email: z.email('Invalid email'),
@@ -33,22 +34,6 @@ const totpSchema = z.object({
     .max(20, 'Enter your 6-digit code or a backup code'),
 });
 type TotpFormValues = z.infer<typeof totpSchema>;
-
-const LOGIN_MUTATION = `
-  mutation Login($email: String!, $password: String!, $captchaToken: String) {
-    login(email: $email, password: $password, captchaToken: $captchaToken) {
-      success
-      totpRequired
-      accessToken
-    }
-  }
-`;
-
-const LOGIN_WITH_TOTP_MUTATION = `
-  mutation LoginWithTotp($email: String!, $password: String!, $code: String!) {
-    loginWithTotp(email: $email, password: $password, code: $code)
-  }
-`;
 
 export function LoginPage() {
   const { t } = useLocale();

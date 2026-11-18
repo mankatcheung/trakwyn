@@ -10,23 +10,15 @@ import { useLocale } from '#/lib/i18n';
 import { getErrorMessage } from '#/lib/errors';
 import { useFormAction } from '#/hooks/useFormAction';
 import { Alert, Button, FormLabel, Input, SubmitButton } from '@trakwyn/ui';
+import {
+  REQUEST_BACKUP_EMAIL_RECOVERY_MUTATION,
+  REQUEST_PASSWORD_RESET_MUTATION,
+} from '#/features/auth/graphql/authQueries';
 
 const schema = z.object({
   email: z.email('Invalid email'),
 });
 type FormValues = z.infer<typeof schema>;
-
-const REQUEST_PASSWORD_RESET_MUTATION = `
-  mutation RequestPasswordReset($email: String!, $captchaToken: String) {
-    requestPasswordReset(email: $email, captchaToken: $captchaToken)
-  }
-`;
-
-const REQUEST_BACKUP_EMAIL_RECOVERY_MUTATION = `
-  mutation RequestBackupEmailRecovery($backupEmail: String!) {
-    requestBackupEmailRecovery(backupEmail: $backupEmail)
-  }
-`;
 
 export function ForgotPasswordPage() {
   const { t } = useLocale();

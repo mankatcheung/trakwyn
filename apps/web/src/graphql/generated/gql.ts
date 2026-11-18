@@ -14,6 +14,9 @@ import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-
  * Learn more about it here: https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size
  */
 type Documents = {
+  '\n  mutation RequestAccountDeletion {\n    requestAccountDeletion\n  }\n': typeof types.RequestAccountDeletionDocument;
+  '\n  mutation ConfirmAccountDeletion($token: String!) {\n    confirmAccountDeletion(token: $token)\n  }\n': typeof types.ConfirmAccountDeletionDocument;
+  '\n  mutation CancelAccountDeletion($token: String) {\n    cancelAccountDeletion(token: $token)\n  }\n': typeof types.CancelAccountDeletionDocument;
   '\n  mutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n    }\n  }\n': typeof types.UpdateApplicationDocument;
   '\n  mutation UpdateApplicationFlags($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n      starred\n      status\n    }\n  }\n': typeof types.UpdateApplicationFlagsDocument;
   '\n  query ApplicationHealthScore($applicationId: ID!) {\n    applicationHealthScore(applicationId: $applicationId) {\n      score\n      label\n      criteria {\n        key\n        label\n        points\n        earned\n        met\n      }\n    }\n  }\n': typeof types.ApplicationHealthScoreDocument;
@@ -39,7 +42,16 @@ type Documents = {
   '\n  mutation PermanentlyDeleteApplication($id: ID!) {\n    permanentlyDeleteApplication(id: $id)\n  }\n': typeof types.PermanentlyDeleteApplicationDocument;
   '\n  mutation BulkRestoreApplications($ids: [ID!]!) {\n    bulkRestoreApplications(ids: $ids) {\n      restored\n    }\n  }\n': typeof types.BulkRestoreApplicationsDocument;
   '\n  mutation EmptyTrash {\n    emptyTrash {\n      deleted\n      failed\n    }\n  }\n': typeof types.EmptyTrashDocument;
-  'mutation Register($email: String!, $password: String!, $captchaToken: String) {\n  register(email: $email, password: $password, captchaToken: $captchaToken)\n}\n\nmutation Login($email: String!, $password: String!, $captchaToken: String) {\n  login(email: $email, password: $password, captchaToken: $captchaToken) {\n    success\n    totpRequired\n    accessToken\n  }\n}\n\nmutation LoginWithTotp($email: String!, $password: String!, $code: String!) {\n  loginWithTotp(email: $email, password: $password, code: $code)\n}\n\nmutation RefreshToken {\n  refreshToken\n}\n\nmutation Logout {\n  logout\n}': typeof types.RegisterDocument;
+  '\n  query SessionGate {\n    me {\n      email\n      emailVerified\n      deletionScheduledAt\n      onboardingCompletedAt\n      onboardingGoals\n    }\n  }\n': typeof types.SessionGateDocument;
+  '\n  mutation Login($email: String!, $password: String!, $captchaToken: String) {\n    login(email: $email, password: $password, captchaToken: $captchaToken) {\n      success\n      totpRequired\n      accessToken\n    }\n  }\n': typeof types.LoginDocument;
+  '\n  mutation LoginWithTotp($email: String!, $password: String!, $code: String!) {\n    loginWithTotp(email: $email, password: $password, code: $code)\n  }\n': typeof types.LoginWithTotpDocument;
+  '\n  mutation Register($email: String!, $password: String!, $captchaToken: String) {\n    register(email: $email, password: $password, captchaToken: $captchaToken)\n  }\n': typeof types.RegisterDocument;
+  '\n  mutation Logout {\n    logout\n  }\n': typeof types.LogoutDocument;
+  '\n  mutation RequestPasswordReset($email: String!, $captchaToken: String) {\n    requestPasswordReset(email: $email, captchaToken: $captchaToken)\n  }\n': typeof types.RequestPasswordResetDocument;
+  '\n  mutation RequestBackupEmailRecovery($backupEmail: String!) {\n    requestBackupEmailRecovery(backupEmail: $backupEmail)\n  }\n': typeof types.RequestBackupEmailRecoveryDocument;
+  '\n  mutation ResetPassword($token: String!, $newPassword: String!) {\n    resetPassword(token: $token, newPassword: $newPassword)\n  }\n': typeof types.ResetPasswordDocument;
+  '\n  mutation ConfirmBackupEmail($token: String!) {\n    confirmBackupEmail(token: $token)\n  }\n': typeof types.ConfirmBackupEmailDocument;
+  '\n  mutation ConfirmEmailChange($token: String!) {\n    confirmEmailChange(token: $token)\n  }\n': typeof types.ConfirmEmailChangeDocument;
   '\n  query DashboardApplications {\n    applications {\n      id\n      company\n      role\n      status\n      starred\n      followUpAt\n      createdAt\n    }\n  }\n': typeof types.DashboardApplicationsDocument;
   '\n  query DashboardCalendarEvents {\n    calendarEvents {\n      id\n      applicationId\n      company\n      role\n      type\n      date\n      interviewRoundType\n    }\n  }\n': typeof types.DashboardCalendarEventsDocument;
   '\n  query WeeklyApplicationGoal {\n    weeklyApplicationGoal {\n      weeklyApplicationGoal\n      currentWeekCount\n      currentWeekStart\n      streakWeeks\n    }\n  }\n': typeof types.WeeklyApplicationGoalDocument;
@@ -88,6 +100,7 @@ type Documents = {
   '\n  mutation GenerateMockInterviewQuestions(\n    $interviewRoundId: ID!\n    $prompt: String\n    $count: Int\n    $useProfile: Boolean\n    $documentId: ID\n  ) {\n    generateMockInterviewQuestions(\n      interviewRoundId: $interviewRoundId\n      prompt: $prompt\n      count: $count\n      useProfile: $useProfile\n      documentId: $documentId\n    ) {\n      suggestions\n      usedJobDescription\n      usedBriefing\n      usedProfile\n      usedDocument\n    }\n  }\n': typeof types.GenerateMockInterviewQuestionsDocument;
   '\n  mutation GenerateMockInterviewAnswer(\n    $mockInterviewQuestionId: ID!\n    $prompt: String\n    $useProfile: Boolean\n    $documentId: ID\n  ) {\n    generateMockInterviewAnswer(\n      mockInterviewQuestionId: $mockInterviewQuestionId\n      prompt: $prompt\n      useProfile: $useProfile\n      documentId: $documentId\n    ) {\n      answer\n      usedJobDescription\n      usedBriefing\n      usedProfile\n      usedDocument\n    }\n  }\n': typeof types.GenerateMockInterviewAnswerDocument;
   '\n  mutation GenerateMockTalkingPoints(\n    $mockInterviewQuestionId: ID!\n    $prompt: String\n    $useProfile: Boolean\n    $documentId: ID\n  ) {\n    generateMockTalkingPoints(\n      mockInterviewQuestionId: $mockInterviewQuestionId\n      prompt: $prompt\n      useProfile: $useProfile\n      documentId: $documentId\n    ) {\n      nothingRelevant\n      usedProfile\n      usedDocument\n      question {\n        id\n        interviewRoundId\n        question\n        answer\n        answerSource\n        talkingPoints\n        talkingPointsGeneratedAt\n        position\n        createdAt\n        updatedAt\n      }\n    }\n  }\n': typeof types.GenerateMockTalkingPointsDocument;
+  '\n  mutation RecordCookieConsent($analyticsAccepted: Boolean!) {\n    recordCookieConsent(analyticsAccepted: $analyticsAccepted)\n  }\n': typeof types.RecordCookieConsentDocument;
   'mutation CreateNote($applicationId: ID!, $content: String!) {\n  createNote(applicationId: $applicationId, content: $content) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateNote($id: ID!, $content: String!) {\n  updateNote(id: $id, content: $content) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteNote($id: ID!) {\n  deleteNote(id: $id)\n}': typeof types.CreateNoteDocument;
   'query Notes($applicationId: ID!) {\n  notes(applicationId: $applicationId) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}': typeof types.NotesDocument;
   '\n  query Offers($applicationId: ID!) {\n    offers(applicationId: $applicationId) {\n      id\n      applicationId\n      baseSalary\n      bonus\n      equity\n      benefits\n      costOfLivingAdjustment\n      currency\n      period\n      notes\n      createdAt\n      updatedAt\n    }\n  }\n': typeof types.OffersDocument;
@@ -171,8 +184,18 @@ type Documents = {
   '\n  mutation StartOAuthReauth($provider: OAuthProvider!) {\n    startOAuthReauth(provider: $provider)\n  }\n': typeof types.StartOAuthReauthDocument;
   '\n  mutation RequestStepUpCode {\n    requestStepUpCode\n  }\n': typeof types.RequestStepUpCodeDocument;
   '\n  mutation VerifyStepUpCode($code: String!) {\n    verifyStepUpCode(code: $code)\n  }\n': typeof types.VerifyStepUpCodeDocument;
+  '\n  query SharedSummary($token: String!) {\n    sharedSummary(token: $token) {\n      statusCounts {\n        status\n        count\n      }\n      totalApplications\n      totalInterviews\n      upcomingInterviews\n      applicationsUpdatedLast7Days\n      generatedAt\n    }\n  }\n': typeof types.SharedSummaryDocument;
+  '\n  query EmailVerification {\n    me {\n      email\n      emailVerified\n      deletionScheduledAt\n    }\n  }\n': typeof types.EmailVerificationDocument;
+  '\n  mutation ResendVerificationEmail {\n    resendVerificationEmail\n  }\n': typeof types.ResendVerificationEmailDocument;
+  '\n  mutation VerifyEmail($token: String!) {\n    verifyEmail(token: $token)\n  }\n': typeof types.VerifyEmailDocument;
 };
 const documents: Documents = {
+  '\n  mutation RequestAccountDeletion {\n    requestAccountDeletion\n  }\n':
+    types.RequestAccountDeletionDocument,
+  '\n  mutation ConfirmAccountDeletion($token: String!) {\n    confirmAccountDeletion(token: $token)\n  }\n':
+    types.ConfirmAccountDeletionDocument,
+  '\n  mutation CancelAccountDeletion($token: String) {\n    cancelAccountDeletion(token: $token)\n  }\n':
+    types.CancelAccountDeletionDocument,
   '\n  mutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n    }\n  }\n':
     types.UpdateApplicationDocument,
   '\n  mutation UpdateApplicationFlags($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n      starred\n      status\n    }\n  }\n':
@@ -223,8 +246,25 @@ const documents: Documents = {
     types.BulkRestoreApplicationsDocument,
   '\n  mutation EmptyTrash {\n    emptyTrash {\n      deleted\n      failed\n    }\n  }\n':
     types.EmptyTrashDocument,
-  'mutation Register($email: String!, $password: String!, $captchaToken: String) {\n  register(email: $email, password: $password, captchaToken: $captchaToken)\n}\n\nmutation Login($email: String!, $password: String!, $captchaToken: String) {\n  login(email: $email, password: $password, captchaToken: $captchaToken) {\n    success\n    totpRequired\n    accessToken\n  }\n}\n\nmutation LoginWithTotp($email: String!, $password: String!, $code: String!) {\n  loginWithTotp(email: $email, password: $password, code: $code)\n}\n\nmutation RefreshToken {\n  refreshToken\n}\n\nmutation Logout {\n  logout\n}':
+  '\n  query SessionGate {\n    me {\n      email\n      emailVerified\n      deletionScheduledAt\n      onboardingCompletedAt\n      onboardingGoals\n    }\n  }\n':
+    types.SessionGateDocument,
+  '\n  mutation Login($email: String!, $password: String!, $captchaToken: String) {\n    login(email: $email, password: $password, captchaToken: $captchaToken) {\n      success\n      totpRequired\n      accessToken\n    }\n  }\n':
+    types.LoginDocument,
+  '\n  mutation LoginWithTotp($email: String!, $password: String!, $code: String!) {\n    loginWithTotp(email: $email, password: $password, code: $code)\n  }\n':
+    types.LoginWithTotpDocument,
+  '\n  mutation Register($email: String!, $password: String!, $captchaToken: String) {\n    register(email: $email, password: $password, captchaToken: $captchaToken)\n  }\n':
     types.RegisterDocument,
+  '\n  mutation Logout {\n    logout\n  }\n': types.LogoutDocument,
+  '\n  mutation RequestPasswordReset($email: String!, $captchaToken: String) {\n    requestPasswordReset(email: $email, captchaToken: $captchaToken)\n  }\n':
+    types.RequestPasswordResetDocument,
+  '\n  mutation RequestBackupEmailRecovery($backupEmail: String!) {\n    requestBackupEmailRecovery(backupEmail: $backupEmail)\n  }\n':
+    types.RequestBackupEmailRecoveryDocument,
+  '\n  mutation ResetPassword($token: String!, $newPassword: String!) {\n    resetPassword(token: $token, newPassword: $newPassword)\n  }\n':
+    types.ResetPasswordDocument,
+  '\n  mutation ConfirmBackupEmail($token: String!) {\n    confirmBackupEmail(token: $token)\n  }\n':
+    types.ConfirmBackupEmailDocument,
+  '\n  mutation ConfirmEmailChange($token: String!) {\n    confirmEmailChange(token: $token)\n  }\n':
+    types.ConfirmEmailChangeDocument,
   '\n  query DashboardApplications {\n    applications {\n      id\n      company\n      role\n      status\n      starred\n      followUpAt\n      createdAt\n    }\n  }\n':
     types.DashboardApplicationsDocument,
   '\n  query DashboardCalendarEvents {\n    calendarEvents {\n      id\n      applicationId\n      company\n      role\n      type\n      date\n      interviewRoundType\n    }\n  }\n':
@@ -321,6 +361,8 @@ const documents: Documents = {
     types.GenerateMockInterviewAnswerDocument,
   '\n  mutation GenerateMockTalkingPoints(\n    $mockInterviewQuestionId: ID!\n    $prompt: String\n    $useProfile: Boolean\n    $documentId: ID\n  ) {\n    generateMockTalkingPoints(\n      mockInterviewQuestionId: $mockInterviewQuestionId\n      prompt: $prompt\n      useProfile: $useProfile\n      documentId: $documentId\n    ) {\n      nothingRelevant\n      usedProfile\n      usedDocument\n      question {\n        id\n        interviewRoundId\n        question\n        answer\n        answerSource\n        talkingPoints\n        talkingPointsGeneratedAt\n        position\n        createdAt\n        updatedAt\n      }\n    }\n  }\n':
     types.GenerateMockTalkingPointsDocument,
+  '\n  mutation RecordCookieConsent($analyticsAccepted: Boolean!) {\n    recordCookieConsent(analyticsAccepted: $analyticsAccepted)\n  }\n':
+    types.RecordCookieConsentDocument,
   'mutation CreateNote($applicationId: ID!, $content: String!) {\n  createNote(applicationId: $applicationId, content: $content) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}\n\nmutation UpdateNote($id: ID!, $content: String!) {\n  updateNote(id: $id, content: $content) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}\n\nmutation DeleteNote($id: ID!) {\n  deleteNote(id: $id)\n}':
     types.CreateNoteDocument,
   'query Notes($applicationId: ID!) {\n  notes(applicationId: $applicationId) {\n    id\n    applicationId\n    content\n    createdAt\n    updatedAt\n  }\n}':
@@ -482,6 +524,14 @@ const documents: Documents = {
   '\n  mutation RequestStepUpCode {\n    requestStepUpCode\n  }\n': types.RequestStepUpCodeDocument,
   '\n  mutation VerifyStepUpCode($code: String!) {\n    verifyStepUpCode(code: $code)\n  }\n':
     types.VerifyStepUpCodeDocument,
+  '\n  query SharedSummary($token: String!) {\n    sharedSummary(token: $token) {\n      statusCounts {\n        status\n        count\n      }\n      totalApplications\n      totalInterviews\n      upcomingInterviews\n      applicationsUpdatedLast7Days\n      generatedAt\n    }\n  }\n':
+    types.SharedSummaryDocument,
+  '\n  query EmailVerification {\n    me {\n      email\n      emailVerified\n      deletionScheduledAt\n    }\n  }\n':
+    types.EmailVerificationDocument,
+  '\n  mutation ResendVerificationEmail {\n    resendVerificationEmail\n  }\n':
+    types.ResendVerificationEmailDocument,
+  '\n  mutation VerifyEmail($token: String!) {\n    verifyEmail(token: $token)\n  }\n':
+    types.VerifyEmailDocument,
 };
 
 /**
@@ -498,6 +548,24 @@ const documents: Documents = {
  */
 export function graphql(source: string): unknown;
 
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation RequestAccountDeletion {\n    requestAccountDeletion\n  }\n',
+): (typeof documents)['\n  mutation RequestAccountDeletion {\n    requestAccountDeletion\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation ConfirmAccountDeletion($token: String!) {\n    confirmAccountDeletion(token: $token)\n  }\n',
+): (typeof documents)['\n  mutation ConfirmAccountDeletion($token: String!) {\n    confirmAccountDeletion(token: $token)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation CancelAccountDeletion($token: String) {\n    cancelAccountDeletion(token: $token)\n  }\n',
+): (typeof documents)['\n  mutation CancelAccountDeletion($token: String) {\n    cancelAccountDeletion(token: $token)\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -652,8 +720,62 @@ export function graphql(
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
-  source: 'mutation Register($email: String!, $password: String!, $captchaToken: String) {\n  register(email: $email, password: $password, captchaToken: $captchaToken)\n}\n\nmutation Login($email: String!, $password: String!, $captchaToken: String) {\n  login(email: $email, password: $password, captchaToken: $captchaToken) {\n    success\n    totpRequired\n    accessToken\n  }\n}\n\nmutation LoginWithTotp($email: String!, $password: String!, $code: String!) {\n  loginWithTotp(email: $email, password: $password, code: $code)\n}\n\nmutation RefreshToken {\n  refreshToken\n}\n\nmutation Logout {\n  logout\n}',
-): (typeof documents)['mutation Register($email: String!, $password: String!, $captchaToken: String) {\n  register(email: $email, password: $password, captchaToken: $captchaToken)\n}\n\nmutation Login($email: String!, $password: String!, $captchaToken: String) {\n  login(email: $email, password: $password, captchaToken: $captchaToken) {\n    success\n    totpRequired\n    accessToken\n  }\n}\n\nmutation LoginWithTotp($email: String!, $password: String!, $code: String!) {\n  loginWithTotp(email: $email, password: $password, code: $code)\n}\n\nmutation RefreshToken {\n  refreshToken\n}\n\nmutation Logout {\n  logout\n}'];
+  source: '\n  query SessionGate {\n    me {\n      email\n      emailVerified\n      deletionScheduledAt\n      onboardingCompletedAt\n      onboardingGoals\n    }\n  }\n',
+): (typeof documents)['\n  query SessionGate {\n    me {\n      email\n      emailVerified\n      deletionScheduledAt\n      onboardingCompletedAt\n      onboardingGoals\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation Login($email: String!, $password: String!, $captchaToken: String) {\n    login(email: $email, password: $password, captchaToken: $captchaToken) {\n      success\n      totpRequired\n      accessToken\n    }\n  }\n',
+): (typeof documents)['\n  mutation Login($email: String!, $password: String!, $captchaToken: String) {\n    login(email: $email, password: $password, captchaToken: $captchaToken) {\n      success\n      totpRequired\n      accessToken\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation LoginWithTotp($email: String!, $password: String!, $code: String!) {\n    loginWithTotp(email: $email, password: $password, code: $code)\n  }\n',
+): (typeof documents)['\n  mutation LoginWithTotp($email: String!, $password: String!, $code: String!) {\n    loginWithTotp(email: $email, password: $password, code: $code)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation Register($email: String!, $password: String!, $captchaToken: String) {\n    register(email: $email, password: $password, captchaToken: $captchaToken)\n  }\n',
+): (typeof documents)['\n  mutation Register($email: String!, $password: String!, $captchaToken: String) {\n    register(email: $email, password: $password, captchaToken: $captchaToken)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation Logout {\n    logout\n  }\n',
+): (typeof documents)['\n  mutation Logout {\n    logout\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation RequestPasswordReset($email: String!, $captchaToken: String) {\n    requestPasswordReset(email: $email, captchaToken: $captchaToken)\n  }\n',
+): (typeof documents)['\n  mutation RequestPasswordReset($email: String!, $captchaToken: String) {\n    requestPasswordReset(email: $email, captchaToken: $captchaToken)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation RequestBackupEmailRecovery($backupEmail: String!) {\n    requestBackupEmailRecovery(backupEmail: $backupEmail)\n  }\n',
+): (typeof documents)['\n  mutation RequestBackupEmailRecovery($backupEmail: String!) {\n    requestBackupEmailRecovery(backupEmail: $backupEmail)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation ResetPassword($token: String!, $newPassword: String!) {\n    resetPassword(token: $token, newPassword: $newPassword)\n  }\n',
+): (typeof documents)['\n  mutation ResetPassword($token: String!, $newPassword: String!) {\n    resetPassword(token: $token, newPassword: $newPassword)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation ConfirmBackupEmail($token: String!) {\n    confirmBackupEmail(token: $token)\n  }\n',
+): (typeof documents)['\n  mutation ConfirmBackupEmail($token: String!) {\n    confirmBackupEmail(token: $token)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation ConfirmEmailChange($token: String!) {\n    confirmEmailChange(token: $token)\n  }\n',
+): (typeof documents)['\n  mutation ConfirmEmailChange($token: String!) {\n    confirmEmailChange(token: $token)\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -942,6 +1064,12 @@ export function graphql(
 export function graphql(
   source: '\n  mutation GenerateMockTalkingPoints(\n    $mockInterviewQuestionId: ID!\n    $prompt: String\n    $useProfile: Boolean\n    $documentId: ID\n  ) {\n    generateMockTalkingPoints(\n      mockInterviewQuestionId: $mockInterviewQuestionId\n      prompt: $prompt\n      useProfile: $useProfile\n      documentId: $documentId\n    ) {\n      nothingRelevant\n      usedProfile\n      usedDocument\n      question {\n        id\n        interviewRoundId\n        question\n        answer\n        answerSource\n        talkingPoints\n        talkingPointsGeneratedAt\n        position\n        createdAt\n        updatedAt\n      }\n    }\n  }\n',
 ): (typeof documents)['\n  mutation GenerateMockTalkingPoints(\n    $mockInterviewQuestionId: ID!\n    $prompt: String\n    $useProfile: Boolean\n    $documentId: ID\n  ) {\n    generateMockTalkingPoints(\n      mockInterviewQuestionId: $mockInterviewQuestionId\n      prompt: $prompt\n      useProfile: $useProfile\n      documentId: $documentId\n    ) {\n      nothingRelevant\n      usedProfile\n      usedDocument\n      question {\n        id\n        interviewRoundId\n        question\n        answer\n        answerSource\n        talkingPoints\n        talkingPointsGeneratedAt\n        position\n        createdAt\n        updatedAt\n      }\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation RecordCookieConsent($analyticsAccepted: Boolean!) {\n    recordCookieConsent(analyticsAccepted: $analyticsAccepted)\n  }\n',
+): (typeof documents)['\n  mutation RecordCookieConsent($analyticsAccepted: Boolean!) {\n    recordCookieConsent(analyticsAccepted: $analyticsAccepted)\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -1440,6 +1568,30 @@ export function graphql(
 export function graphql(
   source: '\n  mutation VerifyStepUpCode($code: String!) {\n    verifyStepUpCode(code: $code)\n  }\n',
 ): (typeof documents)['\n  mutation VerifyStepUpCode($code: String!) {\n    verifyStepUpCode(code: $code)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query SharedSummary($token: String!) {\n    sharedSummary(token: $token) {\n      statusCounts {\n        status\n        count\n      }\n      totalApplications\n      totalInterviews\n      upcomingInterviews\n      applicationsUpdatedLast7Days\n      generatedAt\n    }\n  }\n',
+): (typeof documents)['\n  query SharedSummary($token: String!) {\n    sharedSummary(token: $token) {\n      statusCounts {\n        status\n        count\n      }\n      totalApplications\n      totalInterviews\n      upcomingInterviews\n      applicationsUpdatedLast7Days\n      generatedAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query EmailVerification {\n    me {\n      email\n      emailVerified\n      deletionScheduledAt\n    }\n  }\n',
+): (typeof documents)['\n  query EmailVerification {\n    me {\n      email\n      emailVerified\n      deletionScheduledAt\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation ResendVerificationEmail {\n    resendVerificationEmail\n  }\n',
+): (typeof documents)['\n  mutation ResendVerificationEmail {\n    resendVerificationEmail\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  mutation VerifyEmail($token: String!) {\n    verifyEmail(token: $token)\n  }\n',
+): (typeof documents)['\n  mutation VerifyEmail($token: String!) {\n    verifyEmail(token: $token)\n  }\n'];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

@@ -6,13 +6,10 @@ import { useLocale } from '#/lib/i18n';
 import { queryClient } from '#/lib/queryClient';
 import { EMAIL_VERIFICATION_KEY } from '#/features/verification/lib/emailVerification';
 import { extractGqlError } from '#/features/settings/lib/gqlErrors';
-import {
-  CANCEL_ACCOUNT_DELETION,
-  DELETION_DATE_FORMAT,
-} from '#/features/account-deletion/lib/accountDeletion';
+import { CANCEL_ACCOUNT_DELETION } from '#/features/account-deletion/graphql/accountDeletionQueries';
+import { DELETION_DATE_FORMAT } from '#/features/account-deletion/lib/accountDeletion';
 import { AccountDeletionLayout } from '../components/AccountDeletionLayout';
-
-const LOGOUT_MUTATION = `mutation { logout }`;
+import { LOGOUT_MUTATION } from '#/features/auth/graphql/authQueries';
 
 /**
  * What a signed-in account scheduled for deletion gets in place of the app
