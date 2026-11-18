@@ -11,7 +11,7 @@ export type Award = {
   createdAt: string;
 };
 
-const AWARDS_QUERY = graphql(`
+export const AWARDS_QUERY = graphql(`
   query Awards {
     awards {
       id

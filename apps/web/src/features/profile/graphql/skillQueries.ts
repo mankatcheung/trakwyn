@@ -10,7 +10,7 @@ export type Skill = {
   createdAt: string;
 };
 
-const SKILLS_QUERY = graphql(`
+export const SKILLS_QUERY = graphql(`
   query Skills {
     skills {
       id

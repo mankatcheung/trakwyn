@@ -13,7 +13,7 @@ export type Project = {
   createdAt: string;
 };
 
-const PROJECTS_QUERY = graphql(`
+export const PROJECTS_QUERY = graphql(`
   query Projects {
     projects {
       id

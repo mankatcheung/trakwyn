@@ -2,7 +2,7 @@ import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { graphql } from '#/graphql/generated';
 
-const DOCUMENT_VERSION_OUTCOMES_QUERY = graphql(`
+export const DOCUMENT_VERSION_OUTCOMES_QUERY = graphql(`
   query DocumentVersionOutcomes {
     documentVersionOutcomes {
       documentType

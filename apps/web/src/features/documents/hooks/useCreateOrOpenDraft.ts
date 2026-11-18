@@ -15,7 +15,7 @@ import { graphql } from '#/graphql/generated';
 
 export type DraftType = 'cover_letter' | 'resume';
 
-const CREATE_DRAFT_MUTATION = graphql(`
+export const CREATE_DRAFT_MUTATION = graphql(`
   mutation CreateDocumentDraft($input: CreateDocumentDraftInput!) {
     createDocumentDraft(input: $input) {
       id

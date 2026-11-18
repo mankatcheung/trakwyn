@@ -54,6 +54,20 @@ export function respond<R, V>(
   };
 }
 
+/**
+ * Answers `document` with the promise `handler` returns, for a test that settles the
+ * request itself (a response held open, then released) and still wants it typed.
+ */
+export function respondWith<R, V>(
+  document: TypedDocumentNode<R, V>,
+  handler: (variables: V) => Promise<R>,
+): GqlResponse {
+  return {
+    operation: operationName(document),
+    settle: (variables) => handler(variables as V),
+  };
+}
+
 /** Rejects `document` with `error`, for the failure path. */
 export function respondError<R, V>(document: TypedDocumentNode<R, V>, error: unknown): GqlResponse {
   return { operation: operationName(document), settle: () => Promise.reject(error) };

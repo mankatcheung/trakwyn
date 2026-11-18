@@ -2,7 +2,7 @@ import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { graphql } from '#/graphql/generated';
 
-const APPLICATION_CHANNEL_ANALYTICS_QUERY = graphql(`
+export const APPLICATION_CHANNEL_ANALYTICS_QUERY = graphql(`
   query ApplicationChannelAnalytics {
     applicationChannelAnalytics {
       bySource {

@@ -3,7 +3,7 @@ import { gqlClient } from '#/graphql/client';
 import type { ApplicationStatus } from '#/graphql/generated/graphql';
 import { graphql } from '#/graphql/generated';
 
-const APPLICATIONS_QUERY = graphql(`
+export const APPLICATIONS_QUERY = graphql(`
   query BoardApplications {
     applications {
       id

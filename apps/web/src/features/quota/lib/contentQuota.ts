@@ -2,7 +2,7 @@ import { graphql } from '#/graphql/generated';
 import { useQuery } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 
-const CONTENT_QUOTA_QUERY = graphql(`
+export const CONTENT_QUOTA_QUERY = graphql(`
   query ContentQuota {
     contentQuota {
       limits {

@@ -14,7 +14,7 @@ export type WorkExperience = {
   updatedAt: string;
 };
 
-const WORK_EXPERIENCES_QUERY = graphql(`
+export const WORK_EXPERIENCES_QUERY = graphql(`
   query WorkExperiences {
     workExperiences {
       id

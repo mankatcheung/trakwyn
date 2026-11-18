@@ -4,7 +4,7 @@ import { graphql } from '#/graphql/generated';
 import type { Resolved } from '#/graphql/resolved';
 import type { ResultOf } from '@graphql-typed-document-node/core';
 
-const MY_OFFERS_QUERY = graphql(`
+export const MY_OFFERS_QUERY = graphql(`
   query MyOffers {
     myOffers {
       company

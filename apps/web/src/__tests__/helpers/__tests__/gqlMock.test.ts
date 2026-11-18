@@ -3,7 +3,7 @@ import {
   REQUEST_STEP_UP_CODE,
   VERIFY_STEP_UP_CODE,
 } from '#/features/settings/graphql/securityQueries';
-import { mockGql, operationName, respond, respondError } from '../gqlMock';
+import { mockGql, operationName, respond, respondError, respondWith } from '../gqlMock';
 
 describe('operationName', () => {
   it('reads the name from a typed document', () => {
@@ -54,6 +54,25 @@ describe('mockGql', () => {
     await expect(request(VERIFY_STEP_UP_CODE, { code: '000000' })).resolves.toEqual({
       verifyStepUpCode: false,
     });
+  });
+
+  it('lets respondWith hold a typed response open until the test releases it', async () => {
+    const request = vi.fn();
+    let release: (value: { verifyStepUpCode: boolean }) => void = () => {};
+    mockGql(request, [
+      respondWith(
+        VERIFY_STEP_UP_CODE,
+        () =>
+          new Promise((resolve) => {
+            release = resolve;
+          }),
+      ),
+    ]);
+
+    const pending = request(VERIFY_STEP_UP_CODE, { code: '1' });
+    release({ verifyStepUpCode: true });
+
+    await expect(pending).resolves.toEqual({ verifyStepUpCode: true });
   });
 
   it('rejects with the given error for respondError', async () => {

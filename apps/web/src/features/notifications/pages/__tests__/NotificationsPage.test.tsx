@@ -11,7 +11,12 @@ vi.mock('#/graphql/client', () => ({
 }));
 
 import { NotificationsPage } from '#/features/notifications/pages/NotificationsPage';
-import { gqlText, gqlContaining } from '#/__tests__/helpers/gqlText';
+import { gqlContaining } from '#/__tests__/helpers/gqlText';
+import { mockGql, respond } from '#/__tests__/helpers/gqlMock';
+import {
+  NOTIFICATIONS_PAGE_QUERY,
+  UNREAD_COUNT_QUERY,
+} from '#/features/notifications/graphql/notificationQueries';
 
 const makeClient = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -42,18 +47,16 @@ const notification2 = {
 describe('NotificationsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGqlRequest.mockImplementation((query: string) => {
-      if (gqlText(query).includes('NotificationsPage')) {
-        return Promise.resolve({
-          notificationsPage: {
-            hasNextPage: false,
-            nextCursor: null,
-            items: [notification1, notification2],
-          },
-        });
-      }
-      return Promise.resolve({});
-    });
+    mockGql(mockGqlRequest, [
+      respond(NOTIFICATIONS_PAGE_QUERY, {
+        notificationsPage: {
+          hasNextPage: false,
+          nextCursor: null,
+          items: [notification1, notification2],
+        },
+      }),
+      respond(UNREAD_COUNT_QUERY, { unreadNotificationCount: 0 }),
+    ]);
   });
 
   afterEach(() => {
