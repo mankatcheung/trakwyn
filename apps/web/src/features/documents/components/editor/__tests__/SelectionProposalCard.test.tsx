@@ -27,7 +27,7 @@ beforeAll(() => {
   (Text.prototype as unknown as { getClientRects: () => DOMRectList }).getClientRects = () => rects;
 });
 
-const range: AiRange = { kind: 'text', from: 1, to: 6, text: 'hello', hasMarks: false };
+const range: AiRange = { kind: 'inline', from: 1, to: 6, text: 'hello', hasMarks: false };
 
 function makeAi(state: InlineAiState): InlineAiController {
   return {

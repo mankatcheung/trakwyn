@@ -42,8 +42,8 @@ describe('LegalFooterLinks', () => {
     const { container, rerender } = render(<LegalFooterLinks />);
     expect(container.firstChild).toHaveClass('justify-center', 'text-xs');
 
-    rerender(<LegalFooterLinks className="custom-footer" />);
-    expect(container.firstChild).toHaveClass('custom-footer');
+    rerender(<LegalFooterLinks className="flex-col" />);
+    expect(container.firstChild).toHaveClass('flex-col');
     expect(container.firstChild).not.toHaveClass('justify-center');
   });
 });
