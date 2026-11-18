@@ -46,7 +46,6 @@ const ROOT_IMPORTS_OF_FEATURES = new Set([
  */
 const HAND_ROLLED_GQL_MOCKS = new Set<string>([
   'features/application-detail/pages/__tests__/ApplicationDetailPage.test.tsx',
-  'features/settings/pages/__tests__/SettingsAiPage.test.tsx',
 ]);
 
 /** Lines above which a source file must justify itself below. */
