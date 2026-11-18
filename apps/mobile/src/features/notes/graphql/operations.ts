@@ -1,4 +1,4 @@
-// Hand-written to match apps/web's apps/web/src/features/notes/graphql/notes.{queries,mutations}.graphql
+// Hand-written to match apps/web/src/features/notes/graphql/noteQueries.ts
 // field-for-field — codegen is still deferred for apps/mobile (see JEF-261/262).
 
 const NOTE_FIELDS = `
