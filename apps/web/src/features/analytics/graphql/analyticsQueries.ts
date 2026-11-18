@@ -1,14 +1,21 @@
 import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
+import { graphql } from '#/graphql/generated';
 import type { ApplicationStatus } from '#/graphql/generated/graphql';
 
-const ANALYTICS_QUERY = `
+const ANALYTICS_QUERY = graphql(`
   query AnalyticsApplications {
     applications {
-      id company role status appliedAt createdAt likelyGhosted
+      id
+      company
+      role
+      status
+      appliedAt
+      createdAt
+      likelyGhosted
     }
   }
-`;
+`);
 
 export type AnalyticsApplication = {
   id: string;
@@ -25,5 +32,6 @@ export type AnalyticsApplication = {
 // component's much heavier dependency into the eagerly-loaded route chunk.
 export const analyticsQueryOptions = queryOptions({
   queryKey: ['analytics'],
-  queryFn: () => gqlClient.request<{ applications: AnalyticsApplication[] }>(ANALYTICS_QUERY),
+  queryFn: async () =>
+    (await gqlClient.request(ANALYTICS_QUERY)) as { applications: AnalyticsApplication[] },
 });

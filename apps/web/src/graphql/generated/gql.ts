@@ -17,6 +17,12 @@ type Documents = {
   '\n  mutation RequestAccountDeletion {\n    requestAccountDeletion\n  }\n': typeof types.RequestAccountDeletionDocument;
   '\n  mutation ConfirmAccountDeletion($token: String!) {\n    confirmAccountDeletion(token: $token)\n  }\n': typeof types.ConfirmAccountDeletionDocument;
   '\n  mutation CancelAccountDeletion($token: String) {\n    cancelAccountDeletion(token: $token)\n  }\n': typeof types.CancelAccountDeletionDocument;
+  '\n  query AnalyticsApplications {\n    applications {\n      id\n      company\n      role\n      status\n      appliedAt\n      createdAt\n      likelyGhosted\n    }\n  }\n': typeof types.AnalyticsApplicationsDocument;
+  '\n  query ApplicationChannelAnalytics {\n    applicationChannelAnalytics {\n      bySource {\n        label\n        applicationCount\n        respondedCount\n        responseRate\n        offerCount\n        offerRate\n      }\n      byTag {\n        label\n        applicationCount\n        respondedCount\n        responseRate\n        offerCount\n        offerRate\n      }\n    }\n  }\n': typeof types.ApplicationChannelAnalyticsDocument;
+  '\n  query DocumentVersionOutcomes {\n    documentVersionOutcomes {\n      documentType\n      version\n      applicationCount\n      interviewCount\n      interviewRate\n    }\n  }\n': typeof types.DocumentVersionOutcomesDocument;
+  '\n  query InterviewRoundAnalytics {\n    interviewRoundAnalytics {\n      byType {\n        type\n        passed\n        failed\n        pending\n        cancelled\n      }\n      roundsToOffer {\n        average\n        median\n        sampleSize\n      }\n      roundsToRejection {\n        average\n        median\n        sampleSize\n      }\n    }\n  }\n': typeof types.InterviewRoundAnalyticsDocument;
+  '\n  query OfferAnalytics {\n    offerAnalytics {\n      trend {\n        offerId\n        applicationId\n        company\n        role\n        createdAt\n        currency\n        normalizedYearlySalary\n      }\n      byCurrency {\n        currency\n        count\n        minYearlySalary\n        maxYearlySalary\n        medianYearlySalary\n        averageYearlySalary\n      }\n    }\n  }\n': typeof types.OfferAnalyticsDocument;
+  '\n  query ResponseTimeAnalytics {\n    responseTimeAnalytics {\n      timeInStage {\n        status\n        averageDays\n        medianDays\n        sampleSize\n      }\n      timeToFirstResponse {\n        averageDays\n        medianDays\n        sampleSize\n      }\n    }\n  }\n': typeof types.ResponseTimeAnalyticsDocument;
   '\n  mutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n    }\n  }\n': typeof types.UpdateApplicationDocument;
   '\n  mutation UpdateApplicationFlags($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n      starred\n      status\n    }\n  }\n': typeof types.UpdateApplicationFlagsDocument;
   '\n  query ApplicationHealthScore($applicationId: ID!) {\n    applicationHealthScore(applicationId: $applicationId) {\n      score\n      label\n      criteria {\n        key\n        label\n        points\n        earned\n        met\n      }\n    }\n  }\n': typeof types.ApplicationHealthScoreDocument;
@@ -52,6 +58,7 @@ type Documents = {
   '\n  mutation ResetPassword($token: String!, $newPassword: String!) {\n    resetPassword(token: $token, newPassword: $newPassword)\n  }\n': typeof types.ResetPasswordDocument;
   '\n  mutation ConfirmBackupEmail($token: String!) {\n    confirmBackupEmail(token: $token)\n  }\n': typeof types.ConfirmBackupEmailDocument;
   '\n  mutation ConfirmEmailChange($token: String!) {\n    confirmEmailChange(token: $token)\n  }\n': typeof types.ConfirmEmailChangeDocument;
+  '\n  query CalendarEvents {\n    calendarEvents {\n      id\n      applicationId\n      company\n      role\n      type\n      date\n      interviewRoundType\n    }\n  }\n': typeof types.CalendarEventsDocument;
   '\n  query DashboardApplications {\n    applications {\n      id\n      company\n      role\n      status\n      starred\n      followUpAt\n      createdAt\n    }\n  }\n': typeof types.DashboardApplicationsDocument;
   '\n  query DashboardCalendarEvents {\n    calendarEvents {\n      id\n      applicationId\n      company\n      role\n      type\n      date\n      interviewRoundType\n    }\n  }\n': typeof types.DashboardCalendarEventsDocument;
   '\n  query WeeklyApplicationGoal {\n    weeklyApplicationGoal {\n      weeklyApplicationGoal\n      currentWeekCount\n      currentWeekStart\n      streakWeeks\n    }\n  }\n': typeof types.WeeklyApplicationGoalDocument;
@@ -196,6 +203,18 @@ const documents: Documents = {
     types.ConfirmAccountDeletionDocument,
   '\n  mutation CancelAccountDeletion($token: String) {\n    cancelAccountDeletion(token: $token)\n  }\n':
     types.CancelAccountDeletionDocument,
+  '\n  query AnalyticsApplications {\n    applications {\n      id\n      company\n      role\n      status\n      appliedAt\n      createdAt\n      likelyGhosted\n    }\n  }\n':
+    types.AnalyticsApplicationsDocument,
+  '\n  query ApplicationChannelAnalytics {\n    applicationChannelAnalytics {\n      bySource {\n        label\n        applicationCount\n        respondedCount\n        responseRate\n        offerCount\n        offerRate\n      }\n      byTag {\n        label\n        applicationCount\n        respondedCount\n        responseRate\n        offerCount\n        offerRate\n      }\n    }\n  }\n':
+    types.ApplicationChannelAnalyticsDocument,
+  '\n  query DocumentVersionOutcomes {\n    documentVersionOutcomes {\n      documentType\n      version\n      applicationCount\n      interviewCount\n      interviewRate\n    }\n  }\n':
+    types.DocumentVersionOutcomesDocument,
+  '\n  query InterviewRoundAnalytics {\n    interviewRoundAnalytics {\n      byType {\n        type\n        passed\n        failed\n        pending\n        cancelled\n      }\n      roundsToOffer {\n        average\n        median\n        sampleSize\n      }\n      roundsToRejection {\n        average\n        median\n        sampleSize\n      }\n    }\n  }\n':
+    types.InterviewRoundAnalyticsDocument,
+  '\n  query OfferAnalytics {\n    offerAnalytics {\n      trend {\n        offerId\n        applicationId\n        company\n        role\n        createdAt\n        currency\n        normalizedYearlySalary\n      }\n      byCurrency {\n        currency\n        count\n        minYearlySalary\n        maxYearlySalary\n        medianYearlySalary\n        averageYearlySalary\n      }\n    }\n  }\n':
+    types.OfferAnalyticsDocument,
+  '\n  query ResponseTimeAnalytics {\n    responseTimeAnalytics {\n      timeInStage {\n        status\n        averageDays\n        medianDays\n        sampleSize\n      }\n      timeToFirstResponse {\n        averageDays\n        medianDays\n        sampleSize\n      }\n    }\n  }\n':
+    types.ResponseTimeAnalyticsDocument,
   '\n  mutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n    }\n  }\n':
     types.UpdateApplicationDocument,
   '\n  mutation UpdateApplicationFlags($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n      starred\n      status\n    }\n  }\n':
@@ -265,6 +284,8 @@ const documents: Documents = {
     types.ConfirmBackupEmailDocument,
   '\n  mutation ConfirmEmailChange($token: String!) {\n    confirmEmailChange(token: $token)\n  }\n':
     types.ConfirmEmailChangeDocument,
+  '\n  query CalendarEvents {\n    calendarEvents {\n      id\n      applicationId\n      company\n      role\n      type\n      date\n      interviewRoundType\n    }\n  }\n':
+    types.CalendarEventsDocument,
   '\n  query DashboardApplications {\n    applications {\n      id\n      company\n      role\n      status\n      starred\n      followUpAt\n      createdAt\n    }\n  }\n':
     types.DashboardApplicationsDocument,
   '\n  query DashboardCalendarEvents {\n    calendarEvents {\n      id\n      applicationId\n      company\n      role\n      type\n      date\n      interviewRoundType\n    }\n  }\n':
@@ -570,6 +591,42 @@ export function graphql(
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(
+  source: '\n  query AnalyticsApplications {\n    applications {\n      id\n      company\n      role\n      status\n      appliedAt\n      createdAt\n      likelyGhosted\n    }\n  }\n',
+): (typeof documents)['\n  query AnalyticsApplications {\n    applications {\n      id\n      company\n      role\n      status\n      appliedAt\n      createdAt\n      likelyGhosted\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query ApplicationChannelAnalytics {\n    applicationChannelAnalytics {\n      bySource {\n        label\n        applicationCount\n        respondedCount\n        responseRate\n        offerCount\n        offerRate\n      }\n      byTag {\n        label\n        applicationCount\n        respondedCount\n        responseRate\n        offerCount\n        offerRate\n      }\n    }\n  }\n',
+): (typeof documents)['\n  query ApplicationChannelAnalytics {\n    applicationChannelAnalytics {\n      bySource {\n        label\n        applicationCount\n        respondedCount\n        responseRate\n        offerCount\n        offerRate\n      }\n      byTag {\n        label\n        applicationCount\n        respondedCount\n        responseRate\n        offerCount\n        offerRate\n      }\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query DocumentVersionOutcomes {\n    documentVersionOutcomes {\n      documentType\n      version\n      applicationCount\n      interviewCount\n      interviewRate\n    }\n  }\n',
+): (typeof documents)['\n  query DocumentVersionOutcomes {\n    documentVersionOutcomes {\n      documentType\n      version\n      applicationCount\n      interviewCount\n      interviewRate\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query InterviewRoundAnalytics {\n    interviewRoundAnalytics {\n      byType {\n        type\n        passed\n        failed\n        pending\n        cancelled\n      }\n      roundsToOffer {\n        average\n        median\n        sampleSize\n      }\n      roundsToRejection {\n        average\n        median\n        sampleSize\n      }\n    }\n  }\n',
+): (typeof documents)['\n  query InterviewRoundAnalytics {\n    interviewRoundAnalytics {\n      byType {\n        type\n        passed\n        failed\n        pending\n        cancelled\n      }\n      roundsToOffer {\n        average\n        median\n        sampleSize\n      }\n      roundsToRejection {\n        average\n        median\n        sampleSize\n      }\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query OfferAnalytics {\n    offerAnalytics {\n      trend {\n        offerId\n        applicationId\n        company\n        role\n        createdAt\n        currency\n        normalizedYearlySalary\n      }\n      byCurrency {\n        currency\n        count\n        minYearlySalary\n        maxYearlySalary\n        medianYearlySalary\n        averageYearlySalary\n      }\n    }\n  }\n',
+): (typeof documents)['\n  query OfferAnalytics {\n    offerAnalytics {\n      trend {\n        offerId\n        applicationId\n        company\n        role\n        createdAt\n        currency\n        normalizedYearlySalary\n      }\n      byCurrency {\n        currency\n        count\n        minYearlySalary\n        maxYearlySalary\n        medianYearlySalary\n        averageYearlySalary\n      }\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query ResponseTimeAnalytics {\n    responseTimeAnalytics {\n      timeInStage {\n        status\n        averageDays\n        medianDays\n        sampleSize\n      }\n      timeToFirstResponse {\n        averageDays\n        medianDays\n        sampleSize\n      }\n    }\n  }\n',
+): (typeof documents)['\n  query ResponseTimeAnalytics {\n    responseTimeAnalytics {\n      timeInStage {\n        status\n        averageDays\n        medianDays\n        sampleSize\n      }\n      timeToFirstResponse {\n        averageDays\n        medianDays\n        sampleSize\n      }\n    }\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
   source: '\n  mutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n    }\n  }\n',
 ): (typeof documents)['\n  mutation UpdateApplication($id: ID!, $input: UpdateApplicationInput!) {\n    updateApplication(id: $id, input: $input) {\n      id\n    }\n  }\n'];
 /**
@@ -776,6 +833,12 @@ export function graphql(
 export function graphql(
   source: '\n  mutation ConfirmEmailChange($token: String!) {\n    confirmEmailChange(token: $token)\n  }\n',
 ): (typeof documents)['\n  mutation ConfirmEmailChange($token: String!) {\n    confirmEmailChange(token: $token)\n  }\n'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: '\n  query CalendarEvents {\n    calendarEvents {\n      id\n      applicationId\n      company\n      role\n      type\n      date\n      interviewRoundType\n    }\n  }\n',
+): (typeof documents)['\n  query CalendarEvents {\n    calendarEvents {\n      id\n      applicationId\n      company\n      role\n      type\n      date\n      interviewRoundType\n    }\n  }\n'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

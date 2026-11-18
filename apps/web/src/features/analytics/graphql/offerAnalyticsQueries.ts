@@ -1,7 +1,8 @@
 import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
+import { graphql } from '#/graphql/generated';
 
-const OFFER_ANALYTICS_QUERY = `
+const OFFER_ANALYTICS_QUERY = graphql(`
   query OfferAnalytics {
     offerAnalytics {
       trend {
@@ -23,7 +24,7 @@ const OFFER_ANALYTICS_QUERY = `
       }
     }
   }
-`;
+`);
 
 export interface OfferTrendPoint {
   offerId: string;
@@ -51,5 +52,6 @@ export interface OfferAnalytics {
 
 export const offerAnalyticsQueryOptions = queryOptions({
   queryKey: ['offerAnalytics'],
-  queryFn: () => gqlClient.request<{ offerAnalytics: OfferAnalytics }>(OFFER_ANALYTICS_QUERY),
+  queryFn: async () =>
+    (await gqlClient.request(OFFER_ANALYTICS_QUERY)) as { offerAnalytics: OfferAnalytics },
 });

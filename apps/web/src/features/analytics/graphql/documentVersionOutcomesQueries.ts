@@ -1,7 +1,8 @@
 import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
+import { graphql } from '#/graphql/generated';
 
-const DOCUMENT_VERSION_OUTCOMES_QUERY = `
+const DOCUMENT_VERSION_OUTCOMES_QUERY = graphql(`
   query DocumentVersionOutcomes {
     documentVersionOutcomes {
       documentType
@@ -11,7 +12,7 @@ const DOCUMENT_VERSION_OUTCOMES_QUERY = `
       interviewRate
     }
   }
-`;
+`);
 
 export interface DocumentVersionOutcome {
   documentType: string;
@@ -23,8 +24,8 @@ export interface DocumentVersionOutcome {
 
 export const documentVersionOutcomesQueryOptions = queryOptions({
   queryKey: ['documentVersionOutcomes'],
-  queryFn: () =>
-    gqlClient.request<{ documentVersionOutcomes: DocumentVersionOutcome[] }>(
-      DOCUMENT_VERSION_OUTCOMES_QUERY,
-    ),
+  queryFn: async () =>
+    (await gqlClient.request(DOCUMENT_VERSION_OUTCOMES_QUERY)) as {
+      documentVersionOutcomes: DocumentVersionOutcome[];
+    },
 });

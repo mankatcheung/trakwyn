@@ -1,7 +1,8 @@
 import { queryOptions } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
+import { graphql } from '#/graphql/generated';
 
-const APPLICATION_CHANNEL_ANALYTICS_QUERY = `
+const APPLICATION_CHANNEL_ANALYTICS_QUERY = graphql(`
   query ApplicationChannelAnalytics {
     applicationChannelAnalytics {
       bySource {
@@ -22,7 +23,7 @@ const APPLICATION_CHANNEL_ANALYTICS_QUERY = `
       }
     }
   }
-`;
+`);
 
 export interface ApplicationGroupStat {
   label: string;
@@ -40,8 +41,8 @@ export interface ApplicationChannelAnalytics {
 
 export const applicationChannelAnalyticsQueryOptions = queryOptions({
   queryKey: ['applicationChannelAnalytics'],
-  queryFn: () =>
-    gqlClient.request<{ applicationChannelAnalytics: ApplicationChannelAnalytics }>(
-      APPLICATION_CHANNEL_ANALYTICS_QUERY,
-    ),
+  queryFn: async () =>
+    (await gqlClient.request(APPLICATION_CHANNEL_ANALYTICS_QUERY)) as {
+      applicationChannelAnalytics: ApplicationChannelAnalytics;
+    },
 });
