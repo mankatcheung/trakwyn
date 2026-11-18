@@ -39,14 +39,9 @@ vi.mock('#/features/ai/lib/aiCredits', async () => {
 import { ChatDockProvider } from '#/features/chat/lib/chatDock';
 import { ChatDockConversationPicker } from '#/features/chat/components/dock/ChatDockPicker';
 import { ConversationHistoryPage } from '#/features/chat/pages/ConversationHistoryPage';
-import { gqlText } from '#/__tests__/helpers/gqlText';
-
-function documentOf(arg: unknown): string {
-  // A request object carries `document`; a string or a typed document is the document itself.
-  if (typeof arg === 'object' && arg !== null && 'document' in arg)
-    return (arg as { document: string }).document;
-  return arg as string;
-}
+import { mockGql, respond } from '#/__tests__/helpers/gqlMock';
+import { LLM_API_KEYS_QUERY } from '#/features/settings/graphql/aiQueries';
+import { CONVERSATIONS_QUERY } from '#/features/chat/graphql/chatQueries';
 
 const makeClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -78,15 +73,13 @@ const conversations = [
 
 /** `order` is the providers AI calls try, first to last (JEF-503). */
 function setup(order: string[]) {
-  mockGqlRequest.mockImplementation((arg: unknown) => {
-    const query = documentOf(arg);
-    if (gqlText(query).includes('LlmApiKeys'))
-      return Promise.resolve({
-        llmApiKeys: [{ provider: 'openai' }, { provider: 'anthropic' }],
-        me: { aiProviderOrder: order },
-      });
-    return Promise.resolve({ conversations });
-  });
+  mockGql(mockGqlRequest, [
+    respond(LLM_API_KEYS_QUERY, {
+      llmApiKeys: [{ provider: 'openai' }, { provider: 'anthropic' }],
+      me: { aiProviderOrder: order },
+    }),
+    respond(CONVERSATIONS_QUERY, { conversations }),
+  ]);
 }
 
 /** The "time ago · provider" line under a conversation title. */

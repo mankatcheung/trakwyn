@@ -8,15 +8,7 @@ import { proseToTiptapDoc } from '#/features/documents/lib/editor/proseToTiptapD
 import type { TiptapNode } from '#/features/documents/lib/editor/markdownToTiptapDoc';
 import { documentsQueryOptions } from '../graphql/documentQueries';
 import type { DocumentEditorHandle } from './editor/DocumentDraftEditor';
-import { graphql } from '#/graphql/generated';
-
-const EXTRACT_TEXT_MUTATION = graphql(`
-  mutation ExtractDocumentText($documentId: ID!) {
-    extractDocumentText(documentId: $documentId) {
-      text
-    }
-  }
-`);
+import { EXTRACT_TEXT_MUTATION } from '../graphql/importQueries';
 
 interface ImportDocumentActionProps {
   applicationId: string;
