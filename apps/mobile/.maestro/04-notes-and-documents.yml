@@ -91,8 +91,12 @@ appId: com.trakwyn.app
     id: 'draft-title-input'
 - tapOn:
     id: 'ai-helper-open'
+# A freshly registered account has no hosted credits and no provider of its
+# own, so the sheet offers "Set up AI" (ai-helper-setup) and renders the
+# Generate button (ai-helper-run) only once a provider exists. Asserting the
+# run button here failed every night on both platforms.
 - assertVisible:
-    id: 'ai-helper-run'
+    id: 'ai-helper-setup'
 - runFlow:
     when:
       platform: Android
