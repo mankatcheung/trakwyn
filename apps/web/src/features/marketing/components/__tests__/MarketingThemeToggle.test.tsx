@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
 const { mockSetTheme, mockUseTheme } = vi.hoisted(() => ({
@@ -12,44 +12,61 @@ vi.mock('#/lib/theme', () => ({
 
 vi.mock('#/lib/i18n', () => ({
   useLocale: () => ({
-    t: (key: string, options?: { theme?: string }) =>
-      key === 'profile.themeAria'
-        ? `Theme: ${options?.theme}`
-        : ({
-            'profile.themeLight': 'Light',
-            'profile.themeDark': 'Dark',
-            'profile.themeSystem': 'System',
-          }[key] ?? key),
+    t: (key: string) =>
+      ({
+        'profile.appearanceTitle': 'Appearance',
+        'profile.themeLight': 'Light',
+        'profile.themeDark': 'Dark',
+        'profile.themeSystem': 'System',
+      })[key] ?? key,
   }),
 }));
 
 import { MarketingThemeToggle } from '#/features/marketing/components/MarketingThemeToggle';
 
 describe('MarketingThemeToggle', () => {
-  it('advances light → dark on click', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('shows all three options in a labelled group', () => {
     mockUseTheme.mockReturnValue({ theme: 'light', setTheme: mockSetTheme });
 
     render(<MarketingThemeToggle />);
-    screen.getByRole('button', { name: 'Theme: Light' }).click();
 
-    expect(mockSetTheme).toHaveBeenCalledWith('dark');
+    expect(screen.getByRole('group', { name: 'Appearance' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Light' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Dark' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'System' })).toBeInTheDocument();
   });
 
-  it('advances dark → system on click', () => {
+  it.each([
+    ['light', 'Light'],
+    ['dark', 'Dark'],
+    ['system', 'System'],
+  ] as const)('marks only the current theme (%s) as pressed', (theme, label) => {
+    mockUseTheme.mockReturnValue({ theme, setTheme: mockSetTheme });
+
+    render(<MarketingThemeToggle />);
+
+    for (const name of ['Light', 'Dark', 'System']) {
+      expect(screen.getByRole('button', { name })).toHaveAttribute(
+        'aria-pressed',
+        String(name === label),
+      );
+    }
+  });
+
+  it.each([
+    ['Light', 'light'],
+    ['Dark', 'dark'],
+    ['System', 'system'],
+  ] as const)('picks %s in one click, whatever is selected now', (label, value) => {
     mockUseTheme.mockReturnValue({ theme: 'dark', setTheme: mockSetTheme });
 
     render(<MarketingThemeToggle />);
-    screen.getByRole('button', { name: 'Theme: Dark' }).click();
+    screen.getByRole('button', { name: label }).click();
 
-    expect(mockSetTheme).toHaveBeenCalledWith('system');
-  });
-
-  it('advances system → light on click', () => {
-    mockUseTheme.mockReturnValue({ theme: 'system', setTheme: mockSetTheme });
-
-    render(<MarketingThemeToggle />);
-    screen.getByRole('button', { name: 'Theme: System' }).click();
-
-    expect(mockSetTheme).toHaveBeenCalledWith('light');
+    expect(mockSetTheme).toHaveBeenCalledWith(value);
   });
 });

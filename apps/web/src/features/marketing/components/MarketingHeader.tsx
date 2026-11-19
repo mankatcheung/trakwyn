@@ -5,7 +5,6 @@ import { LogoMark } from '#/components/LogoMark';
 import { useLocale } from '#/lib/i18n';
 import { useIsLoggedIn } from '#/features/auth/hooks/useIsLoggedIn';
 import { trackCta } from '#/lib/analytics';
-import { MarketingThemeToggle } from './MarketingThemeToggle';
 import { MarketingLocalePicker } from './MarketingLocalePicker';
 
 interface MarketingHeaderProps {
@@ -120,11 +119,9 @@ export function MarketingHeader({
               {t('landing.startFree')}
             </Link>
             <MarketingLocalePicker />
-            <MarketingThemeToggle />
           </div>
           <div className="flex items-center gap-1 sm:hidden">
             <MarketingLocalePicker />
-            <MarketingThemeToggle />
             <Link
               to="/register"
               onClick={() => trackCta('get_started', 'header_mobile')}

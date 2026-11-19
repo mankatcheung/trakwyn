@@ -5,6 +5,7 @@ import { LogoMark } from '#/components/LogoMark';
 import { LegalFooterLinks } from '#/features/legal/components/LegalFooterLinks';
 import { useLocale } from '#/lib/i18n';
 import { useIsLoggedIn } from '#/features/auth/hooks/useIsLoggedIn';
+import { MarketingThemeToggle } from './MarketingThemeToggle';
 
 /**
  * Shared footer for every public marketing page (`/` and `/features/*`).
@@ -108,7 +109,10 @@ export function MarketingFooter() {
             </div>
           </div>
         </div>
-        <div className="mt-10 flex flex-col items-center gap-4 border-t border-gray-200 pt-6 sm:flex-row sm:justify-between dark:border-gray-800">
+        <div className="mt-10">
+          <MarketingThemeToggle />
+        </div>
+        <div className="mt-6 flex flex-col items-center gap-4 border-t border-gray-200 pt-6 sm:flex-row sm:justify-between dark:border-gray-800">
           <span className="text-xs text-gray-400 dark:text-gray-500">
             {t('marketing.footer.copyright', { year: new Date().getFullYear() })}
           </span>

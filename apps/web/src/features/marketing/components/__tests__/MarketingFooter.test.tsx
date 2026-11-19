@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import en from '#/i18n/en.json';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { CLIPPER_WEB_STORE_URL } from '#/constants';
 
@@ -18,6 +19,12 @@ vi.mock('@tanstack/react-router', () => ({
 
 vi.mock('#/graphql/client', () => ({
   hasSessionCookie: mockHasSessionCookie,
+}));
+
+const { mockSetTheme } = vi.hoisted(() => ({ mockSetTheme: vi.fn() }));
+
+vi.mock('#/lib/theme', () => ({
+  useTheme: () => ({ theme: 'light', setTheme: mockSetTheme }),
 }));
 
 vi.mock('#/lib/i18n', () => ({
@@ -86,6 +93,18 @@ describe('MarketingFooter', () => {
       'href',
       '/dashboard',
     );
+  });
+
+  it('renders one theme picker with Light, Dark and System, and applies the choice (JEF-655)', async () => {
+    mockHasSessionCookie.mockReturnValue(false);
+    render(<MarketingFooter />);
+
+    expect(screen.getAllByRole('group', { name: 'Appearance' })).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Light' })).toHaveAttribute('aria-pressed', 'true');
+
+    await userEvent.click(screen.getByRole('button', { name: 'System' }));
+
+    expect(mockSetTheme).toHaveBeenCalledWith('system');
   });
 
   it('links to the Privacy Policy and Terms of Service', () => {
