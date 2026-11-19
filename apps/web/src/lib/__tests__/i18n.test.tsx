@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
-import { LOCALE_INIT_SCRIPT, LocaleProvider, useLocale } from '#/lib/i18n';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { LOCALE_INIT_SCRIPT, LocaleProvider, adoptLocaleFromQuery, useLocale } from '#/lib/i18n';
 
 function Probe() {
   const { locale, t, formatNumber } = useLocale();
@@ -168,16 +168,176 @@ describe('a locale named by the URL (JEF-653)', () => {
     expect(window.location.pathname).toBe('/zh-cn/pricing');
     expect(window.location.search).toBe('');
   });
+});
 
-  it('still writes ?locale= on a page that has no per-locale URL', async () => {
-    window.history.replaceState({}, '', '/login');
+describe('the language lives in storage, not in the URL (JEF-654)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+    localStorage.removeItem('locale');
+  });
+
+  function SwitchProbe() {
+    const { locale, setLocale } = useLocale();
+    return (
+      <>
+        <output>{locale}</output>
+        {/* eslint-disable-next-line i18next/no-literal-string -- test fixture label, not user-facing copy */}
+        <button onClick={() => setLocale('zh-TW')}>pick</button>
+      </>
+    );
+  }
+
+  it('never writes ?locale= into a portal URL, on load or when the language changes', async () => {
+    localStorage.setItem('locale', 'zh-CN');
+    window.history.replaceState({}, '', '/dashboard?tab=open#top');
     render(
-      <LocaleProvider urlLocale="zh-CN">
+      <LocaleProvider>
+        <SwitchProbe />
+      </LocaleProvider>,
+    );
+    expect(await screen.findByText('zh-CN')).toBeInTheDocument();
+    expect(window.location.search).toBe('?tab=open');
+
+    fireEvent.click(screen.getByRole('button', { name: 'pick' }));
+    expect(await screen.findByText('zh-TW')).toBeInTheDocument();
+
+    expect(window.location.pathname + window.location.search + window.location.hash).toBe(
+      '/dashboard?tab=open#top',
+    );
+    expect(localStorage.getItem('locale')).toBe('zh-TW');
+  });
+
+  it('keeps en-GB on its English marketing URL, through a reload, with no query', async () => {
+    window.history.replaceState({}, '', '/pricing');
+    function PickGb() {
+      const { locale, setLocale } = useLocale();
+      return (
+        <>
+          <output>{locale}</output>
+          {/* eslint-disable-next-line i18next/no-literal-string -- test fixture label, not user-facing copy */}
+          <button onClick={() => setLocale('en-GB')}>pick</button>
+        </>
+      );
+    }
+    const first = render(
+      <LocaleProvider>
+        <PickGb />
+      </LocaleProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'pick' }));
+    expect(await screen.findByText('en-GB')).toBeInTheDocument();
+    expect(window.location.pathname + window.location.search).toBe('/pricing');
+    first.unmount();
+
+    // A reload at the same URL: nothing in it names en-GB, so it comes from storage.
+    render(
+      <LocaleProvider>
         <Probe />
       </LocaleProvider>,
     );
-    await screen.findByText(/zh-CN\|仪表盘\|/);
-    expect(window.location.search).toBe('?locale=zh-CN');
+    expect(screen.getByText(/^en-GB\|/)).toBeInTheDocument();
+  });
+
+  it('reads the language from storage on a portal page, not from a ?locale= it did not adopt', () => {
+    localStorage.setItem('locale', 'en');
+    window.history.replaceState({}, '', '/login?locale=zh-CN');
+    render(
+      <LocaleProvider>
+        <Probe />
+      </LocaleProvider>,
+    );
+    expect(screen.getByText(/^en\|Dashboard\|/)).toBeInTheDocument();
+  });
+
+  describe('adoptLocaleFromQuery', () => {
+    it('saves an old link’s language and takes it off the address bar, keeping the rest', async () => {
+      localStorage.setItem('locale', 'en');
+      window.history.replaceState({ key: 'kept' }, '', '/login?locale=zh-CN&next=%2Fdashboard#top');
+
+      adoptLocaleFromQuery();
+
+      expect(localStorage.getItem('locale')).toBe('zh-CN');
+      expect(window.location.pathname + window.location.search + window.location.hash).toBe(
+        '/login?next=%2Fdashboard#top',
+      );
+      expect(window.history.state).toEqual({ key: 'kept' });
+
+      render(
+        <LocaleProvider>
+          <Probe />
+        </LocaleProvider>,
+      );
+      expect(await screen.findByText(/zh-CN\|仪表盘\|/)).toBeInTheDocument();
+    });
+
+    it('lets the link win over a language already stored', () => {
+      localStorage.setItem('locale', 'en');
+      window.history.replaceState({}, '', '/register?locale=zh-TW');
+
+      adoptLocaleFromQuery();
+
+      expect(localStorage.getItem('locale')).toBe('zh-TW');
+      expect(window.location.search).toBe('');
+    });
+
+    it('adopts en-GB too, which is a supported language without URLs of its own', () => {
+      window.history.replaceState({}, '', '/login?locale=en-GB');
+
+      adoptLocaleFromQuery();
+
+      expect(localStorage.getItem('locale')).toBe('en-GB');
+      expect(window.location.search).toBe('');
+    });
+
+    it.each(['/pricing?locale=zh-TW', '/?locale=zh-HK', '/zh-hk/pricing?locale=zh-CN'])(
+      'leaves %s to the router, which owns ?locale= on marketing pages',
+      (href) => {
+        localStorage.setItem('locale', 'en');
+        window.history.replaceState({}, '', href);
+
+        adoptLocaleFromQuery();
+
+        expect(localStorage.getItem('locale')).toBe('en');
+        expect(window.location.pathname + window.location.search).toBe(href);
+      },
+    );
+
+    it.each(['/login?locale=fr', '/login?locale=', '/login?locale=ZH-CN'])(
+      'ignores %s, which is not a supported language',
+      (href) => {
+        localStorage.setItem('locale', 'en');
+        window.history.replaceState({}, '', href);
+
+        adoptLocaleFromQuery();
+
+        expect(localStorage.getItem('locale')).toBe('en');
+        expect(window.location.pathname + window.location.search).toBe(href);
+      },
+    );
+
+    it('does not touch the history when there is nothing to adopt', () => {
+      window.history.replaceState({}, '', '/dashboard?tab=open');
+      const replaceState = vi.spyOn(window.history, 'replaceState');
+
+      adoptLocaleFromQuery();
+
+      expect(replaceState).not.toHaveBeenCalled();
+    });
+
+    it('leaves the URL as it was when storage is unavailable', () => {
+      window.history.replaceState({}, '', '/login?locale=zh-CN');
+      vi.stubGlobal('localStorage', {
+        getItem: () => null,
+        setItem: () => {
+          throw new Error('storage blocked');
+        },
+      });
+
+      expect(() => adoptLocaleFromQuery()).not.toThrow();
+
+      expect(window.location.search).toBe('?locale=zh-CN');
+    });
   });
 });
 

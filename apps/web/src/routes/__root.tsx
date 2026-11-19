@@ -76,6 +76,11 @@ function AppToaster() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  // The language the URL names. Since JEF-654 that is only a localized
+  // marketing page (the router rewrite turns `/zh-hk/pricing` into
+  // `?locale=zh-HK`), or a legacy link on the server. A portal page's address
+  // never carries one: its language is read from storage, and an old
+  // `?locale=` link is adopted into it before the router starts.
   const urlLocale = useRouterState({ select: (s) => localeFromSearch(s.location.search) });
   // On a page that has a URL per language, picking a language moves to that
   // URL (JEF-653), so the back button, a reload and a copied link keep it.

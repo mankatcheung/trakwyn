@@ -96,11 +96,11 @@ export async function ensureLocaleLoaded(locale: Locale): Promise<void> {
 
 /**
  * Resolves the locale without consulting i18next, so it can run before
- * `init()` and start the bundle fetch as early as possible. Mirrors the
- * precedence in LOCALE_INIT_SCRIPT (URL path prefix → query → stored →
- * browser) — note that differs from LanguageDetector's configured order, but
- * this has always been the effective precedence, since LocaleProvider's own
- * initial state wins.
+ * `init()` and start the bundle fetch as early as possible. The precedence is
+ * URL path prefix → stored → browser, and a legacy `?locale=` on a marketing
+ * page ahead of those (see `legacyMarketingQueryLocale`). A `?locale=` on any
+ * other page was already moved into storage by `adoptLocaleFromQuery`.
+ * LocaleProvider's own initial state wins over LanguageDetector.
  */
 function detectLocale(): Locale {
   // The server has no Accept-Language or cookie to go on, so an unprefixed
@@ -114,15 +114,59 @@ function detectLocale(): Locale {
   try {
     const prefixed = localeFromPathname(window.location.pathname);
     if (prefixed) return prefixed;
-    const queryLocale = new URLSearchParams(window.location.search).get(LOCALE_QUERY_KEY);
     return normalizeLocale(
-      queryLocale ?? localStorage.getItem(LOCALE_STORAGE_KEY) ?? navigator.languages?.[0],
+      legacyMarketingQueryLocale() ??
+        localStorage.getItem(LOCALE_STORAGE_KEY) ??
+        navigator.languages?.[0],
     );
   } catch {
     return 'en';
   }
 }
 
+/**
+ * A legacy `?locale=` on a marketing page (`/pricing?locale=zh-TW`). The
+ * router owns it there: it redirects to the prefixed URL (JEF-653), so it is
+ * read, not adopted. On any other page it is `adoptLocaleFromQuery`'s.
+ */
+function legacyMarketingQueryLocale(): string | null {
+  if (!isLocalizedPath(stripLocalePrefix(window.location.pathname))) return null;
+  return new URLSearchParams(window.location.search).get(LOCALE_QUERY_KEY);
+}
+
+/**
+ * Older versions wrote the language into every portal URL as `?locale=zh-CN`,
+ * so such links are still out there, in bookmarks, history and shared
+ * messages. Following one chooses that language, once: it is saved to
+ * storage, which is where the language lives (JEF-654), and the parameter is
+ * taken off the address bar without a reload, so a link copied from here no
+ * longer carries it. Marketing pages are left to the router (see above).
+ *
+ * Exported for tests; it runs once, below, before the locale is detected.
+ */
+export function adoptLocaleFromQuery(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const { pathname, search, hash } = window.location;
+    if (isLocalizedPath(stripLocalePrefix(pathname))) return;
+    const params = new URLSearchParams(search);
+    const value = params.get(LOCALE_QUERY_KEY);
+    if (!isLocale(value)) return;
+    localStorage.setItem(LOCALE_STORAGE_KEY, value);
+    params.delete(LOCALE_QUERY_KEY);
+    const rest = params.toString();
+    window.history.replaceState(
+      window.history.state,
+      '',
+      `${pathname}${rest ? `?${rest}` : ''}${hash}`,
+    );
+  } catch {
+    // Storage or history unavailable (a private window, a blocked frame): the
+    // language is then the browser's, and the URL is left as it was.
+  }
+}
+
+adoptLocaleFromQuery();
 const detectedLocale = detectLocale();
 
 void i18next
@@ -136,8 +180,7 @@ void i18next
     nonExplicitSupportedLngs: false,
     interpolation: { escapeValue: false },
     detection: {
-      order: ['querystring', 'navigator', 'localStorage'],
-      lookupQuerystring: LOCALE_QUERY_KEY,
+      order: ['navigator', 'localStorage'],
       lookupLocalStorage: LOCALE_STORAGE_KEY,
       caches: ['localStorage'],
     },
@@ -170,20 +213,9 @@ function getInitialLocale(): Locale {
   // Not `i18next.language`: on the server that is one global shared by every
   // request in flight. A server render gets its locale from `urlLocale`.
   if (typeof window === 'undefined') return 'en';
-  const queryLocale = new URLSearchParams(window.location.search).get(LOCALE_QUERY_KEY);
   return normalizeLocale(
-    queryLocale ?? localStorage.getItem(LOCALE_STORAGE_KEY) ?? i18next.language,
+    legacyMarketingQueryLocale() ?? localStorage.getItem(LOCALE_STORAGE_KEY) ?? i18next.language,
   );
-}
-
-function writeLocaleToUrl(locale: Locale): void {
-  if (typeof window === 'undefined') return;
-  // A marketing page's language is in its path (`/zh-hk/pricing`), which the
-  // router rewrites. A `?locale=` on top would make a second URL for the page.
-  if (isLocalizedPath(stripLocalePrefix(window.location.pathname))) return;
-  const url = new URL(window.location.href);
-  url.searchParams.set(LOCALE_QUERY_KEY, locale);
-  window.history.replaceState(window.history.state, '', url);
 }
 
 /** i18next interpolation values, e.g. `{{count}}`/`{{term}}` placeholders — also drives plural-form selection when `count` is present. */
@@ -252,8 +284,8 @@ export function LocaleProvider({ children, urlLocale, onLocaleChange }: LocalePr
     });
 
     document.documentElement.lang = locale;
+    // The language lives here and nowhere in the URL (JEF-654).
     localStorage.setItem(LOCALE_STORAGE_KEY, locale);
-    writeLocaleToUrl(locale);
 
     return () => {
       cancelled = true;
@@ -264,7 +296,6 @@ export function LocaleProvider({ children, urlLocale, onLocaleChange }: LocalePr
     () => ({
       locale,
       setLocale: (next) => {
-        writeLocaleToUrl(next);
         onLocaleChange?.(next);
         // Await the bundle before switching, so the UI never flips to a
         // language whose strings aren't loaded yet (which would render
@@ -333,5 +364,9 @@ export function useLocale(): LocaleContextValue {
  * Sets `<html lang>` before hydration. The path prefix is checked first, so a
  * `/zh-hk/…` page is not relabelled with the visitor's stored or browser
  * language while it waits for JavaScript.
+ *
+ * It still reads `?locale=`, though the app no longer writes one (JEF-654): it
+ * runs before `adoptLocaleFromQuery` has moved an old link's language into
+ * storage, so the first paint of such a link is labelled correctly.
  */
 export const LOCALE_INIT_SCRIPT = `(function(){try{var m=${JSON.stringify(LOCALE_PATH_PREFIX)};var s=location.pathname.split('/')[1];var f=null;for(var k in m){if(m[k]===s){f=k}}var p=new URLSearchParams(location.search).get('${LOCALE_QUERY_KEY}');var l=f||p||localStorage.getItem('${LOCALE_STORAGE_KEY}')||((navigator.languages||[])[0])||'en';document.documentElement.lang=l;}catch(e){}})();`;

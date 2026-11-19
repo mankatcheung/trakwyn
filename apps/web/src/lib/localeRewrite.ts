@@ -30,7 +30,8 @@ export interface LocaleRewrite {
  * The public URL of the page at `location` (the router's internal one) in
  * `locale`, for the language picker to push; nothing when the page is not one
  * that has a URL per locale. `en-GB` has no URLs of its own, so it gets the
- * English path with `?locale=en-GB` to keep it displayed.
+ * English path, with no query: the language itself is kept in storage by
+ * `setLocale` (JEF-654), which is what keeps it displayed there.
  */
 export function localizedHref(
   location: { pathname: string; searchStr: string; hash: string },
@@ -39,12 +40,11 @@ export function localizedHref(
   if (!isLocalizedPath(location.pathname)) return undefined;
   const params = new URLSearchParams(location.searchStr);
   params.delete(LOCALE_QUERY_KEY);
-  const indexed = indexedLocale(locale);
-  if (!indexed) params.set(LOCALE_QUERY_KEY, locale);
   const search = params.toString();
   const hash =
     location.hash && !location.hash.startsWith('#') ? `#${location.hash}` : location.hash;
-  return `${localizedPath(location.pathname, indexed ?? 'en')}${search ? `?${search}` : ''}${hash}`;
+  const path = localizedPath(location.pathname, indexedLocale(locale) ?? 'en');
+  return `${path}${search ? `?${search}` : ''}${hash}`;
 }
 
 /**

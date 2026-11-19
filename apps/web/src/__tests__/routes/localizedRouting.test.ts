@@ -70,7 +70,7 @@ describe('a prefixed URL', () => {
 
     expect(localizedHref(router.latestLocation, 'zh-TW')).toBe('/zh-tw/features/tracking');
     expect(localizedHref(router.latestLocation, 'en')).toBe('/features/tracking');
-    expect(localizedHref(router.latestLocation, 'en-GB')).toBe('/features/tracking?locale=en-GB');
+    expect(localizedHref(router.latestLocation, 'en-GB')).toBe('/features/tracking');
   });
 
   it('keeps links inside the language, and leaves non-marketing links alone', async () => {
