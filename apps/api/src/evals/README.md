@@ -204,6 +204,7 @@ Flags that take a value need one (`--out` with nothing after it is an error). An
 
 | Flag                        | Meaning                                                                                                                                                                                                           |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--help`, `-h`              | Print the usage, every flag with a one-line description and the exit codes, then exit `0`. Wins over every other argument and reads no variable, so it works with nothing configured.                             |
 | `--target provider[:model]` | A model to test. **Repeat it** to compare models in one table. If you pass none, `EVAL_PROVIDER` and `EVAL_MODEL` are used. With neither, the run stops (except with `--validate-judge`).                         |
 | `--case <id>[,<id>]`        | Run only these cases. Repeat the flag or separate ids with commas. Without it, all cases run.                                                                                                                     |
 | `--min-pass-rate <0-1>`     | The pass rate a target must reach for the run to succeed. Default `0.8`. Outside 0 to 1 is an error.                                                                                                              |

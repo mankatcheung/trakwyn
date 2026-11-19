@@ -18,7 +18,7 @@ type Env = Readonly<Record<string, string | undefined>>;
 
 const DEFAULT_MIN_PASS_RATE = 0.8;
 export const DEFAULT_MAX_ERROR_RATE = 0.1;
-const VALUE_FLAGS = [
+export const VALUE_FLAGS = [
   '--target',
   '--case',
   '--min-pass-rate',
@@ -28,7 +28,7 @@ const VALUE_FLAGS = [
   '--publish-from',
   '--show',
 ] as const;
-const SWITCH_FLAGS = [
+export const SWITCH_FLAGS = [
   '--cache',
   '--refresh',
   '--validate-judge',

@@ -21,6 +21,7 @@ import {
   JUDGE_MIN_ACCURACY,
   validateJudge,
 } from '#src/evals/judge/validateJudge.js';
+import { formatEvalHelp, wantsHelp } from '#src/evals/evalHelp.js';
 import { parseEvalArgs } from '#src/evals/parseEvalArgs.js';
 import { withReasoning } from '#src/evals/reasoningOverride.js';
 import { gitShortSha, publishToLangfuse } from '#src/evals/publish/publishToLangfuse.js';
@@ -171,13 +172,20 @@ function withoutUntrustedQuality(runs: TargetRun[], trusted: boolean): TargetRun
 }
 
 async function main(): Promise<number> {
+  // JEF-658: before any parsing, so no other argument or variable can block it.
+  const argv = process.argv.slice(2);
+  if (wantsHelp(argv)) {
+    console.log(formatEvalHelp());
+    return 0;
+  }
+
   let config: EvalConfig;
   let cache: Cache;
   let judge: ILLMProvider | null;
   let needsQuality = false;
 
   try {
-    config = parseEvalArgs(process.argv.slice(2), process.env);
+    config = parseEvalArgs(argv, process.env);
     // print a saved run and stop; nothing is built or called.
     if (config.show !== null) return showSavedRun(config.show, config.caseIds);
     // JEF-562: upload a saved run and stop, before any provider is built.
