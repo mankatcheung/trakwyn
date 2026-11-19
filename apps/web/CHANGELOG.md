@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.20.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.19.0...web-v0.20.0) (2026-11-19)
+
+
+### Features
+
+* **web:** keep the language in localStorage only, not in portal URLs (JEF-654) ([#1570](https://github.com/mankatcheung/trakwyn/issues/1570)) ([057004a](https://github.com/mankatcheung/trakwyn/commit/057004a2b7f02cf45a8812aa75323cd19c886d66))
+* **web:** move the marketing theme toggle from the header to the footer (JEF-655) ([#1569](https://github.com/mankatcheung/trakwyn/issues/1569)) ([bcd123c](https://github.com/mankatcheung/trakwyn/commit/bcd123c25555cc2f176b716ba754417fb3f570c8))
+* **web:** serve the marketing pages per locale so Chinese can be indexed (JEF-653) ([#1565](https://github.com/mankatcheung/trakwyn/issues/1565)) ([e4d0cc5](https://github.com/mankatcheung/trakwyn/commit/e4d0cc5d6eeddecb736bbbb20b90df7f52c8e3c2))
+
 ## [0.19.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.18.0...web-v0.19.0) (2026-11-18)
 
 
