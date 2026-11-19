@@ -59,8 +59,16 @@ Search engines index a URL, not a language setting, so the prerendered marketing
 - **A new marketing page** needs its path in `LOCALIZED_PATHS` and `PRERENDERED_MARKETING`, a `seo.<key>.title` / `.description` pair in all five bundles, and `head: ({ match }) => marketingHead({ path, seo: '<key>' }, match.context.pageLocale)`. Legal pages use `legalHead` (no link-preview card).
 - **The server renders the URL's locale.** The root `beforeLoad` loads that bundle first (also on the server) and puts `pageLocale` in the route context; `LocaleProvider` gets `urlLocale` from the router. `getRouter` is async so the client loads the bundle before hydrating a prefixed page, or it would render English over Chinese HTML. Never read `i18next.language` for a server render: it is shared by every request.
 - **`<head>` is built from `lib/seo.ts`:** a self-referencing canonical, the same `hreflang` set on every page in a group plus `x-default` (English), and `og:locale`. There is no `og:locale:alternate`: the router keeps one meta tag per name/property, so it would list one locale of three.
-- **The language picker** changes the URL: `LocaleProvider`'s `onLocaleChange` (supplied by the root route, which owns the router) pushes `localizedHref(...)` on a localized page and does nothing elsewhere. `writeLocaleToUrl` skips these pages, so no `?locale=` is added to them.
-- **Not localized:** guide articles (English only), the auth pages and the signed-in app, which keep the query/localStorage behaviour.
+- **The language picker** changes the URL: `LocaleProvider`'s `onLocaleChange` (supplied by the root route, which owns the router) pushes `localizedHref(...)` on a localized page and does nothing elsewhere. `en-GB` gets the plain English path; its language is kept in storage.
+- **Not localized:** guide articles (English only), the auth pages and the signed-in app. They use the storage rule below.
+
+## The language outside the marketing pages (JEF-654)
+
+The chosen language lives in `localStorage` (`locale`) and nowhere in the URL. Detection is path prefix (marketing only), then storage, then the browser, then English. Nothing writes `?locale=` into an address bar: a copied portal link carries no language, so it cannot override the language of whoever opens it.
+
+- **An old `?locale=` link is adopted once.** Earlier versions wrote it into every URL, so bookmarks and history still hold it. `adoptLocaleFromQuery` (`lib/i18n.tsx`) runs at module load, before the router parses the URL: a supported value is saved to storage (it wins over what was stored, because following the link asked for it) and the parameter is taken off the address bar with `replaceState`, keeping the state, the other params and the hash. Marketing pages are skipped: the router owns `?locale=` there and redirects to the prefixed URL.
+- **`LOCALE_INIT_SCRIPT` still reads `?locale=`**, only so the first paint of an old link has the right `<html lang>` before adoption runs.
+- **Open tabs do not follow each other:** the language is read when a page loads, so a change in one tab shows in another only after it reloads, and each page load saves its own language over the stored one.
 
 ## Where the detail lives
 

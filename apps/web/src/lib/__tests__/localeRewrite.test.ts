@@ -108,8 +108,11 @@ describe('localizedHref', () => {
     expect(localizedHref(at('/pricing', '', 'faq'), 'zh-HK')).toBe('/zh-hk/pricing#faq');
   });
 
-  it('shows en-GB on the English URL, with ?locale=en-GB to say so', () => {
-    expect(localizedHref(at('/pricing', '?locale=zh-HK'), 'en-GB')).toBe('/pricing?locale=en-GB');
+  it('gives en-GB the English URL with no query: its language is kept in storage (JEF-654)', () => {
+    expect(localizedHref(at('/pricing', '?locale=zh-HK'), 'en-GB')).toBe('/pricing');
+    expect(localizedHref(at('/guides', '?tag=ai&locale=zh-HK', '#top'), 'en-GB')).toBe(
+      '/guides?tag=ai#top',
+    );
   });
 
   it('has nothing to say for a page without per-locale URLs', () => {
