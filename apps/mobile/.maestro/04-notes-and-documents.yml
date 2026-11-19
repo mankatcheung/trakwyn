@@ -101,6 +101,9 @@ appId: com.trakwyn.app
     when:
       platform: Android
     commands:
+      # Three presses, the same three steps iOS takes below: close the sheet,
+      # leave the editor, leave the Cover letters list for the section index.
+      - back
       - back
       - back
 - runFlow:
