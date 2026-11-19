@@ -36,6 +36,7 @@ import {
 import { AiCreditsInline } from '../../ai/components/AiCreditsInline';
 import { useRefreshAiCredits } from '../../ai/hooks/useRefreshAiCredits';
 import { AiCreditsExhaustedNotice } from '../../settings/components/AiCreditsExhaustedNotice';
+import { useKeyboardVerticalOffset } from '../../../hooks/useKeyboardVerticalOffset';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
 
@@ -49,6 +50,7 @@ function tempMessageId(): string {
 export function ChatScreen() {
   const { t } = useTranslation('chat');
   const { colors } = useTheme();
+  const { keyboardVerticalOffset, measureProps } = useKeyboardVerticalOffset();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { id: conversationId, initialMessage } = useLocalSearchParams<{
     id: string;
@@ -130,130 +132,134 @@ export function ChatScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      {isLoading ? (
-        <ActivityIndicator
-          style={styles.loading}
-          size="large"
-          color={colors.primary}
-          testID="chat-loading"
-        />
-      ) : (
-        <FlatList
-          ref={listRef}
-          data={messages}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          ListEmptyComponent={<Text style={styles.emptyText}>{t('emptyPrompt')}</Text>}
-          renderItem={({ item }) => (
-            <View>
-              <View style={[styles.bubbleRow, item.role === 'user' && styles.bubbleRowUser]}>
-                <View
-                  style={[
-                    styles.bubble,
-                    item.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant,
-                  ]}
-                >
-                  {item.role === 'assistant' ? (
-                    <Markdown content={item.content} />
-                  ) : (
-                    <Text style={styles.bubbleTextUser}>{item.content}</Text>
-                  )}
+    <View style={styles.container} {...measureProps} collapsable={false} testID="chat-screen">
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={keyboardVerticalOffset}
+      >
+        {isLoading ? (
+          <ActivityIndicator
+            style={styles.loading}
+            size="large"
+            color={colors.primary}
+            testID="chat-loading"
+          />
+        ) : (
+          <FlatList
+            ref={listRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.list}
+            ListEmptyComponent={<Text style={styles.emptyText}>{t('emptyPrompt')}</Text>}
+            renderItem={({ item }) => (
+              <View>
+                <View style={[styles.bubbleRow, item.role === 'user' && styles.bubbleRowUser]}>
+                  <View
+                    style={[
+                      styles.bubble,
+                      item.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant,
+                    ]}
+                  >
+                    {item.role === 'assistant' ? (
+                      <Markdown content={item.content} />
+                    ) : (
+                      <Text style={styles.bubbleTextUser}>{item.content}</Text>
+                    )}
+                  </View>
                 </View>
+                {item.role === 'assistant' && !item.id.startsWith('optimistic-') ? (
+                  <AiFeedbackControl
+                    messageId={item.id}
+                    conversationId={conversationId}
+                    rating={item.myRating ?? null}
+                  />
+                ) : null}
+                {item.proposals?.map((proposal) => (
+                  <ChatProposalCard
+                    key={proposal.id}
+                    proposal={proposal}
+                    conversationId={conversationId}
+                  />
+                ))}
               </View>
-              {item.role === 'assistant' && !item.id.startsWith('optimistic-') ? (
-                <AiFeedbackControl
-                  messageId={item.id}
-                  conversationId={conversationId}
-                  rating={item.myRating ?? null}
-                />
-              ) : null}
-              {item.proposals?.map((proposal) => (
-                <ChatProposalCard
-                  key={proposal.id}
-                  proposal={proposal}
-                  conversationId={conversationId}
-                />
-              ))}
-            </View>
-          )}
-        />
-      )}
-
-      {isSending ? (
-        <View style={[styles.bubbleRow, styles.sendingRow]}>
-          <View style={[styles.bubble, styles.bubbleAssistant]}>
-            {streamingText ? (
-              <Markdown content={streamingText} />
-            ) : (
-              <ActivityIndicator
-                size="small"
-                color={colors.textSubtle}
-                testID="chat-sending-indicator"
-              />
             )}
+          />
+        )}
+
+        {isSending ? (
+          <View style={[styles.bubbleRow, styles.sendingRow]}>
+            <View style={[styles.bubble, styles.bubbleAssistant]}>
+              {streamingText ? (
+                <Markdown content={streamingText} />
+              ) : (
+                <ActivityIndicator
+                  size="small"
+                  color={colors.textSubtle}
+                  testID="chat-sending-indicator"
+                />
+              )}
+            </View>
+          </View>
+        ) : null}
+
+        {sendError ? (
+          sendErrorCode === ERROR_CODES.AI_CREDITS_EXHAUSTED || sendErrorCode === PLAN_REQUIRED ? (
+            <AiCreditsExhaustedNotice
+              surface="assistant"
+              message={sendError}
+              reason={sendErrorCode === PLAN_REQUIRED ? 'plan' : 'credits'}
+            />
+          ) : sendErrorCode === ERROR_CODES.EMAIL_NOT_VERIFIED ||
+            sendErrorCode === ERROR_CODES.AI_TEMPORARILY_UNAVAILABLE ? (
+            <Text style={styles.error}>{codedErrorMessage(sendErrorCode) ?? sendError}</Text>
+          ) : (
+            <Text style={styles.error}>{sendError}</Text>
+          )
+        ) : null}
+
+        {fallbackNotice ? (
+          <Text style={styles.notice} testID="chat-fallback-notice">
+            {t('fallbackNotice', {
+              from: providerEntryLabel(fallbackNotice.from),
+              to: providerEntryLabel(fallbackNotice.to),
+            })}
+          </Text>
+        ) : null}
+
+        <View style={styles.composerWrap}>
+          <AiCreditsInline testID="chat-credits" style={styles.credits} />
+          <View style={styles.composer}>
+            <TextInput
+              placeholderTextColor={colors.textFaint}
+              style={styles.input}
+              placeholder={t('inputPlaceholder')}
+              value={input}
+              onChangeText={setInput}
+              multiline
+              maxLength={CHAT_MESSAGE_MAX_CHARS}
+              testID="chat-input"
+            />
+            <Pressable
+              style={[styles.sendButton, (isSending || !input.trim()) && styles.sendButtonDisabled]}
+              onPress={handleSend}
+              disabled={isSending || !input.trim()}
+              testID="chat-send-button"
+              accessibilityLabel={t('send')}
+            >
+              <SendIcon color={colors.onPrimary} size={18} />
+            </Pressable>
           </View>
         </View>
-      ) : null}
-
-      {sendError ? (
-        sendErrorCode === ERROR_CODES.AI_CREDITS_EXHAUSTED || sendErrorCode === PLAN_REQUIRED ? (
-          <AiCreditsExhaustedNotice
-            surface="assistant"
-            message={sendError}
-            reason={sendErrorCode === PLAN_REQUIRED ? 'plan' : 'credits'}
-          />
-        ) : sendErrorCode === ERROR_CODES.EMAIL_NOT_VERIFIED ||
-          sendErrorCode === ERROR_CODES.AI_TEMPORARILY_UNAVAILABLE ? (
-          <Text style={styles.error}>{codedErrorMessage(sendErrorCode) ?? sendError}</Text>
-        ) : (
-          <Text style={styles.error}>{sendError}</Text>
-        )
-      ) : null}
-
-      {fallbackNotice ? (
-        <Text style={styles.notice} testID="chat-fallback-notice">
-          {t('fallbackNotice', {
-            from: providerEntryLabel(fallbackNotice.from),
-            to: providerEntryLabel(fallbackNotice.to),
-          })}
-        </Text>
-      ) : null}
-
-      <View style={styles.composerWrap}>
-        <AiCreditsInline testID="chat-credits" style={styles.credits} />
-        <View style={styles.composer}>
-          <TextInput
-            placeholderTextColor={colors.textFaint}
-            style={styles.input}
-            placeholder={t('inputPlaceholder')}
-            value={input}
-            onChangeText={setInput}
-            multiline
-            maxLength={CHAT_MESSAGE_MAX_CHARS}
-            testID="chat-input"
-          />
-          <Pressable
-            style={[styles.sendButton, (isSending || !input.trim()) && styles.sendButtonDisabled]}
-            onPress={handleSend}
-            disabled={isSending || !input.trim()}
-            testID="chat-send-button"
-            accessibilityLabel={t('send')}
-          >
-            <SendIcon color={colors.onPrimary} size={18} />
-          </Pressable>
-        </View>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
+    keyboardView: { flex: 1 },
     loading: { marginTop: 40 },
     list: { padding: 16, gap: 12 },
     emptyText: { fontSize: 14, color: colors.textSubtle, textAlign: 'center', marginTop: 20 },
