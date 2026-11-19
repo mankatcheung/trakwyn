@@ -70,3 +70,21 @@ from forks, where GitHub withholds every secret (R-7).
 in the plan (EAS Workflows' `type: maestro`) if maintaining the Gradle steps
 here turns out to cost more than the build fees: with an Expo account attached,
 `eas build --profile e2e --local` builds the same binary these flows expect.
+
+## Reading an iOS run (JEF-662)
+
+The iOS flows sometimes fail at the register step with "Could not reach the
+server": the sign-up request takes longer than the app's 20 s timeout on the
+shared macOS runner, and the cause is not known yet. Every run, green or red,
+leaves what is needed to compare runs:
+
+- **The job page summary** shows the runner (image, CPU, memory, Xcode), ten
+  sign-ups timed right after the warm-up, and the API's slowest requests.
+- **The `maestro-ios` artifact** also holds `runner-load.log` (load, memory, the
+  database RAM disk and the busiest processes every ten seconds while the flows
+  ran), `signup-timing.txt`, `runner-details.txt`, `api.log` and Maestro's
+  screenshots and view hierarchies.
+
+A request that the app abandoned has no "request completed" line in `api.log`;
+line its "incoming request" time up against the failing flow's time in Maestro's
+log instead.
