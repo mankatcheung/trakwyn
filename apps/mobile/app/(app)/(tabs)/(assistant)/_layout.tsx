@@ -1,14 +1,13 @@
 import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { NotificationBell } from '../../../../src/components/navigation/NotificationBell';
+import { useNotificationBellHeader } from '../../../../src/components/navigation/useNotificationBellHeader';
 import { themedStackScreenOptions } from '../../../../src/components/navigation/themedStackScreenOptions';
 import { useTheme } from '../../../../src/theme/ThemeContext';
-
-const bellHeader = { headerRight: () => <NotificationBell /> };
 
 export default function AssistantStackLayout() {
   const { t } = useTranslation('navigation');
   const { colors } = useTheme();
+  const bellHeader = useNotificationBellHeader();
 
   return (
     <Stack screenOptions={themedStackScreenOptions(colors)}>
