@@ -109,11 +109,11 @@ export function MarketingFooter() {
             </div>
           </div>
         </div>
-        <div className="mt-10 flex flex-col items-center gap-4 border-t border-gray-200 pt-6 sm:flex-row sm:justify-between dark:border-gray-800">
+        <div className="mt-10 flex flex-col items-center gap-5 border-t border-gray-200 pt-6 xl:flex-row xl:justify-between dark:border-gray-800">
           <span className="text-xs text-gray-400 dark:text-gray-500">
             {t('marketing.footer.copyright', { year: new Date().getFullYear() })}
           </span>
-          <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-6">
+          <div className="flex flex-col items-center gap-5 xl:flex-row xl:gap-8">
             <LegalFooterLinks className="flex max-w-xs flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-gray-500 sm:max-w-none dark:text-gray-400" />
             <MarketingThemeToggle />
           </div>

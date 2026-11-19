@@ -95,15 +95,16 @@ describe('MarketingFooter', () => {
     );
   });
 
-  it('renders one theme toggle that cycles the theme (JEF-655)', async () => {
+  it('renders one theme picker with Light, Dark and System, and applies the choice (JEF-655)', async () => {
     mockHasSessionCookie.mockReturnValue(false);
     render(<MarketingFooter />);
 
-    const toggle = screen.getByRole('button', { name: /theme/i });
-    await userEvent.click(toggle);
+    expect(screen.getAllByRole('group', { name: 'Appearance' })).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Light' })).toHaveAttribute('aria-pressed', 'true');
 
-    // light → dark, the same order as the Settings control.
-    expect(mockSetTheme).toHaveBeenCalledWith('dark');
+    await userEvent.click(screen.getByRole('button', { name: 'System' }));
+
+    expect(mockSetTheme).toHaveBeenCalledWith('system');
   });
 
   it('links to the Privacy Policy and Terms of Service', () => {
