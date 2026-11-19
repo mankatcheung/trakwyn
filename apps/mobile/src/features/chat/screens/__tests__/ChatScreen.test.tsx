@@ -28,7 +28,24 @@ const mockRefreshAiCredits = jest.fn().mockResolvedValue(undefined);
 jest.mock('../../../ai/hooks/useRefreshAiCredits', () => ({
   useRefreshAiCredits: () => mockRefreshAiCredits,
 }));
+jest.mock('../../../../hooks/useKeyboardVerticalOffset', () => ({
+  useKeyboardVerticalOffset: jest.fn(),
+}));
+// The real view keeps `keyboardVerticalOffset` to itself, so a spy records the props it is given.
+const mockKeyboardAvoidingView = jest.fn();
+jest.mock('react-native/Libraries/Components/Keyboard/KeyboardAvoidingView', () => {
+  const { View } = jest.requireActual('react-native');
+  const { createElement } = jest.requireActual('react');
+  return {
+    __esModule: true,
+    default: (props: { children?: React.ReactNode; style?: unknown }) => {
+      mockKeyboardAvoidingView(props);
+      return createElement(View, { style: props.style }, props.children);
+    },
+  };
+});
 import { useLocalSearchParams } from 'expo-router';
+import { useKeyboardVerticalOffset } from '../../../../hooks/useKeyboardVerticalOffset';
 import { useAppendOptimisticMessage, useChatHistory } from '../../hooks/useChatHistory';
 import { streamChatMessage } from '../../lib/chatStream';
 import { ChatScreen } from '../ChatScreen';
@@ -84,6 +101,46 @@ describe('ChatScreen', () => {
     jest.clearAllMocks();
     mockedUseAppendOptimisticMessage.mockReturnValue(jest.fn());
     jest.mocked(useAiCredits).mockReturnValue(ownKeyCredits());
+    jest.mocked(useKeyboardVerticalOffset).mockReturnValue({
+      keyboardVerticalOffset: 0,
+      measureProps: { ref: { current: null }, onLayout: jest.fn() },
+    });
+  });
+
+  // JEF-377: under a navigation header the keyboard view underestimates how much the keyboard
+  // covers by the header's height, so the Send button stayed behind the keyboard on iOS.
+  it('hands the measured header offset to the keyboard view', async () => {
+    jest.mocked(useKeyboardVerticalOffset).mockReturnValue({
+      keyboardVerticalOffset: 109,
+      measureProps: { ref: { current: null }, onLayout: jest.fn() },
+    });
+    mockedUseChatHistory.mockReturnValue({ data: [message], isLoading: false } as never);
+
+    await renderScreen('conv-1');
+
+    await waitFor(() =>
+      expect(mockKeyboardAvoidingView).toHaveBeenLastCalledWith(
+        expect.objectContaining({ keyboardVerticalOffset: 109 }),
+      ),
+    );
+  });
+
+  // The first attempt measured a zero-size marker, which iOS never reports a layout for, so the
+  // offset stayed at zero on a real device. The measured view has to be the sized screen wrapper.
+  it('measures the screen wrapper when it is laid out', async () => {
+    const onLayout = jest.fn();
+    jest.mocked(useKeyboardVerticalOffset).mockReturnValue({
+      keyboardVerticalOffset: 0,
+      measureProps: { ref: { current: null }, onLayout },
+    });
+    mockedUseChatHistory.mockReturnValue({ data: [message], isLoading: false } as never);
+
+    const { getByTestId } = await renderScreen('conv-1');
+    await fireEvent(getByTestId('chat-screen'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 109, width: 402, height: 682 } },
+    });
+
+    expect(onLayout).toHaveBeenCalledTimes(1);
   });
 
   it('renders existing messages', async () => {
