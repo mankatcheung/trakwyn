@@ -2,6 +2,8 @@
 # Makes a freshly created git worktree runnable: copies apps/api/.env and
 # apps/web/.env from the main checkout (rewriting any absolute paths that
 # point at the main checkout so they point at this worktree instead),
+# copies the committed .env.test.example and .env.e2e.example templates to their
+# gitignored .env.test and .env.e2e (with this worktree's ports),
 # links the gitignored infra/*/terraform.tfvars and infra/*/.envrc files from
 # the main checkout, installs dependencies, applies migrations, and seeds the
 # local database.
@@ -104,6 +106,28 @@ set_env CORS_ORIGIN "http://localhost:$WEB_PORT_VALUE" apps/api/.env
 set_env WEB_APP_ORIGIN "http://localhost:$WEB_PORT_VALUE" apps/api/.env
 set_env API_ORIGIN "http://localhost:$API_PORT_VALUE" apps/api/.env
 echo "dev ports: web $WEB_PORT_VALUE, API $API_PORT_VALUE"
+
+# Local copies of the committed env templates for tests and e2e (JEF-656), the
+# same files CI copies, so a run here starts with CI's values and not the dev
+# ones in .env. Made only when absent, so a hand edit survives a re-run. The
+# e2e API file carries the same port and origins as .env, or two worktrees'
+# e2e runs would both want 3001.
+copy_template() { # copy_template SRC DEST: copy the committed template once
+  [ -f "$1" ] || return 0
+  if [ -f "$2" ]; then
+    echo "skip: $2 already exists"
+    return 0
+  fi
+  cp "$1" "$2"
+  echo "wrote $2"
+}
+copy_template apps/api/.env.test.example apps/api/.env.test
+copy_template apps/api/.env.e2e.example apps/api/.env.e2e
+copy_template apps/web/.env.e2e.example apps/web/.env.e2e
+set_env PORT "$API_PORT_VALUE" apps/api/.env.e2e
+set_env CORS_ORIGIN "http://localhost:$WEB_PORT_VALUE" apps/api/.env.e2e
+set_env WEB_APP_ORIGIN "http://localhost:$WEB_PORT_VALUE" apps/api/.env.e2e
+set_env API_ORIGIN "http://localhost:$API_PORT_VALUE" apps/api/.env.e2e
 
 # Per-install Terraform config (terraform.tfvars, and the .envrc that holds
 # each provider token) is gitignored, so a new worktree has none of it. Link it

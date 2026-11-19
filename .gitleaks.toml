@@ -3,9 +3,15 @@ title = "Trakwyn gitleaks config"
 [extend]
 useDefault = true
 
-# The throwaway values the e2e job writes into apps/api/.env (JEF-477). They
-# protect nothing: the job's database and servers live and die with the runner.
+# The throwaway values the e2e job runs with (JEF-477). They protect nothing: the
+# job's database and servers live and die with the runner. They are written in the
+# committed e2e templates that the job copies to .env (JEF-656), and in ci.yml
+# where a test or job still names one.
 [[allowlists]]
-description = "e2e placeholder secrets in ci.yml"
-paths = ['''^\.github/workflows/ci\.yml$''']
+description = "e2e placeholder secrets in ci.yml and the e2e env templates"
+paths = [
+  '''^\.github/workflows/ci\.yml$''',
+  '''^apps/api/\.env\.e2e\.example$''',
+  '''^apps/web/\.env\.e2e\.example$''',
+]
 regexes = ['''e2e-only-[a-z-]+''']

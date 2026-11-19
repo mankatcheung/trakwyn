@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import { apiOrigin, webOrigin, webPort } from './devPorts';
+import { webServerEnv } from './e2eEnv';
 
 // Locally the specs run against the dev servers (reusing ones already up). CI
 // serves the built output instead (JEF-487): no first-request compilation, and
@@ -47,18 +48,24 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
+  // Locally each server also gets its app's `.env.e2e` (JEF-656), a copy of the
+  // committed `.env.e2e.example` that CI copies to `.env` instead, so a local
+  // run starts the servers with CI's values and not the dev ones in `.env`. A
+  // server that is already running keeps the env it started with (see
+  // `reuseExistingServer`), so stop `pnpm dev` first.
   webServer: [
     {
       command: apiCommand,
       url: `${apiOrigin}/graphql`,
       reuseExistingServer: !process.env.CI,
-      env: process.env.CI ? { ...process.env, STORAGE_PROVIDER: 'local' } : undefined,
+      env: process.env.CI ? { ...process.env, STORAGE_PROVIDER: 'local' } : webServerEnv('api'),
       timeout: 30_000,
     },
     {
       command: webCommand,
       url: webOrigin,
       reuseExistingServer: !process.env.CI,
+      env: process.env.CI ? undefined : webServerEnv('web'),
       timeout: 30_000,
     },
   ],
