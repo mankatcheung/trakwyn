@@ -2,6 +2,15 @@
 
 Loaded when working under `apps/web/e2e`. The rest of the web notes are in `apps/web/CLAUDE.md`. Paths are relative to `apps/web/` unless stated.
 
+## Running the specs (JEF-656)
+
+`pnpm --filter @trakwyn/web test:e2e` starts both dev servers itself (CI serves built output) with the committed e2e env, so a local run matches CI and does not take the dev values in `apps/api/.env` (`PLANS_ENFORCED=true` locks offers and share links behind a plan).
+
+- **Once per checkout:** `cp apps/api/.env.e2e.example apps/api/.env.e2e`, `cp apps/web/.env.e2e.example apps/web/.env.e2e`, then `pnpm --filter @trakwyn/api db:migrate:e2e`. `pnpm setup:worktree` makes the copies in a worktree, with its ports. Run the migration again after pulling a new one. It fills `apps/api/.pglite-e2e`, kept apart from the dev database, and needs the API stopped (PGlite is one process at a time).
+- **`e2eEnv.ts`** reads those two files and hands each server its own; a variable already exported in the shell wins. CI has no `.env.e2e`: its job copies the same templates to `.env` and sets `DATABASE_URL` to Postgres, the only difference.
+- **Stop `pnpm dev` first.** `reuseExistingServer` keeps a running server, and it keeps the env it started with.
+- **Change a value in the template, not in `ci.yml`.** `ciWorkflow.test.ts` fails on an inline env block.
+
 ## Marketing screenshots (JEF-528)
 
 `pnpm --filter @trakwyn/web screenshots` regenerates `public/screenshots/<screen>-<light|dark>.webp` from the seeded demo account. The images are committed, like `public/og-image.png`; CI does not regenerate them.

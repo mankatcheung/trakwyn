@@ -6,6 +6,8 @@ coverage
 *.db
 local.db.*
 .pglite/
+# The local e2e database (apps/api/.env.e2e.example), kept apart from the dev one
+.pglite-e2e/
 *.db-shm
 *.db-wal
 uploads/

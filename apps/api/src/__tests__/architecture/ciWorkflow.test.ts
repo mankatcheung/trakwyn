@@ -222,3 +222,64 @@ describe('vercel-deploy-production', () => {
     expect(action.slice(rollback)).toMatch(/exit 1/);
   });
 });
+
+// JEF-656: the env a test or e2e run starts with is written once, in a committed
+// `.env.*.example`, and both CI and a developer copy that file. The e2e job used
+// to write its own inline, so a local run and CI drifted: the dev `.env` made
+// seven integration tests fail that pass in CI.
+describe('test and e2e env come from committed templates (JEF-656)', () => {
+  const apiE2e = read('apps/api/.env.e2e.example');
+  const webE2e = read('apps/web/.env.e2e.example');
+
+  /** The `KEY=value` lines of an env file, ignoring comments and blanks. */
+  const assignments = (text: string): Map<string, string> =>
+    new Map(
+      text
+        .split('\n')
+        .filter((line) => /^[A-Z][A-Z0-9_]*=/.test(line))
+        .map((line) => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)]),
+    );
+
+  it('has the e2e job copy the templates, not write the env inline', () => {
+    const e2e = job('e2e');
+    expect(e2e).toContain('cp apps/api/.env.e2e.example apps/api/.env');
+    expect(e2e).toContain('cp apps/web/.env.e2e.example apps/web/.env');
+    expect(e2e).not.toMatch(/cat >+ apps\/(api|web)\/\.env/);
+    expect(e2e).not.toContain('JWT_SECRET=');
+  });
+
+  // The one deliberate difference: CI runs the API on Postgres, the template on
+  // PGlite. dotenv never overwrites a variable that is already set, so the job's
+  // value wins, for the migration step and the servers alike.
+  it('keeps CI on Postgres by setting DATABASE_URL on the e2e job, matching its container', () => {
+    const e2e = job('e2e');
+    const url = /^ {4}env:\n(?: {6}.+\n)*? {6}DATABASE_URL: (postgres:\/\/\S+)$/m.exec(e2e);
+    expect(url, 'the e2e job needs DATABASE_URL under its own env:').not.toBeNull();
+    const parts = /^postgres:\/\/(\w+):(\w+)@([\w.]+):\d+\/(\w+)$/.exec(url![1]);
+    expect(parts, 'DATABASE_URL should be postgres://user:password@host:port/db').not.toBeNull();
+    const [, user, password, host, db] = parts!;
+    expect(host).toBe('localhost');
+    expect(e2e).toContain(`POSTGRES_USER=${user}`);
+    expect(e2e).toContain(`POSTGRES_PASSWORD=${password}`);
+    expect(e2e).toContain(`POSTGRES_DB=${db}`);
+    expect(assignments(apiE2e).get('DATABASE_URL')).toMatch(/^pglite:/);
+  });
+
+  it('has the test job copy the API test template, so CI runs what a developer runs', () => {
+    expect(job('test')).toContain('cp apps/api/.env.test.example apps/api/.env.test');
+  });
+
+  it('keeps the placeholders in the templates under the e2e-only- prefix gitleaks allows', () => {
+    const secrets = [...assignments(apiE2e)].filter(([key]) => /SECRET|KEY$/.test(key));
+    expect(secrets.length).toBeGreaterThan(0);
+    for (const [key, value] of secrets) expect(value, key).toMatch(/^e2e-only-/);
+    const allowlist = read('.gitleaks.toml');
+    expect(allowlist).toContain('apps/api/\\.env\\.e2e\\.example');
+    expect(allowlist).toContain('apps/web/\\.env\\.e2e\\.example');
+  });
+
+  it('writes the web app the relative API URL, the same value CI used inline', () => {
+    expect(assignments(webE2e).get('VITE_API_URL')).toBe('/graphql');
+    expect(assignments(apiE2e).get('PLANS_ENFORCED')).toBe('false');
+  });
+});

@@ -70,6 +70,8 @@ cp apps/web/.env.example apps/web/.env
 
 `DATABASE_URL` is `pglite:./.pglite` for local dev, or any `postgres://` URL. A leftover `file:…local.db` value is rejected, and `pnpm setup:worktree` rewrites it. `JWT_SECRET` and `JWT_REFRESH_SECRET` must be set.
 
+**Test and e2e env is committed, once (JEF-656).** The values are `apps/api/.env.test.example` and `.env.e2e.example` (`apps/api`, `apps/web`). CI copies them, and so does a developer (`cp .env.e2e.example .env.e2e`; `pnpm setup:worktree` does it in a worktree, with its ports). Change a value in the example, never inline in `ci.yml` (held by `ciWorkflow.test.ts`). `.env.test` is what stops the dev `.env` failing seven API integration tests locally. Details: `apps/api/CLAUDE.md` (Testing) and `apps/web/e2e/CLAUDE.md`.
+
 ## Key Conventions
 
 - **IDs** are `nanoid()` strings.
