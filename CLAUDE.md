@@ -19,7 +19,7 @@ pnpm dev                 # api + web
 pnpm build
 pnpm typecheck
 pnpm test                # or: pnpm --filter @trakwyn/api test / @trakwyn/web
-cd apps/api && pnpm test -- src/__tests__/application/auth/LoginUseCase.test.ts  # single file
+cd apps/api && pnpm test -- src/__tests__/use-cases/auth/LoginUseCase.test.ts  # single file
 pnpm lint
 pnpm format
 
