@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.20.0...api-v0.21.0) (2026-11-20)
+
+
+### Features
+
+* **api:** add a --help flag to the eval command (JEF-658) ([#1576](https://github.com/mankatcheung/trakwyn/issues/1576)) ([5141e00](https://github.com/mankatcheung/trakwyn/commit/5141e00f8ac8795bb1b13fda73fedf9b5989cd2f))
+
 ## [0.20.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.19.0...api-v0.20.0) (2026-11-19)
 
 
