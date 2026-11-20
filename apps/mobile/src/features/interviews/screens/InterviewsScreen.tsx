@@ -2,9 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { KeyboardAvoidingScreen } from '../../../components/KeyboardAvoidingScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
@@ -91,10 +90,7 @@ function InterviewRoundFormModal({
       onRequestClose={onCancel}
       testID="interview-round-form-modal"
     >
-      <KeyboardAvoidingView
-        style={styles.modalContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingScreen style={styles.modalContainer}>
         <View style={styles.modalHeader}>
           <Pressable onPress={onCancel} testID="interview-form-cancel-button">
             <Text style={styles.linkMuted}>{t('cancel')}</Text>
@@ -168,7 +164,7 @@ function InterviewRoundFormModal({
             testID="interview-notes-input"
           />
         </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingScreen>
     </Modal>
   );
 }

@@ -4,8 +4,6 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,6 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { KeyboardAvoidingScreen } from '../../../components/KeyboardAvoidingScreen';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useDocuments } from '../hooks/useDocumentQueries';
@@ -232,10 +231,7 @@ export function DocumentCategoryScreen({ category }: DocumentCategoryScreenProps
   );
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <KeyboardAvoidingScreen style={styles.container}>
       <FlatList
         data={visible}
         keyExtractor={(item) => item.key}
@@ -295,7 +291,7 @@ export function DocumentCategoryScreen({ category }: DocumentCategoryScreenProps
           </Pressable>
         ) : null}
       </View>
-    </KeyboardAvoidingView>
+    </KeyboardAvoidingScreen>
   );
 }
 

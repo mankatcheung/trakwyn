@@ -2,9 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { KeyboardAvoidingScreen } from '../../../components/KeyboardAvoidingScreen';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useContacts } from '../hooks/useContactQueries';
@@ -82,10 +81,7 @@ function ContactFormModal({
       onRequestClose={onClose}
       testID="contact-form-modal"
     >
-      <KeyboardAvoidingView
-        style={styles.modalContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingScreen style={styles.modalContainer}>
         <View style={styles.modalHeader}>
           <Pressable onPress={onClose} testID="contact-modal-cancel">
             <Text style={styles.linkMuted}>{t('detail.cancel')}</Text>
@@ -154,7 +150,7 @@ function ContactFormModal({
             multiline
           />
         </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingScreen>
     </Modal>
   );
 }

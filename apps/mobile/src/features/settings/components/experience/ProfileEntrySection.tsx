@@ -1,14 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Modal, Pressable, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingScreen } from '../../../../components/KeyboardAvoidingScreen';
 import { useTranslation } from 'react-i18next';
 import { getErrorMessage } from '../../../../lib/errors';
 import { useTheme } from '../../../../theme/ThemeContext';
@@ -111,10 +103,7 @@ function EntryFormModal({
       onRequestClose={onClose}
       testID={`${testIdPrefix}-form-modal`}
     >
-      <KeyboardAvoidingView
-        style={styles.modalContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingScreen style={styles.modalContainer}>
         <View style={styles.modalHeader}>
           <Pressable onPress={onClose} testID={`cancel-${testIdPrefix}-button`}>
             <Text style={styles.linkMuted}>{t('experience.cancel')}</Text>
@@ -153,7 +142,7 @@ function EntryFormModal({
             </Text>
           ) : null}
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingScreen>
     </Modal>
   );
 }

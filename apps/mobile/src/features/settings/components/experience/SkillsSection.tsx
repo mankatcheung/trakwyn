@@ -1,14 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Modal, Pressable, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingScreen } from '../../../../components/KeyboardAvoidingScreen';
 import { useTranslation } from 'react-i18next';
 import { useCreateSkill, useDeleteSkill, useSkills } from '../../hooks/useExperience';
 import type { Skill } from '../../types';
@@ -41,10 +33,7 @@ function SkillFormModal({ visible, isSaving, onSave, onClose }: SkillFormModalPr
       onRequestClose={onClose}
       testID="skill-form-modal"
     >
-      <KeyboardAvoidingView
-        style={styles.modalContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingScreen style={styles.modalContainer}>
         <View style={styles.modalHeader}>
           <Pressable onPress={onClose} testID="cancel-skill-button">
             <Text style={styles.linkMuted}>{t('experience.cancel')}</Text>
@@ -69,7 +58,7 @@ function SkillFormModal({ visible, isSaving, onSave, onClose }: SkillFormModalPr
             testID="skill-name-input"
           />
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingScreen>
     </Modal>
   );
 }

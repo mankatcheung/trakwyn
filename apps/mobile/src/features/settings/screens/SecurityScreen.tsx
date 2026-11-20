@@ -2,8 +2,6 @@ import React, { useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { KeyboardAvoidingScreen } from '../../../components/KeyboardAvoidingScreen';
 import { useTranslation } from 'react-i18next';
 import {
   useRevokeOtherSessions,
@@ -182,10 +181,7 @@ export function SecurityScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <KeyboardAvoidingScreen style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>{t('security.changePasswordTitle')}</Text>
@@ -276,7 +272,7 @@ export function SecurityScreen() {
         </View>
       </ScrollView>
       {stepUpDialog}
-    </KeyboardAvoidingView>
+    </KeyboardAvoidingScreen>
   );
 }
 

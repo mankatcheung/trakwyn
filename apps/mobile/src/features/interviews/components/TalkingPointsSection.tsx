@@ -1,14 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingScreen } from '../../../components/KeyboardAvoidingScreen';
 import { useTranslation } from 'react-i18next';
 import { AiActionBar } from '../../ai/components/AiActionBar';
 import { useGenerateMockTalkingPoints } from '../hooks/useMockInterviewQuestionMutations';
@@ -125,10 +117,7 @@ export function TalkingPointsSection({
           onRequestClose={() => setOpen(false)}
           testID="talking-points-modal"
         >
-          <KeyboardAvoidingView
-            style={styles.modal}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          >
+          <KeyboardAvoidingScreen style={styles.modal}>
             <View style={styles.modalHeader}>
               <Pressable onPress={() => setOpen(false)} testID="talking-points-cancel-button">
                 <Text style={styles.linkMuted}>{t('cancel')}</Text>
@@ -168,7 +157,7 @@ export function TalkingPointsSection({
                 }}
               />
             </ScrollView>
-          </KeyboardAvoidingView>
+          </KeyboardAvoidingScreen>
         </Modal>
       ) : null}
     </View>

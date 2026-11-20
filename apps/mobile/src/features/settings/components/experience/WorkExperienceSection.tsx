@@ -1,14 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Modal, Pressable, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingScreen } from '../../../../components/KeyboardAvoidingScreen';
 import { useTranslation } from 'react-i18next';
 import {
   useCreateWorkExperience,
@@ -69,10 +61,7 @@ function WorkExperienceFormModal({
       onRequestClose={onClose}
       testID="work-experience-form-modal"
     >
-      <KeyboardAvoidingView
-        style={styles.modalContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingScreen style={styles.modalContainer}>
         <View style={styles.modalHeader}>
           <Pressable onPress={onClose} testID="cancel-work-experience-button">
             <Text style={styles.linkMuted}>{t('experience.cancel')}</Text>
@@ -129,7 +118,7 @@ function WorkExperienceFormModal({
             testID="work-experience-end-input"
           />
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingScreen>
     </Modal>
   );
 }

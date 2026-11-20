@@ -3,8 +3,6 @@ import * as DocumentPicker from 'expo-document-picker';
 import {
   ActivityIndicator,
   Image,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { KeyboardAvoidingScreen } from '../../../components/KeyboardAvoidingScreen';
 import { useTranslation } from 'react-i18next';
 import {
   useProfile,
@@ -180,10 +179,7 @@ export function ProfileScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <KeyboardAvoidingScreen style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
           {saveError ? <Text style={styles.error}>{saveError}</Text> : null}
@@ -403,7 +399,7 @@ export function ProfileScreen() {
         </View>
       </ScrollView>
       {stepUpDialog}
-    </KeyboardAvoidingView>
+    </KeyboardAvoidingScreen>
   );
 }
 

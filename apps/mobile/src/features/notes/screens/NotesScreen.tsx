@@ -3,15 +3,14 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { KeyboardAvoidingScreen } from '../../../components/KeyboardAvoidingScreen';
 import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useNotes } from '../hooks/useNoteQueries';
@@ -100,10 +99,7 @@ function NoteFormModal({
       onRequestClose={onClose}
       testID="note-form-modal"
     >
-      <KeyboardAvoidingView
-        style={styles.modalContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingScreen style={styles.modalContainer}>
         <View style={styles.modalHeader}>
           <Pressable onPress={onClose} testID="note-modal-cancel">
             <Text style={styles.linkMuted}>{t('cancel')}</Text>
@@ -129,7 +125,7 @@ function NoteFormModal({
           autoFocus
           testID="note-modal-input"
         />
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingScreen>
     </Modal>
   );
 }
