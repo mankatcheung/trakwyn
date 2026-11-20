@@ -63,6 +63,24 @@ jobs:
           device=$(hdiutil attach -nomount ram://2097152 | awk '{print $1}')
           diskutil erasevolume APFS trakwyn-e2e "$device"
 
+      # Facts about the machine this run landed on (JEF-662). The hosted macOS
+      # pool is shared, and when a flow fails at sign-up these are what a slow
+      # run is compared against. Uploaded with the other artifacts and shown on
+      # the job page.
+      - name: Record runner details
+        run: |
+          {
+            echo "started: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "image: ${ImageOS:-unknown} ${ImageVersion:-unknown}"
+            sw_vers
+            echo "cpu: $(sysctl -n machdep.cpu.brand_string), $(sysctl -n hw.ncpu) logical cores"
+            echo "memory: $(($(sysctl -n hw.memsize) / 1073741824)) GiB"
+            xcodebuild -version | head -2
+            xcrun simctl list runtimes | grep -i "iOS"
+            echo "database disk:"
+            df -h /Volumes/trakwyn-e2e
+          } 2>&1 | tee "${{ runner.temp }}/runner-details.txt"
+
       - name: Configure ephemeral E2E environment
         run: |
           cat > apps/api/.env <<'EOF'
@@ -185,11 +203,48 @@ jobs:
             exit 1
           fi
 
+      # Ten more sign-ups straight after the warm-up, timed from the client the
+      # way the app sees them (JEF-662). The warm-up shows the first one is
+      # fast; these show whether slow ones happen on a passing run too. Nothing
+      # here can fail the job.
+      - name: Time sign-ups
+        continue-on-error: true
+        run: |
+          : > "${{ runner.temp }}/signup-timing.txt"
+          for i in $(seq 1 10); do
+            email="timing-$i-$(date +%s)@example.com"
+            seconds=$(curl -sS --max-time 60 -o /dev/null -w '%{time_total}' \
+              -H 'Content-Type: application/json' \
+              -d "{\"query\":\"mutation RegisterMobile(\$email: String!, \$password: String!) { registerMobile(email: \$email, password: \$password) { accessToken } }\",\"variables\":{\"email\":\"$email\",\"password\":\"CorrectHorseBatteryStaple1!\"}}" \
+              http://localhost:3001/graphql || echo "failed")
+            echo "$(date -u +%H:%M:%S) sign-up $i: ${seconds}s" | tee -a "${{ runner.temp }}/signup-timing.txt"
+          done
+
+      # Load, memory, the database disk and the busiest processes every ten
+      # seconds while the flows run (JEF-662), so a flow that fails at sign-up
+      # can be lined up with what the machine was doing. Like the API above,
+      # this keeps running after the step ends.
+      - name: Sample the runner's load
+        run: |
+          (
+            while true; do
+              {
+                echo "--- $(date -u +%H:%M:%S) load: $(uptime | sed 's/.*load averages*: //')"
+                top -l 2 -s 1 -n 0 | grep -E '^(CPU usage|PhysMem)' | tail -2
+                df -k /Volumes/trakwyn-e2e | tail -1
+                ps -Ao pcpu,rss,comm -r | head -6
+              } >> "${{ runner.temp }}/runner-load.log" 2>&1
+              sleep 9
+            done
+          ) > /dev/null 2>&1 &
+
       - name: Run the Maestro flows
         run: maestro test apps/mobile/.maestro --debug-output "${{ runner.temp }}/maestro-debug"
 
+      # On every outcome, as the Android job does: a green run's logs are the
+      # baseline a red one is read against (JEF-662).
       - name: Upload Maestro artifacts
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: maestro-ios
@@ -200,4 +255,34 @@ jobs:
           path: |
             ${{ runner.temp }}/maestro-debug/
             ${{ runner.temp }}/api.log
+            ${{ runner.temp }}/runner-details.txt
+            ${{ runner.temp }}/signup-timing.txt
+            ${{ runner.temp }}/runner-load.log
           if-no-files-found: ignore
+
+      # The same facts on the job page, so a run can be read without opening
+      # the artifact: the runner, the sign-up timings and the slowest requests
+      # the API served (completion time and milliseconds).
+      - name: Summarize the run
+        if: always()
+        run: |
+          {
+            echo "### iOS E2E diagnostics"
+            echo
+            echo "Runner:"
+            echo '```'
+            cat "${{ runner.temp }}/runner-details.txt" 2>/dev/null || echo "(not recorded)"
+            echo '```'
+            echo
+            echo "Sign-ups timed after the warm-up:"
+            echo '```'
+            cat "${{ runner.temp }}/signup-timing.txt" 2>/dev/null || echo "(not recorded)"
+            echo '```'
+            echo
+            echo "Slowest API requests (completed at, ms):"
+            echo '```'
+            perl -pe 's/\e\[[0-9;]*m//g' "${{ runner.temp }}/api.log" 2>/dev/null |
+              awk '/^\[[0-9:]+\] INFO: request completed/ {t=$1} /responseTime:/ {printf "%s %d\n", t, $2}' |
+              sort -k2 -n -r | head -8
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
