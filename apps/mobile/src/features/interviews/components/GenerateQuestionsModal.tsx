@@ -1,14 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingScreen } from '../../../components/KeyboardAvoidingScreen';
 import { useTranslation } from 'react-i18next';
 import { AiActionBar } from '../../ai/components/AiActionBar';
 import {
@@ -108,10 +100,7 @@ export function GenerateQuestionsModal({
       onRequestClose={onClose}
       testID="generate-questions-modal"
     >
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingScreen style={styles.container}>
         <View style={styles.header}>
           <Pressable onPress={onClose} testID="generate-cancel-button">
             <Text style={styles.linkMuted}>{result ? t('discard') : t('cancel')}</Text>
@@ -197,7 +186,7 @@ export function GenerateQuestionsModal({
             </Pressable>
           </View>
         ) : null}
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingScreen>
     </Modal>
   );
 }

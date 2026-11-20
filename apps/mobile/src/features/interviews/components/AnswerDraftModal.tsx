@@ -1,15 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingScreen } from '../../../components/KeyboardAvoidingScreen';
 import { useTranslation } from 'react-i18next';
 import { INTERVIEW_QUESTION_LIMITS } from '../types';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -58,10 +49,7 @@ export function AnswerDraftModal({
       onRequestClose={onDiscard}
       testID="answer-draft-modal"
     >
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingScreen style={styles.container}>
         <View style={styles.header}>
           <Pressable onPress={onDiscard} testID="answer-draft-discard-button">
             <Text style={styles.linkMuted}>{t('discardDraft')}</Text>
@@ -108,7 +96,7 @@ export function AnswerDraftModal({
           </Pressable>
           <AiCreditCost feature="mockAnswer" />
         </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingScreen>
     </Modal>
   );
 }

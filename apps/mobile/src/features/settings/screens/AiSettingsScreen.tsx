@@ -14,6 +14,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { KeyboardAvoidingScreen } from '../../../components/KeyboardAvoidingScreen';
 import Svg, { Circle } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
 import {
@@ -676,10 +677,7 @@ export function AiSettingsScreen() {
   const busy = testKey.isPending || deleteKey.isPending;
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <KeyboardAvoidingScreen style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         {data && !hostedAiAvailable(data.aiCredits) ? <AiProNote /> : null}
         {data ? (
@@ -852,7 +850,7 @@ export function AiSettingsScreen() {
           onClose={closeAddProviderModal}
         />
       )}
-    </KeyboardAvoidingView>
+    </KeyboardAvoidingScreen>
   );
 }
 
