@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.20.0...web-v0.21.0) (2026-11-20)
+
+
+### Miscellaneous Chores
+
+* **web:** Synchronize server versions
+
 ## [0.20.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.19.0...web-v0.20.0) (2026-11-19)
 
 
