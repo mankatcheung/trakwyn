@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.12.1](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.12.0...mobile-v0.12.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **mobile:** keep the Assistant chat composer above the keyboard on iOS (JEF-377) ([#1580](https://github.com/mankatcheung/trakwyn/issues/1580)) ([06d122f](https://github.com/mankatcheung/trakwyn/commit/06d122f635d7dde843ac4fa733802ccda6336fe9))
+* **mobile:** measure the iOS keyboard offset on every header and page-sheet screen (JEF-661) ([#1589](https://github.com/mankatcheung/trakwyn/issues/1589)) ([f93cf21](https://github.com/mankatcheung/trakwyn/commit/f93cf21e0131c0b16a7a4f7f2a65394c683bd571))
+* **mobile:** repair flow 04 (AI helper assertion, Android back presses) ([#1578](https://github.com/mankatcheung/trakwyn/issues/1578)) ([7c9bc70](https://github.com/mankatcheung/trakwyn/commit/7c9bc70c268d3cebea7e42524367575575a00bfe))
+* **mobile:** show the notification bell as a native header item on iOS 26 (JEF-659) ([#1584](https://github.com/mankatcheung/trakwyn/issues/1584)) ([67a92ed](https://github.com/mankatcheung/trakwyn/commit/67a92ed0b8ab5ec918311af704631c146216064d))
+
 ## [0.12.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.11.0...mobile-v0.12.0) (2026-11-17)
 
 

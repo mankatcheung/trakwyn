@@ -2,6 +2,6 @@
   "apps/api": "0.20.0",
   "apps/web": "0.20.0",
   "apps/extension": "1.6.0",
-  "apps/mobile": "0.12.0",
+  "apps/mobile": "0.12.1",
   "apps/cli": "0.0.3"
 }
