@@ -17,6 +17,7 @@
     "db:migrate": "turbo run db:migrate --filter=@trakwyn/api",
     "setup:worktree": "bash scripts/setup-worktree.sh",
     "stop:worktree": "bash scripts/stop-worktree-processes.sh",
+    "e2e:local": "bash scripts/mobile-e2e-local.sh",
     "prepare": "husky"
   },
   "devDependencies": {
