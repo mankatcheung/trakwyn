@@ -28,7 +28,8 @@ Usage: pnpm e2e:local [ios|android] [NN ...] [options]
 Options:
   --skip-build      reuse the app already installed on the device
   --device ID       iOS simulator UDID or Android adb serial (default: picked)
-  --window          Android: show the emulator window (default: headless)
+  --window          show the device on screen: the Android emulator window (default:
+                    headless) or Simulator.app for the iOS simulator
   --keep            leave a device this script booted running afterwards
   -h, --help        show this help
 
@@ -325,6 +326,24 @@ prepare_ios_device() {
   fi
   xcrun simctl bootstatus "$DEVICE" -b >/dev/null
   disable_password_autofill "$DEVICE"
+  # After the autofill reboot, so the window shows the final state.
+  [ "$SHOW_WINDOW" = 1 ] && show_ios_simulator "$DEVICE"
+  return 0
+}
+
+# A booted simulator has no window until an app opens it. Xcode up to 26 ships
+# Simulator.app; Xcode 27 replaced it with DeviceHub.app, which lists the booted
+# simulators itself. Neither is reachable by name with `open -a`.
+show_ios_simulator() {
+  local dev="$1" xcode app
+  xcode="$(dirname "$(xcode-select -p)")"
+  for app in "$(xcode-select -p)/Applications/Simulator.app" "$xcode/Applications/DeviceHub.app"; do
+    if [ -d "$app" ]; then
+      open "$app" --args -CurrentDeviceUDID "$dev" || warn "could not open $app"
+      return 0
+    fi
+  done
+  warn "neither Simulator.app nor DeviceHub.app was found in Xcode; open the simulator by hand"
 }
 
 build_ios() {
