@@ -1,0 +1,55 @@
+# F-9 — Edit an application's role and salary.
+#
+# Flow 02 proves the create mutation. Update is a separate hand-written
+# document (src/features/applications/graphql/operations.ts) that nothing in
+# the Jest tiers sends to a server, so a drifted field name there would only
+# show up for a user. The new values are asserted from the detail screen, which
+# reads them back from the API after the save.
+appId: com.trakwyn.app
+---
+- runFlow: subflows/launch-signed-out.yml
+- runFlow: subflows/register-new-account.yml
+
+- evalScript: ${output.company = 'Edit Co ' + Date.now()}
+- evalScript: ${output.role = 'Staff Engineer ' + Date.now()}
+- evalScript: ${output.salary = 'Pay ' + Date.now()}
+
+- runFlow:
+    file: subflows/create-application.yml
+    env:
+      COMPANY: ${output.company}
+      ROLE: Backend Engineer
+
+- tapOn: '.*${output.company}.*'
+# The Health score card loads after the rows and pushes them down; wait for it
+# before tapping, as 04-notes-and-documents.yml does.
+- assertVisible:
+    id: 'health-score-card'
+- waitForAnimationToEnd
+- tapOn:
+    id: 'application-detail-edit-button'
+
+# The edit form opens filled in, so the old role has to go first.
+- tapOn:
+    id: 'form-role-input'
+- eraseText
+- inputText: ${output.role}
+- pressKey: Enter
+- scrollUntilVisible:
+    element:
+      id: 'form-salary-input'
+- waitForAnimationToEnd
+- tapOn:
+    id: 'form-salary-input'
+- inputText: ${output.salary}
+- pressKey: Enter
+- scrollUntilVisible:
+    element:
+      id: 'form-submit-button'
+- waitForAnimationToEnd
+- tapOn:
+    id: 'form-submit-button'
+
+# Saving pops back to the detail screen.
+- assertVisible: '.*${output.salary}.*'
+- assertVisible: '.*${output.role}.*'

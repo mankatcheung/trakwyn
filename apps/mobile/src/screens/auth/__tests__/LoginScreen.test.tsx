@@ -84,7 +84,34 @@ describe('LoginScreen', () => {
     await fireEvent.press(getByTestId('login-submit-button'));
 
     await findByText('Enter a valid email address');
+    // .maestro/08-login-errors-and-forgot-password.yml asserts on this id
+    // rather than on the message, so copy can change without breaking it.
+    expect(getByTestId('login-error')).toBeTruthy();
     expect(login).not.toHaveBeenCalled();
+  });
+
+  it('navigates to forgot-password when its link is pressed', async () => {
+    const push = jest.fn();
+    mockedUseAuth.mockReturnValue({
+      login: jest.fn(),
+      loginWithTotp: jest.fn(),
+      loginWithOAuth: jest.fn(),
+      register: jest.fn(),
+      logout: jest.fn(),
+      isLoading: false,
+      isAuthenticated: false,
+      sessionExpired: false,
+      reauthenticate: jest.fn(),
+      reauthenticateWithProvider: jest.fn(),
+      verifyStepUpCode: jest.fn(),
+    });
+
+    // By testID: .maestro/08-login-errors-and-forgot-password.yml taps it.
+    const { getByTestId } = await renderScreen(push);
+
+    await fireEvent.press(getByTestId('login-forgot-password-link'));
+
+    expect(push).toHaveBeenCalledWith('/forgot-password');
   });
 
   it('navigates to register when the create-account link is pressed', async () => {

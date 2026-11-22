@@ -1,0 +1,40 @@
+# Creates one application from the signed-in tab bar and leaves the app on the
+# Applications tab, where the new row is listed.
+#
+# Takes two env values from the calling flow:
+#   COMPANY  the company name, which the flow later asserts on
+#   ROLE     the role title
+#
+#   - runFlow:
+#       file: subflows/create-application.yml
+#       env:
+#         COMPANY: ${output.company}
+#         ROLE: Backend Engineer
+appId: com.trakwyn.app
+---
+- tapOn:
+    id: 'tab-applications'
+- tapOn:
+    id: 'add-application-button'
+
+- tapOn:
+    id: 'form-company-input'
+- inputText: ${COMPANY}
+- tapOn:
+    id: 'form-role-input'
+- inputText: ${ROLE}
+- pressKey: Enter
+# The form is longer than a small phone's screen and tapOn does not scroll.
+- scrollUntilVisible:
+    element:
+      id: 'form-submit-button'
+# Let the scroll settle: on iOS a tap on a list that is still decelerating
+# only stops it and never reaches the row.
+- waitForAnimationToEnd
+- tapOn:
+    id: 'form-submit-button'
+# Saving pops back to wherever the form was pushed from, and a bare
+# `/applications/new` resolves to (home)'s copy of the route, so that is the
+# dashboard, not the list. Go to the Applications tab explicitly.
+- tapOn:
+    id: 'tab-applications'

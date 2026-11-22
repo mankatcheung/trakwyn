@@ -1,0 +1,55 @@
+# F-10 — Move an application to Trash, then restore it.
+#
+# Deletes here are soft (`JobApplication.deletedAt`), and the list filter
+# that hides a trashed row lives in the API's repository, not in the app. So
+# "gone from the list" and "back after restore" can only be asserted against a
+# real server; the Jest tiers stub the transport.
+appId: com.trakwyn.app
+---
+- runFlow: subflows/launch-signed-out.yml
+- runFlow: subflows/register-new-account.yml
+
+- evalScript: ${output.company = 'Trash Co ' + Date.now()}
+
+- runFlow:
+    file: subflows/create-application.yml
+    env:
+      COMPANY: ${output.company}
+      ROLE: Backend Engineer
+
+- tapOn: '.*${output.company}.*'
+- assertVisible:
+    id: 'health-score-card'
+- waitForAnimationToEnd
+- tapOn:
+    id: 'application-detail-delete-button'
+# A native alert, so there is no testID to select. The button is matched
+# case-insensitively because Android renders it in capitals. Nothing else on
+# screen reads "Delete": the alert's title and message say "Bin" or "Trash".
+- tapOn: '(?i)delete'
+
+# Deleting pops back to the list, which no longer has the row.
+- assertNotVisible: '.*${output.company}.*'
+
+- tapOn:
+    id: 'applications-trash-button'
+- assertVisible: '.*${output.company}.*'
+# One trashed application on this account, so the first restore button is its
+# restore button — ids carry the application's nanoid.
+- tapOn:
+    id: 'restore-button-.*'
+# Restoring removes it from Trash.
+- assertNotVisible: '.*${output.company}.*'
+
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: 'BackButton'
+- assertVisible: '.*${output.company}.*'
