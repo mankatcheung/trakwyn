@@ -55,7 +55,9 @@ const files = walk(SRC);
 const fileSet = new Set(files);
 
 const isCode = (file: string) => /\.tsx?$/.test(file);
-const isTest = (file: string) => file.split('/').includes('__tests__');
+// `__integration__` (JEF-665) is test code too: the integration tier's suites and harness.
+const isTest = (file: string) =>
+  file.split('/').some((part) => part === '__tests__' || part === '__integration__');
 const isGenerated = (file: string) =>
   file.startsWith('graphql/generated/') || file === 'routeTree.gen.ts';
 

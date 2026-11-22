@@ -45,7 +45,9 @@ export const CHAT_STREAM_URL = resolveClientUrl(API_URL.replace(/\/graphql$/, '/
  */
 export const CV_IMPORT_URL = resolveClientUrl(API_URL.replace(/\/graphql$/, '/profile/cv-import'));
 
-const REFRESH_MUTATION = `mutation { refreshToken }`;
+// Exported for the integration tier, which validates it against the live schema
+// (`__integration__/rawDocuments.test.ts`): codegen cannot see a plain string.
+export const REFRESH_MUTATION = `mutation { refreshToken }`;
 
 // Non-HttpOnly hint cookie the API sets alongside the real HttpOnly
 // trakwyn_access_token/trakwyn_refresh_token cookies (apps/api's setAuthCookies()) —
