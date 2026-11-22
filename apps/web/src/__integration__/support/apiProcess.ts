@@ -47,6 +47,11 @@ export function apiEnv(dataDir: string): NodeJS.ProcessEnv {
     COOKIE_DOMAIN: '',
     OAUTH_PROVIDER_MODE: 'fake',
     LLM_PROVIDER_MODE: 'fake',
+    // Pinned off: `dotenv` does not override a variable that is already set, so
+    // a developer's apps/api/.env (which `pnpm setup:worktree` copies, with
+    // `PLANS_ENFORCED=true`) cannot lock Pro features here while CI, with none,
+    // passes. Entitlement errors are their own suite.
+    PLANS_ENFORCED: 'false',
     // Tracing would otherwise try to reach Axiom from a test run.
     AXIOM_TOKEN: '',
     AXIOM_DATASET: '',
