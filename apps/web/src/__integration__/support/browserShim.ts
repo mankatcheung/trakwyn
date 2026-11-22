@@ -63,7 +63,10 @@ export function installBrowserShim(): BrowserShim {
   };
 
   Object.assign(globalThis, { window: { location, document }, document });
-  globalThis.fetch = cookieFetch(jar, new URL(API_GRAPHQL_URL).origin, globalThis.fetch);
+  // The project's own API: `integration` and `integration-plans` each point
+  // VITE_API_URL at a different process (vitest.config.ts).
+  const apiUrl = import.meta.env.VITE_API_URL ?? API_GRAPHQL_URL;
+  globalThis.fetch = cookieFetch(jar, new URL(apiUrl).origin, globalThis.fetch);
 
   return {
     jar,
