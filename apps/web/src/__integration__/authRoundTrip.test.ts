@@ -35,6 +35,7 @@ describe('web auth against a real API', () => {
   // A fresh account per run: the server may hold anything else.
   const email = `web-integration-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
   let fetchSpy: MockInstance<typeof fetch>;
+  let realFetch: typeof fetch;
 
   const me = async () => (await gqlClient.request(SESSION_GATE_QUERY)) as { me: { email: string } };
 
@@ -46,6 +47,7 @@ describe('web auth against a real API', () => {
     // Every test starts signed in, on a page that is not the marketing root.
     shim.reset();
     await gqlClient.request(LOGIN_MUTATION, { email, password: PASSWORD });
+    realFetch = globalThis.fetch;
     fetchSpy = vi.spyOn(globalThis, 'fetch');
   });
 
@@ -79,7 +81,24 @@ describe('web auth against a real API', () => {
   it('shares one refresh between concurrent UNAUTHORIZED requests', async () => {
     shim.jar.delete(ACCESS);
 
-    const results = await Promise.all([me(), me(), me()]);
+    // The refresh is shared only while it is in flight, so which requests join
+    // it depends on when each UNAUTHORIZED arrives: a slow one landing after the
+    // first refresh finished would rightly start a second. Hold the refresh back
+    // until all three have been rejected, so the test checks the sharing and not
+    // the network's timing.
+    const REQUESTS = 3;
+    let rejected = 0;
+    let release: () => void = () => {};
+    const allRejected = new Promise<void>((resolve) => (release = resolve));
+    fetchSpy.mockImplementation(async (input, init) => {
+      const isRefresh = typeof init?.body === 'string' && init.body.includes('refreshToken');
+      if (isRefresh) await allRejected;
+      const response = await realFetch(input, init);
+      if (!isRefresh && ++rejected >= REQUESTS) release();
+      return response;
+    });
+
+    const results = await Promise.all(Array.from({ length: REQUESTS }, () => me()));
 
     expect(results.map((r) => r.me.email)).toEqual([email, email, email]);
     expect(refreshCalls(fetchSpy)).toBe(1);
