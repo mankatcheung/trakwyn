@@ -296,6 +296,25 @@ jobs:
 
       - run: pnpm --filter @trakwyn/mobile test:integration
 
+  # The web twin of `mobile-integration` (JEF-665): apps/web's Vitest
+  # `integration` project boots apps/api itself (globalSetup) and runs the auth
+  # round trip and the raw-document check against it. Gated on the `e2e` filter,
+  # which is exactly "apps/web or apps/api changed" (plus shared packages and
+  # the root files); it needs no env file, the API's ephemeral configuration is
+  # in src/__integration__/support/apiProcess.ts.
+  web-integration:
+    name: Web integration tests
+    needs: changes
+    if: needs.changes.outputs.code == 'true' && needs.changes.outputs.e2e == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-project
+
+      - run: pnpm --filter @trakwyn/web test:integration
+
   terraform:
     name: Terraform fmt & validate (${{ matrix.root }})
     needs: changes
@@ -634,6 +653,7 @@ jobs:
         build,
         test,
         mobile-integration,
+        web-integration,
         terraform,
         api-image,
         e2e,
