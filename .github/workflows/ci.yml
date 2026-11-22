@@ -297,8 +297,9 @@ jobs:
       - run: pnpm --filter @trakwyn/mobile test:integration
 
   # The web twin of `mobile-integration` (JEF-665): apps/web's Vitest
-  # `integration` project boots apps/api itself (globalSetup) and runs the auth
-  # round trip and the raw-document check against it. Gated on the `e2e` filter,
+  # `integration` and `integration-plans` projects boot apps/api itself
+  # (globalSetup; the second with PLANS_ENFORCED=true) and run the auth round
+  # trip, the raw-document check and the error-code suites against it. Gated on the `e2e` filter,
   # which is exactly "apps/web or apps/api changed" (plus shared packages and
   # the root files); it needs no env file, the API's ephemeral configuration is
   # in src/__integration__/support/apiProcess.ts.

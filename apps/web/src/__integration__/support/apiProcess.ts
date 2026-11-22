@@ -2,17 +2,35 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { apiOrigin, apiPort, webOrigin } from '../../../devPorts';
+import { apiOrigin, apiPort, plansApiOrigin, plansApiPort, webOrigin } from '../../../devPorts';
 
 const REPO_ROOT = resolve(import.meta.dirname, '../../../../..');
 
 export const API_GRAPHQL_URL = `${apiOrigin}/graphql`;
 export const BOOT_TIMEOUT_MS = 90_000;
 
+/**
+ * One API the tier can boot. `PLANS_ENFORCED` is read once at boot by
+ * `EntitlementService`, so a suite that needs Free and Pro to differ gets its
+ * own process on its own port (JEF-667) instead of toggling it per test.
+ */
+export interface ApiTarget {
+  readonly port: number;
+  readonly origin: string;
+  readonly plansEnforced: boolean;
+}
+
+export const DEFAULT_API: ApiTarget = { port: apiPort, origin: apiOrigin, plansEnforced: false };
+export const PLANS_API: ApiTarget = {
+  port: plansApiPort,
+  origin: plansApiOrigin,
+  plansEnforced: true,
+};
+
 /** True once the API answers a real GraphQL request, not merely once the port accepts a socket. */
-export async function pingApi(): Promise<boolean> {
+export async function pingApi(target: ApiTarget = DEFAULT_API): Promise<boolean> {
   try {
-    const response = await fetch(API_GRAPHQL_URL, {
+    const response = await fetch(`${target.origin}/graphql`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ query: '{ __typename }' }),
@@ -28,10 +46,10 @@ export async function pingApi(): Promise<boolean> {
  * PGlite database, fake OAuth and LLM providers, an email provider that logs.
  * Nothing here is a secret, so the tier runs on a fork's pull request.
  */
-export function apiEnv(dataDir: string): NodeJS.ProcessEnv {
+export function apiEnv(dataDir: string, target: ApiTarget = DEFAULT_API): NodeJS.ProcessEnv {
   return {
     ...process.env,
-    PORT: String(apiPort),
+    PORT: String(target.port),
     NODE_ENV: 'development',
     DATABASE_URL: `pglite:${dataDir}`,
     JWT_SECRET: 'integration-only-jwt-secret',
@@ -43,15 +61,16 @@ export function apiEnv(dataDir: string): NodeJS.ProcessEnv {
     EMAIL_PROVIDER: 'console',
     CORS_ORIGIN: webOrigin,
     WEB_APP_ORIGIN: webOrigin,
-    API_ORIGIN: apiOrigin,
+    API_ORIGIN: target.origin,
     COOKIE_DOMAIN: '',
     OAUTH_PROVIDER_MODE: 'fake',
     LLM_PROVIDER_MODE: 'fake',
-    // Pinned off: `dotenv` does not override a variable that is already set, so
-    // a developer's apps/api/.env (which `pnpm setup:worktree` copies, with
-    // `PLANS_ENFORCED=true`) cannot lock Pro features here while CI, with none,
-    // passes. Entitlement errors are their own suite.
-    PLANS_ENFORCED: 'false',
+    // Always set, never left to the environment: `dotenv` does not override a
+    // variable that is already set, so a developer's apps/api/.env (which
+    // `pnpm setup:worktree` copies, with `PLANS_ENFORCED=true`) cannot lock Pro
+    // features in the default API while CI, with none, passes. Only the
+    // `integration-plans` project's API (`PLANS_API`) enforces.
+    PLANS_ENFORCED: String(target.plansEnforced),
     // Tracing would otherwise try to reach Axiom from a test run.
     AXIOM_TOKEN: '',
     AXIOM_DATASET: '',
@@ -94,14 +113,15 @@ function stopGroup(child: ChildProcess, dataDir: string): void {
  * Boots apps/api with the command Playwright uses, on a throwaway database. An
  * API already answering on the port is reused, as `reuseExistingServer` does.
  */
-export async function bootApi(): Promise<BootedApi> {
-  if (await pingApi()) {
-    console.log(`\n[integration] reusing the API already answering at ${API_GRAPHQL_URL}`);
+export async function bootApi(target: ApiTarget = DEFAULT_API): Promise<BootedApi> {
+  const url = `${target.origin}/graphql`;
+  if (await pingApi(target)) {
+    console.log(`\n[integration] reusing the API already answering at ${url}`);
     return { owned: false, stop: () => {} };
   }
 
   const dataDir = join(mkdtempSync(join(tmpdir(), 'trakwyn-web-integration-')), 'pglite');
-  const env = apiEnv(dataDir);
+  const env = apiEnv(dataDir, target);
   await run('pnpm', ['--filter', '@trakwyn/api', 'db:migrate:apply'], env);
 
   const child = spawn('pnpm', ['--filter', '@trakwyn/api', 'dev'], {
@@ -121,8 +141,8 @@ export async function bootApi(): Promise<BootedApi> {
       stopGroup(child, dataDir);
       throw new Error(`[integration] the API exited during boot (${child.exitCode}):\n${stderr}`);
     }
-    if (await pingApi()) {
-      console.log(`\n[integration] API up at ${API_GRAPHQL_URL} (pid ${child.pid})`);
+    if (await pingApi(target)) {
+      console.log(`\n[integration] API up at ${url} (pid ${child.pid})`);
       return { owned: true, stop: () => stopGroup(child, dataDir) };
     }
     await new Promise((r) => setTimeout(r, 250));
@@ -130,6 +150,6 @@ export async function bootApi(): Promise<BootedApi> {
 
   stopGroup(child, dataDir);
   throw new Error(
-    `[integration] the API did not answer at ${API_GRAPHQL_URL} within ${BOOT_TIMEOUT_MS}ms:\n${stderr}`,
+    `[integration] the API did not answer at ${url} within ${BOOT_TIMEOUT_MS}ms:\n${stderr}`,
   );
 }

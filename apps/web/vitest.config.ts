@@ -2,7 +2,7 @@ import { resolve } from 'path';
 import { defineConfig } from 'vitest/config';
 import viteReact from '@vitejs/plugin-react';
 import { reactCompiler } from './reactCompiler';
-import { apiOrigin } from './devPorts';
+import { apiOrigin, plansApiOrigin } from './devPorts';
 
 export default defineConfig({
   plugins: [viteReact(), reactCompiler()],
@@ -56,6 +56,23 @@ export default defineConfig({
           testTimeout: 60_000,
           hookTimeout: 120_000,
           include: ['src/__integration__/**/*.test.ts', 'src/__integration__/**/*.test.tsx'],
+          exclude: ['**/node_modules/**', 'src/__integration__/plans/**'],
+        },
+      },
+      {
+        // The same tier against an API booted with `PLANS_ENFORCED=true`, which
+        // `EntitlementService` reads once at boot and the other suites cannot
+        // share: they write Pro features as a new (Free) user (JEF-667).
+        extends: true,
+        test: {
+          name: 'integration-plans',
+          environment: 'node',
+          env: { VITE_API_URL: `${plansApiOrigin}/graphql` },
+          globalSetup: ['./src/__integration__/globalSetupPlans.ts'],
+          setupFiles: ['./src/__integration__/setupAfterEnv.ts'],
+          testTimeout: 60_000,
+          hookTimeout: 120_000,
+          include: ['src/__integration__/plans/**/*.test.ts'],
         },
       },
     ],

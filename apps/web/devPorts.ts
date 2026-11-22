@@ -36,3 +36,12 @@ export const webPort = portFrom('WEB_PORT', DEFAULT_WEB_PORT);
 export const apiPort = portFrom('API_PORT', DEFAULT_API_PORT);
 export const webOrigin = `http://localhost:${webPort}`;
 export const apiOrigin = `http://localhost:${apiPort}`;
+
+/**
+ * The second API the `integration-plans` project boots, with `PLANS_ENFORCED`
+ * on (JEF-667). A fixed offset from the checkout's API port, so each worktree
+ * has its own pair and none of them lands in the 3100+ range worktrees draw from.
+ */
+export const PLANS_API_PORT_OFFSET = 1000;
+export const plansApiPort = apiPort + PLANS_API_PORT_OFFSET;
+export const plansApiOrigin = `http://localhost:${plansApiPort}`;
