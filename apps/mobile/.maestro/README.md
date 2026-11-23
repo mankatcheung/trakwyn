@@ -1,6 +1,6 @@
 # Mobile e2e flows
 
-Seven Maestro flows covering the app's spine (JEF-300, F-1…F-7). They drive a
+Twelve Maestro flows: the app's spine (JEF-300, F-1…F-7) and the write paths around it (JEF-668, F-8…F-12). They drive a
 real release build on an Android emulator or an iOS simulator against a real
 API — the tier no Jest project can reach, because nothing below it starts a
 process, installs a bundle, or touches a keychain.
@@ -55,6 +55,9 @@ while the API log recorded no request at all.
   and asserts only on what it created. The flows share one API and one PGlite
   database, so anything that depends on seeded state — or on another flow — fails
   the moment two of them run together (R-3).
+- **Creating an application is a subflow.** `subflows/create-application.yml`
+  takes `COMPANY` and `ROLE` as `env:` and ends on the Applications tab. Call it
+  rather than copying the form steps.
 - **Flows run serially.** `maestro test` does that by default; keep it that way
   for the same reason `apps/web/playwright.config.ts` pins `workers: 1`.
 

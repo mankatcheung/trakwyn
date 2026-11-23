@@ -168,7 +168,11 @@ export function LoginScreen() {
             </Text>
           </View>
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? (
+            <Text style={styles.error} testID="login-error">
+              {error}
+            </Text>
+          ) : null}
 
           <View style={styles.oauthRow}>
             <Pressable
@@ -228,7 +232,10 @@ export function LoginScreen() {
           <View style={styles.field}>
             <View style={styles.labelRow}>
               <Text style={styles.fieldLabel}>{t('auth:login.passwordLabel')}</Text>
-              <Pressable onPress={() => router.push('/forgot-password')}>
+              <Pressable
+                onPress={() => router.push('/forgot-password')}
+                testID="login-forgot-password-link"
+              >
                 <Text style={styles.forgotLink}>{t('auth:login.forgotPassword')}</Text>
               </Pressable>
             </View>

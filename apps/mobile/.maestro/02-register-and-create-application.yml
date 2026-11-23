@@ -12,32 +12,11 @@ appId: com.trakwyn.app
 
 - evalScript: ${output.company = 'Acme ' + Date.now()}
 
-- tapOn:
-    id: 'tab-applications'
-- tapOn:
-    id: 'add-application-button'
-
-- tapOn:
-    id: 'form-company-input'
-- inputText: ${output.company}
-- tapOn:
-    id: 'form-role-input'
-- inputText: 'Backend Engineer'
-- pressKey: Enter
-# The form is longer than a small phone's screen and tapOn does not scroll.
-- scrollUntilVisible:
-    element:
-      id: 'form-submit-button'
-# Let the scroll settle: on iOS a tap on a list that is still decelerating
-# only stops it and never reaches the row.
-- waitForAnimationToEnd
-- tapOn:
-    id: 'form-submit-button'
-# Saving pops back to wherever the form was pushed from, and a bare
-# `/applications/new` resolves to (home)'s copy of the route, so that is the
-# dashboard, not the list. Go to the Applications tab explicitly.
-- tapOn:
-    id: 'tab-applications'
+- runFlow:
+    file: subflows/create-application.yml
+    env:
+      COMPANY: ${output.company}
+      ROLE: Backend Engineer
 
 # Asserted by text, deliberately: this is the one thing in the flow that must
 # have round-tripped through the API rather than merely rendered.

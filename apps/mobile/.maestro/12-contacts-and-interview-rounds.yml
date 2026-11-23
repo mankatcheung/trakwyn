@@ -1,0 +1,112 @@
+# F-12 — Add a contact and an interview round, and find both after a relaunch.
+#
+# Two more create mutations with hand-written documents. The relaunch is what
+# makes this an e2e check: React Query would otherwise answer from the cache
+# the create just filled, and a mutation the server rejected silently would
+# still look saved. After a cold start the only source is the API.
+appId: com.trakwyn.app
+---
+- runFlow: subflows/launch-signed-out.yml
+- runFlow: subflows/register-new-account.yml
+
+- evalScript: ${output.company = 'People Co ' + Date.now()}
+- evalScript: ${output.contact = 'Casey Contact ' + Date.now()}
+- evalScript: ${output.interviewer = 'Ira Interviewer ' + Date.now()}
+
+- runFlow:
+    file: subflows/create-application.yml
+    env:
+      COMPANY: ${output.company}
+      ROLE: Backend Engineer
+
+- tapOn: '.*${output.company}.*'
+- assertVisible:
+    id: 'health-score-card'
+- waitForAnimationToEnd
+
+# Contacts.
+- scrollUntilVisible:
+    element:
+      id: 'section-index-contacts'
+- waitForAnimationToEnd
+- tapOn:
+    id: 'section-index-contacts'
+- tapOn:
+    id: 'add-contact-button'
+- tapOn:
+    id: 'contact-name-input'
+- inputText: ${output.contact}
+# The save button sits in the modal header above the keyboard, so there is no
+# hideKeyboard here; see 04-notes-and-documents.yml.
+- tapOn:
+    id: 'save-contact-button'
+- assertVisible: '.*${output.contact}.*'
+
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: 'BackButton'
+
+# Interview rounds. A new round defaults to a phone screen with no date, so
+# the interviewer's name is the one thing to find again.
+- scrollUntilVisible:
+    element:
+      id: 'section-index-interviews'
+- waitForAnimationToEnd
+- tapOn:
+    id: 'section-index-interviews'
+- tapOn:
+    id: 'add-round-button'
+- tapOn:
+    id: 'interview-interviewer-input'
+- inputText: ${output.interviewer}
+- pressKey: Enter
+- tapOn:
+    id: 'interview-form-save-button'
+- assertVisible: '.*${output.interviewer}.*'
+
+# Cold start, then back to both screens. launchApp without clearState keeps
+# the session (flow 03), so this lands on the tab bar.
+- stopApp
+- launchApp
+- assertVisible:
+    id: 'tab-applications'
+- tapOn:
+    id: 'tab-applications'
+- tapOn: '.*${output.company}.*'
+- assertVisible:
+    id: 'health-score-card'
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      id: 'section-index-contacts'
+- waitForAnimationToEnd
+- tapOn:
+    id: 'section-index-contacts'
+- assertVisible: '.*${output.contact}.*'
+
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: 'BackButton'
+- scrollUntilVisible:
+    element:
+      id: 'section-index-interviews'
+- waitForAnimationToEnd
+- tapOn:
+    id: 'section-index-interviews'
+- assertVisible: '.*${output.interviewer}.*'
