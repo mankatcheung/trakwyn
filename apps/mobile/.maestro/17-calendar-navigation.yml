@@ -1,0 +1,40 @@
+# F-17 — The calendar tab loads and can be moved around.
+#
+# This stops short of asserting an event. The app has no way to give an
+# application a date: `followUpAt` and an interview round's `scheduledAt` are
+# only displayed, never entered, and the applied date is not set on create. An
+# event would have to be seeded through the API, which no flow does. What the
+# flow can check is that the events query answers, the grid renders for each
+# view, and moving between periods does not break the screen.
+appId: com.trakwyn.app
+---
+- runFlow: subflows/launch-signed-out.yml
+- runFlow: subflows/register-new-account.yml
+
+- tapOn:
+    id: 'tab-calendar'
+- assertVisible:
+    id: 'calendar-view-month'
+# Month view draws one cell per day.
+- assertVisible:
+    id: 'calendar-day-.*'
+
+- tapOn:
+    id: 'calendar-next-period'
+- assertVisible:
+    id: 'calendar-day-.*'
+- tapOn:
+    id: 'calendar-previous-period'
+- tapOn:
+    id: 'calendar-previous-period'
+- assertVisible:
+    id: 'calendar-day-.*'
+
+- tapOn:
+    id: 'calendar-view-week'
+- assertVisible:
+    id: 'calendar-day-.*'
+- tapOn:
+    id: 'calendar-view-day'
+- assertVisible:
+    id: 'calendar-next-period'

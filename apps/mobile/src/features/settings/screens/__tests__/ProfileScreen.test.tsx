@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import '../../../../i18n';
 
 jest.mock('expo-document-picker', () => ({ getDocumentAsync: jest.fn() }));
@@ -106,6 +106,29 @@ describe('ProfileScreen', () => {
       expect.objectContaining({ name: 'New Name' }),
       expect.any(Object),
     );
+  });
+
+  it('confirms a save with the profile-saved message', async () => {
+    // .maestro/14-edit-profile.yml waits on this id before it relaunches, so
+    // the app is not killed while the update is still in flight.
+    const mutate = jest.fn();
+    mockedUseProfile.mockReturnValue({
+      data: profile,
+      isLoading: false,
+      isError: false,
+      error: null,
+    } as never);
+    mockedUseUpdateProfile.mockReturnValue({ mutate, isPending: false } as never);
+
+    const { getByTestId, queryByTestId } = await render(<ProfileScreen />);
+
+    expect(queryByTestId('profile-saved')).toBeNull();
+    await fireEvent.press(getByTestId('profile-save-button'));
+    await act(async () => {
+      mutate.mock.calls[0][1].onSuccess();
+    });
+
+    expect(getByTestId('profile-saved')).toBeTruthy();
   });
 
   it('shows an avatar placeholder and uploads a photo', async () => {

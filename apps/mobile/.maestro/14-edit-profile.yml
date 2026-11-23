@@ -1,0 +1,39 @@
+# F-14 — Change the profile name and find it after a cold start.
+#
+# The name round-trips through the update-profile mutation and is read back by
+# the dashboard's greeting, which has its own query. The relaunch is what keeps
+# this honest: without it, React Query would answer from the cache the save
+# just wrote.
+appId: com.trakwyn.app
+---
+- runFlow: subflows/launch-signed-out.yml
+- runFlow: subflows/register-new-account.yml
+
+- evalScript: ${output.name = 'Pat E2E ' + Date.now()}
+
+- tapOn:
+    id: 'tab-settings'
+- tapOn:
+    id: 'settings-profile-row'
+- tapOn:
+    id: 'profile-name-input'
+- inputText: ${output.name}
+- pressKey: Enter
+- scrollUntilVisible:
+    element:
+      id: 'profile-save-button'
+- waitForAnimationToEnd
+- tapOn:
+    id: 'profile-save-button'
+# The message only shows once the API has answered, so waiting for it is what
+# makes the relaunch below safe.
+- assertVisible:
+    id: 'profile-saved'
+
+- stopApp
+- launchApp
+- assertVisible:
+    id: 'tab-applications'
+- tapOn:
+    id: 'tab-home'
+- assertVisible: '.*${output.name}.*'
