@@ -93,6 +93,10 @@ while the API log recorded no request at all.
 - **Creating an application is a subflow.** `subflows/create-application.yml`
   takes `COMPANY` and `ROLE` as `env:` and ends on the Applications tab. Call it
   rather than copying the form steps.
+- **Leaving an application's detail screen lands on the dashboard.** The detail
+  route resolves to `(home)`'s copy, so `back` (or the pop after a delete) shows
+  the dashboard, not the list. Tap `tab-applications` before asserting on the
+  list; flows 10 and 11 failed on exactly this.
 - **Flows run serially.** `maestro test` does that by default; keep it that way
   for the same reason `apps/web/playwright.config.ts` pins `workers: 1`.
 

@@ -29,17 +29,10 @@ appId: com.trakwyn.app
 - waitForAnimationToEnd
 - tapOn:
     id: 'application-detail-star-button'
-- runFlow:
-    when:
-      platform: Android
-    commands:
-      - back
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - tapOn:
-          id: 'BackButton'
+# Back from the detail screen lands on the dashboard (the detail route
+# resolves to (home)'s copy), so go to the Applications tab explicitly.
+- tapOn:
+    id: 'tab-applications'
 
 - assertVisible: '.*${output.plain}.*'
 - tapOn:
