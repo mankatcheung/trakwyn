@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import '../../../../i18n';
 
@@ -115,6 +116,34 @@ describe('DashboardScreen', () => {
     await findByText('Alex Morgan');
     expect(getByTestId('dashboard-avatar')).toBeTruthy();
     await findByText('AM');
+  });
+
+  it('keeps the avatar on screen when a long email stands in for the name (JEF-669)', async () => {
+    const longEmail = 'e2e-1795197076024-51776-with-a-very-long-address@example.com';
+    mockedUseProfile.mockReturnValue({ data: { name: null, email: longEmail } } as never);
+    mockedUseApplications.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+    } as never);
+
+    const { findByTestId, getByTestId } = await renderScreen();
+
+    const title = await findByTestId('dashboard-greeting-name');
+    expect(title.props.children).toBe(longEmail);
+    // One line, shortened in the middle so the domain stays readable.
+    expect(title.props.numberOfLines).toBe(1);
+    expect(title.props.ellipsizeMode).toBe('middle');
+    // The text column shrinks to leave room for the avatar, and the avatar never shrinks.
+    expect(StyleSheet.flatten(getByTestId('dashboard-greeting').props.style)).toMatchObject({
+      flex: 1,
+      minWidth: 0,
+    });
+    expect(StyleSheet.flatten(getByTestId('dashboard-avatar').props.style)).toMatchObject({
+      flexShrink: 0,
+    });
   });
 
   it('shows the CV profile summary card on the dashboard', async () => {
