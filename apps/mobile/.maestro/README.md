@@ -7,21 +7,56 @@ process, installs a bundle, or touches a keychain.
 
 ## Running them locally
 
+Run them before you push: the nightly jobs take 40 to 75 minutes and tell you
+the next morning (JEF-660).
+
 ```bash
 # once: https://maestro.mobile.dev/getting-started/installing-maestro
 curl -Ls https://get.maestro.mobile.dev | bash
 
-# 1. an API on :3001 with the fake providers the flows expect
-cd apps/api && OAUTH_PROVIDER_MODE=fake LLM_PROVIDER_MODE=fake EMAIL_PROVIDER=console pnpm dev
+pnpm e2e:local                 # every flow on an iOS simulator
+pnpm e2e:local android         # on an Android emulator
+pnpm e2e:local ios 04 06       # only the flows numbered 04 and 06
+pnpm e2e:local ios --skip-build   # reuse the app already on the device
+pnpm e2e:local --help
+```
 
-# 2. a build on a running emulator/simulator. The API URL is inlined into the
-#    bundle at build time (src/constants.ts), so it is set here and not later.
+`scripts/mobile-e2e-local.sh` starts the API with the fake providers and a
+throwaway database, picks an iOS 26 simulator (CI runs macos-26), builds the
+Release app against that API, installs it, runs Maestro and stops everything it
+started. The first build takes 10 to 20 minutes on iOS and longer on Android;
+later ones are incremental. It prints where the logs, screenshots and view
+hierarchies of a failed flow are.
+
+It exists because each of these cost an afternoon the first time:
+
+- **Maestro needs a JDK 17 or newer.** The system `java` may be 1.8; Android
+  Studio's bundled JDK works and is found automatically.
+- **The simulator version matters.** On iOS 18 flow 04 fails at the back button;
+  CI runs iOS 26.
+- **Flow 06 types `http://localhost:3001/...`, and the API itself fetches it.**
+  When the API runs on another port (every worktree has its own), the script
+  forwards 3001 to it.
+- **iOS Password AutoFill swallows what Maestro types** into a sign-up form, so
+  the script turns it off in the simulator, as the CI job does.
+- **A fresh Play Store emulator image starves itself** until Google Play services
+  are disabled, and "System UI isn't responding" then covers the app, so every
+  flow fails at its first assertion. The script disables them, waits for the
+  guest to go idle, and taps Wait if the dialog is still up.
+- **`expo run:ios` and `expo prebuild` rewrite two scripts in
+  `apps/mobile/package.json`.** The script restores the file.
+- **`pnpm stop:worktree` does not stop apps inside simulators.**
+
+To do it by hand instead, this is what the script does. The API needs the fake
+providers the flows expect and a port the app was built for; the API URL is
+inlined into the bundle at build time (`src/constants.ts`), so it is set at
+build time and not later:
+
+```bash
+cd apps/api && OAUTH_PROVIDER_MODE=fake LLM_PROVIDER_MODE=fake EMAIL_PROVIDER=console pnpm dev
 cd apps/mobile
 EXPO_PUBLIC_API_URL=http://10.0.2.2:3001/graphql npx expo run:android --variant release
-
-# 3. the flows
-pnpm --filter @trakwyn/mobile test:e2e
-maestro test .maestro/02-register-and-create-application.yml   # or just one
+maestro test .maestro/02-register-and-create-application.yml   # or `pnpm test:e2e` for all
 ```
 
 `10.0.2.2` is the Android emulator's route to the host. An iOS simulator shares

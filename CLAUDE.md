@@ -20,6 +20,7 @@ pnpm build
 pnpm typecheck
 pnpm test                # or: pnpm --filter @trakwyn/api test / @trakwyn/web
 cd apps/api && pnpm test -- src/__tests__/use-cases/auth/LoginUseCase.test.ts  # single file
+pnpm e2e:local [ios|android] [NN ...]   # the mobile Maestro flows on a local simulator/emulator, before you push (JEF-660)
 pnpm lint
 pnpm format
 
