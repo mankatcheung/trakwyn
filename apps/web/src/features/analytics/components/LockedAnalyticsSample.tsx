@@ -49,19 +49,19 @@ export function LockedAnalyticsSample() {
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
         {SAMPLE_STATS.map(({ key, value }) => (
           <Card key={key} className="p-4">
-            <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">{t(key)}</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
+            <p className="mb-1 text-xs text-stone-500 dark:text-stone-400">{t(key)}</p>
+            <p className="text-2xl font-medium text-stone-900 dark:text-stone-100">{value}</p>
           </Card>
         ))}
       </div>
       <Card className="p-6">
-        <h2 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
+        <h2 className="mb-4 text-sm font-medium text-stone-700 dark:text-stone-300">
           {t('analyticsPage.applicationsPerWeek')}
         </h2>
         <Bars height="h-48" />
       </Card>
       <Card className="p-6">
-        <h2 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
+        <h2 className="mb-4 text-sm font-medium text-stone-700 dark:text-stone-300">
           {t('analyticsPage.stageFunnel')}
         </h2>
         <Rows />

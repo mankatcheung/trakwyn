@@ -157,7 +157,7 @@ export function SettingsAiPage() {
         </div>
         <Link
           to="/ai-mcp-setup"
-          className="shrink-0 text-sm font-semibold text-blue-700 hover:underline dark:text-blue-400"
+          className="shrink-0 text-sm font-medium text-blue-700 hover:underline dark:text-blue-400"
         >
           {t('guides.aiMcpSetup.bannerLink')}
         </Link>
@@ -180,10 +180,10 @@ export function SettingsAiPage() {
       )}
       {hostedAi === false && (
         <Card className="p-5">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
             {t('aiSource.proTitle')}
           </h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('aiSource.proOnly')}</p>
+          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{t('aiSource.proOnly')}</p>
           <Link
             to="/settings/plan"
             className="mt-3 inline-block text-sm font-medium text-blue-700 underline dark:text-blue-400"
@@ -196,10 +196,10 @@ export function SettingsAiPage() {
       {/* ── AI features ── */}
       <Card className="overflow-hidden">
         <div className="px-5 pt-5 pb-1">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
             {t('integrations.aiFeaturesTitle')}
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             {t('integrations.aiFeaturesDescription')}
           </p>
         </div>
@@ -218,7 +218,7 @@ export function SettingsAiPage() {
         ) : (
           <>
             {llmApiKeys.length > 0 && (
-              <div className="mt-4 border-t border-gray-100 dark:border-gray-700/60">
+              <div className="mt-4 border-t border-stone-100 dark:border-stone-700/60">
                 {llmApiKeys.map((key) => (
                   <LlmApiKeyRow
                     key={key.provider}
@@ -235,20 +235,20 @@ export function SettingsAiPage() {
 
             <div className="p-5">
               {availableProviderOptions.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-stone-500 dark:text-stone-400">
                   {t('integrations.allProvidersConfigured')}
                 </p>
               ) : addProviderOpen ? (
-                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/40">
+                <div className="rounded-lg border border-stone-200 bg-stone-50 p-4 dark:border-stone-700 dark:bg-stone-900/40">
                   {llmApiKeys.length > 0 && (
                     <div className="mb-4 flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      <h3 className="text-sm font-medium text-stone-900 dark:text-stone-100">
                         {t('integrations.addProvider')}
                       </h3>
                       <button
                         type="button"
                         onClick={closeAddProviderForm}
-                        className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        className="text-xs text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
                       >
                         {t('common.cancel')}
                       </button>
@@ -263,7 +263,7 @@ export function SettingsAiPage() {
                 <button
                   type="button"
                   onClick={() => setAddProviderOverride(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-stone-300 bg-white px-3.5 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
                 >
                   <PlusIcon size={15} />
                   {t('integrations.addProvider')}
@@ -276,10 +276,10 @@ export function SettingsAiPage() {
 
       {/* ── Custom instructions ── */}
       <Card className="p-5">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+        <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
           {t('integrations.customInstructionsLabel')}
         </h2>
-        <p className="mt-1 mb-3.5 text-sm text-gray-500 dark:text-gray-400">
+        <p className="mt-1 mb-3.5 text-sm text-stone-500 dark:text-stone-400">
           {t('integrations.customInstructionsHelp')}
         </p>
         {/* Keyed by load state: the form is born with the saved text, since a
@@ -294,10 +294,10 @@ export function SettingsAiPage() {
       <Card className="p-5">
         <div className="flex items-start justify-between gap-6">
           <div>
-            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
               {t('integrations.crossApplicationContextLabel')}
             </h2>
-            <p className="mt-1 max-w-xl text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-1 max-w-xl text-sm text-stone-500 dark:text-stone-400">
               {t('integrations.crossApplicationContextHelp')}
             </p>
           </div>

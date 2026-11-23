@@ -23,7 +23,7 @@ import { AiCreditsMeter } from '#/features/ai/components/AiCreditsMeter';
 import { Alert, Badge, Button, Card, ProgressBar } from '@trakwyn/ui';
 
 // The bar's default track is white-on-tint, which vanishes on a white card.
-const TRACK = 'bg-gray-200! dark:bg-gray-700!';
+const TRACK = 'bg-stone-200! dark:bg-stone-700!';
 const BAR_COLOR: Record<UsageLevel, string> = {
   unlimited: TRACK,
   ok: TRACK,
@@ -56,11 +56,11 @@ function UsageMeter({ title, used, limit, caption, fullMessage, warningMessage }
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{title}</h3>
+      <h3 className="text-sm font-medium text-stone-900 dark:text-stone-100">{title}</h3>
       {limit !== null && (
         <ProgressBar value={used} max={limit} aria-label={title} className={BAR_COLOR[level]} />
       )}
-      <p className="text-sm text-gray-700 dark:text-gray-300">{caption}</p>
+      <p className="text-sm text-stone-700 dark:text-stone-300">{caption}</p>
       {level === 'warning' && (
         <p role="status" className="text-sm text-amber-600">
           {warningMessage}
@@ -81,7 +81,7 @@ function AiCreditsCard() {
   if (!hosted) return null;
   return (
     <Card className="p-5">
-      <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">
+      <h2 className="mb-3 text-base font-medium text-stone-900 dark:text-stone-100">
         {t('aiCredits.title')}
       </h2>
       <AiCreditsMeter />
@@ -133,14 +133,14 @@ function PlanSummary({ status }: { status: BillingStatus }) {
   return (
     <Card className="space-y-3 p-5">
       <div className="flex items-center gap-3">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+        <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
           {t('plan.title')}
         </h2>
         <Badge tone={status.plan === 'pro' ? 'blue' : 'gray'}>
           {status.plan === 'pro' ? t('plan.badgePro') : t('plan.badgeFree')}
         </Badge>
       </div>
-      <p className="text-sm text-gray-700 dark:text-gray-300">
+      <p className="text-sm text-stone-700 dark:text-stone-300">
         {t(
           message.key,
           message.date ? { date: formatDate(message.date, { dateStyle: 'medium' }) } : {},
@@ -169,10 +169,10 @@ function PlanActions({ status }: { status: BillingStatus }) {
       {!isSubscriber && (
         <div className="space-y-3">
           <div>
-            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
               {t('plan.upgradeTitle')}
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-stone-500 dark:text-stone-400">
               {t('plan.upgradeDescription')}
             </p>
           </div>
@@ -193,26 +193,28 @@ function PlanActions({ status }: { status: BillingStatus }) {
           </div>
           <p
             data-testid="guarantee-short"
-            className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400"
+            className="flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-400"
           >
             <ShieldCheck aria-hidden="true" className="size-4 shrink-0 text-green-600" />
             {t('pricing.guaranteeShort')}
           </p>
           {status.planSource === 'pass' && status.plan === 'pro' && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">{t('plan.passForfeitNote')}</p>
+            <p className="text-sm text-stone-500 dark:text-stone-400">
+              {t('plan.passForfeitNote')}
+            </p>
           )}
           {checkout.isError && <Alert tone="error">{t('plan.checkoutFailed')}</Alert>}
-          <p className="text-sm text-gray-500 dark:text-gray-400">{t('plan.founderNote')}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{t('plan.refundPolicy')}</p>
+          <p className="text-sm text-stone-500 dark:text-stone-400">{t('plan.founderNote')}</p>
+          <p className="text-sm text-stone-500 dark:text-stone-400">{t('plan.refundPolicy')}</p>
         </div>
       )}
       {hasPaid && (
         <div className="space-y-3">
           <div>
-            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
               {t('plan.manageTitle')}
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-stone-500 dark:text-stone-400">
               {t('plan.manageDescription')}
             </p>
           </div>
@@ -221,7 +223,7 @@ function PlanActions({ status }: { status: BillingStatus }) {
           </Button>
           {portal.isError && <Alert tone="error">{t('plan.portalFailed')}</Alert>}
           {isSubscriber && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">{t('plan.refundPolicy')}</p>
+            <p className="text-sm text-stone-500 dark:text-stone-400">{t('plan.refundPolicy')}</p>
           )}
         </div>
       )}
@@ -241,10 +243,10 @@ function Usage({ status }: { status: BillingStatus }) {
   return (
     <Card className="space-y-6 p-5">
       <div>
-        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+        <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
           {t('plan.usageTitle')}
         </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{t('plan.description')}</p>
+        <p className="text-sm text-stone-500 dark:text-stone-400">{t('plan.description')}</p>
       </div>
       <UsageMeter
         title={t('plan.applications')}
@@ -319,15 +321,15 @@ function Comparison({ status }: { status: BillingStatus }) {
   return (
     <Card className="space-y-4 p-5">
       <div>
-        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+        <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
           {t('plan.compareTitle')}
         </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{t('plan.compareDescription')}</p>
+        <p className="text-sm text-stone-500 dark:text-stone-400">{t('plan.compareDescription')}</p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-gray-200 text-gray-500 dark:border-gray-700 dark:text-gray-400">
+            <tr className="border-b border-stone-200 text-stone-500 dark:border-stone-700 dark:text-stone-400">
               <th scope="col" className="py-2 pr-4 font-medium">
                 {t('plan.colFeature')}
               </th>
@@ -341,12 +343,15 @@ function Comparison({ status }: { status: BillingStatus }) {
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.label} className="border-b border-gray-100 dark:border-gray-800">
-                <th scope="row" className="py-2 pr-4 font-normal text-gray-900 dark:text-gray-100">
+              <tr key={row.label} className="border-b border-stone-100 dark:border-stone-800">
+                <th
+                  scope="row"
+                  className="py-2 pr-4 font-normal text-stone-900 dark:text-stone-100"
+                >
                   {row.label}
                 </th>
-                <td className="px-4 py-2 text-gray-700 dark:text-gray-300">{row.free}</td>
-                <td className="px-4 py-2 text-gray-700 dark:text-gray-300">{row.pro}</td>
+                <td className="px-4 py-2 text-stone-700 dark:text-stone-300">{row.free}</td>
+                <td className="px-4 py-2 text-stone-700 dark:text-stone-300">{row.pro}</td>
               </tr>
             ))}
           </tbody>

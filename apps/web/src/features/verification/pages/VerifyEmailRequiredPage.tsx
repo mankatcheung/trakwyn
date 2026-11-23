@@ -78,22 +78,22 @@ export function VerifyEmailRequiredPage({ email }: { email: string }) {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-8 dark:bg-gray-900">
+    <main className="flex min-h-screen items-center justify-center bg-stone-50 px-4 py-8 dark:bg-stone-900">
       <div className="w-full max-w-md space-y-6">
         <div className="flex items-center justify-center gap-2">
           <LogoMark size={28} />
-          <span className="text-xl font-bold text-gray-900 dark:text-gray-100">Trakwyn</span>
+          <span className="text-xl font-medium text-stone-900 dark:text-stone-100">Trakwyn</span>
         </div>
 
-        <div className="space-y-6 rounded-xl bg-white p-8 shadow-sm dark:bg-gray-800">
+        <div className="space-y-6 rounded-xl bg-white p-8 shadow-sm dark:bg-stone-800">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
               {t('verifyRequired.title')}
             </h1>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
               {t('verifyRequired.body', { email })}
             </p>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
               {t('verifyRequired.spamHint')}
             </p>
           </div>
@@ -138,7 +138,7 @@ export function VerifyEmailRequiredPage({ email }: { email: string }) {
             </Button>
           )}
 
-          <div className="border-t border-gray-200 pt-4 dark:border-gray-700">
+          <div className="border-t border-stone-200 pt-4 dark:border-stone-700">
             <Button variant="ghost" size="sm" onClick={signOut}>
               {t('nav.signOut')}
             </Button>

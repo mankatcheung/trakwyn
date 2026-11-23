@@ -115,8 +115,8 @@ export function StepUpWithoutPassword({
         </Button>
       ))}
 
-      <div className="space-y-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700">
-        <p className="text-sm text-gray-600 dark:text-gray-300">
+      <div className="space-y-3 rounded-lg border border-stone-200 p-3 dark:border-stone-700">
+        <p className="text-sm text-stone-600 dark:text-stone-300">
           {codeSent ? t('stepUpReauth.codeSent') : t('stepUpReauth.emailCodeIntro')}
         </p>
         {codeSent ? (

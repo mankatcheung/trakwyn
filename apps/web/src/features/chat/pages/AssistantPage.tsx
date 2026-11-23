@@ -50,12 +50,12 @@ export function AssistantPage() {
       <div className="mx-auto flex min-h-0 w-full max-w-3xl min-w-0 flex-1 flex-col px-4 pt-4 sm:px-8 sm:pt-8">
         <div className="mb-2 flex shrink-0 items-start justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+            <h1 className="text-xl font-medium text-stone-900 dark:text-stone-100">
               {t('assistant.title')}
             </h1>
             {/* Which conversation is open. Pinned with the header so it stays
                 readable after scrolling up through a long thread. */}
-            <p className="truncate text-sm text-gray-500 dark:text-gray-400">
+            <p className="truncate text-sm text-stone-500 dark:text-stone-400">
               {activeId
                 ? (activeConversation?.title ?? t('assistant.newConversation'))
                 : t('assistant.newConversation')}
@@ -79,7 +79,7 @@ export function AssistantPage() {
               to="/assistant/history"
               aria-label={t('assistant.conversationHistory')}
               title={t('assistant.conversationHistory')}
-              className="rounded-lg p-2 text-gray-400 transition-colors hover:text-gray-900 dark:hover:text-gray-100"
+              className="rounded-lg p-2 text-stone-400 transition-colors hover:text-stone-900 dark:hover:text-stone-100"
             >
               <HistoryIcon size={16} />
             </Link>
@@ -89,20 +89,20 @@ export function AssistantPage() {
         <div className="mb-4 shrink-0">
           {activeId ? (
             runsOn && runsOnLabel ? (
-              <p className="text-xs text-gray-400 dark:text-gray-500">
+              <p className="text-xs text-stone-400 dark:text-stone-500">
                 {t('assistant.using')} {runsOnLabel}
                 {runsOn.kind === 'key' && runsOn.model ? ` (${runsOn.model})` : ''}
               </p>
             ) : null
           ) : runsOn?.kind === 'key' && runsOnLabel ? (
-            <p className="text-xs text-gray-400 dark:text-gray-500">
+            <p className="text-xs text-stone-400 dark:text-stone-500">
               {t('assistant.using')} {runsOnLabel}{' '}
               <Link to="/settings/ai" className="underline">
                 {t('assistant.changeInSettings')}
               </Link>
             </p>
           ) : hostedAi === false && runsOn === null ? (
-            <p className="text-xs text-gray-400 dark:text-gray-500">
+            <p className="text-xs text-stone-400 dark:text-stone-500">
               {t('assistant.addApiKeyPrefix')}{' '}
               <Link to="/settings/ai" className="underline">
                 {t('assistant.settingsLinkText')}
@@ -110,7 +110,7 @@ export function AssistantPage() {
               {t('assistant.addApiKeySuffix')}
             </p>
           ) : (
-            <p className="text-xs text-gray-400 dark:text-gray-500">
+            <p className="text-xs text-stone-400 dark:text-stone-500">
               {t('assistant.usingTrakwynAi')}{' '}
               <Link to="/settings/ai" className="underline">
                 {t('assistant.useOwnKey')}

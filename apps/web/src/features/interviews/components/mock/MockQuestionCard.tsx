@@ -61,15 +61,15 @@ export function MockQuestionCard({
   const { t } = useLocale();
 
   return (
-    <article className="space-y-2 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800">
+    <article className="space-y-2 rounded-lg border border-stone-200 bg-white p-3 dark:border-stone-700 dark:bg-stone-800">
       <div className="flex flex-col gap-2 sm:flex-row">
         <div className="min-w-0 flex-1 space-y-1">
-          <p className="text-sm font-semibold wrap-break-word text-gray-900 dark:text-gray-100">
+          <p className="text-sm font-medium wrap-break-word text-stone-900 dark:text-stone-100">
             {q.question}
           </p>
           {q.answer ? (
             <>
-              <p className="text-sm wrap-break-word whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+              <p className="text-sm wrap-break-word whitespace-pre-wrap text-stone-700 dark:text-stone-300">
                 {q.answer}
               </p>
               {q.answerSource === 'ai' && <AiGeneratedBadge />}
@@ -77,7 +77,7 @@ export function MockQuestionCard({
           ) : (
             !draft && (
               <div className="space-y-2">
-                <p className="text-sm text-gray-500 italic">{t('interviews.noAnswerYet')}</p>
+                <p className="text-sm text-stone-500 italic">{t('interviews.noAnswerYet')}</p>
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="secondary" onClick={onEdit}>
                     {t('interviews.writeAnswer')}
@@ -106,7 +106,7 @@ export function MockQuestionCard({
             onSaved={onTalkingPointsSaved}
           />
         </div>
-        <div className="flex shrink-0 items-center justify-end gap-1 border-t border-gray-100 pt-2 sm:items-start sm:gap-0.5 sm:border-t-0 sm:pt-0 dark:border-gray-700">
+        <div className="flex shrink-0 items-center justify-end gap-1 border-t border-stone-100 pt-2 sm:items-start sm:gap-0.5 sm:border-t-0 sm:pt-0 dark:border-stone-700">
           <IconButton
             className={ENTRY_ACTION_CLASS}
             label={t('interviews.moveQuestionUp')}

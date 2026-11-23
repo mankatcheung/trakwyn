@@ -17,7 +17,7 @@ describe('FormLabel', () => {
     render(<FormLabel size="xs">Email</FormLabel>);
     const label = screen.getByText('Email');
     expect(label.className).toContain('text-xs');
-    expect(label.className).not.toContain('dark:text-gray-300');
+    expect(label.className).not.toContain('dark:text-stone-300');
   });
 
   it('associates with a field via htmlFor', () => {

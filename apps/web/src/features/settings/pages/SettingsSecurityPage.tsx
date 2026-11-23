@@ -122,10 +122,10 @@ export function SettingsSecurityPage() {
       {/* ── Password ── */}
       <Card className="space-y-4 p-5">
         <div>
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
             {t('security.passwordTitle')}
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             {t('security.passwordDescription')}
           </p>
         </div>
@@ -135,10 +135,10 @@ export function SettingsSecurityPage() {
       {/* ── Linked accounts ── */}
       <Card className="space-y-4 p-5">
         <div>
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
             {t('security.linkedAccountsTitle')}
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             {t('security.linkedAccountsDescription')}
           </p>
         </div>
@@ -162,15 +162,15 @@ export function SettingsSecurityPage() {
               return (
                 <div
                   key={provider}
-                  className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 dark:border-gray-700"
+                  className="flex items-center justify-between rounded-lg border border-stone-200 px-3 py-2 dark:border-stone-700"
                 >
                   <div className="flex items-center gap-3">
                     <OAuthProviderLogo provider={provider} className="size-5 shrink-0" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
                         {providerLabel}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-xs text-stone-500 dark:text-stone-400">
                         {linked ? (linked.email ?? t('security.linked')) : t('security.notLinked')}
                       </p>
                     </div>
@@ -180,7 +180,7 @@ export function SettingsSecurityPage() {
                       type="button"
                       onClick={() => onUnlink(provider)}
                       aria-label={t('security.unlinkAria', { provider: providerLabel })}
-                      className="flex items-center gap-1 text-sm text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+                      className="flex items-center gap-1 text-sm text-stone-500 hover:text-red-600 dark:text-stone-400 dark:hover:text-red-400"
                     >
                       <UnlinkIcon size={14} />{' '}
                       <span className="hidden sm:inline">{t('security.unlink')}</span>
@@ -188,7 +188,7 @@ export function SettingsSecurityPage() {
                   ) : (
                     <a
                       href={`${API_ORIGIN}/auth/oauth/${provider}/start?mode=link`}
-                      className="text-sm text-blue-600 hover:underline"
+                      className="text-sm text-blue-800 dark:text-blue-400 hover:underline"
                     >
                       {t('security.link')}
                     </a>
@@ -203,10 +203,10 @@ export function SettingsSecurityPage() {
       {/* ── Two-factor authentication ── */}
       <Card className="space-y-4 p-5">
         <div>
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
             {t('security.twoFactorTitle')}
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             {t('security.twoFactorDescription')}
           </p>
         </div>
@@ -216,10 +216,10 @@ export function SettingsSecurityPage() {
         ) : backupCodes ? (
           <div className="space-y-3">
             <p className="text-sm text-green-600">{t('security.twoFactorEnabled')}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-stone-500 dark:text-stone-400">
               {t('security.backupCodesSaveNote')}
             </p>
-            <ul className="grid grid-cols-2 gap-2 rounded-lg bg-gray-50 p-3 font-mono text-sm dark:bg-gray-800">
+            <ul className="grid grid-cols-2 gap-2 rounded-lg bg-stone-50 p-3 font-mono text-sm dark:bg-stone-800">
               {backupCodes.map((code) => (
                 <li key={code}>{code}</li>
               ))}
@@ -241,15 +241,15 @@ export function SettingsSecurityPage() {
           </>
         ) : totpSetup ? (
           <div className="space-y-3">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-stone-500 dark:text-stone-400">
               {t('security.scanQrCodeNote')}
             </p>
             <img
               src={totpSetup.qrCodeDataUrl}
               alt={t('security.qrCodeAlt')}
-              className="size-40 rounded-lg border border-gray-200 dark:border-gray-700"
+              className="size-40 rounded-lg border border-stone-200 dark:border-stone-700"
             />
-            <p className="font-mono text-xs break-all text-gray-500 dark:text-gray-400">
+            <p className="font-mono text-xs break-all text-stone-500 dark:text-stone-400">
               {totpSetup.secret}
             </p>
             <TotpConfirmForm
@@ -268,10 +268,10 @@ export function SettingsSecurityPage() {
       <Card className="space-y-4 p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
               {t('security.activeSessionsTitle')}
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-stone-500 dark:text-stone-400">
               {t('security.activeSessionsDescription')}
             </p>
           </div>
@@ -280,7 +280,7 @@ export function SettingsSecurityPage() {
               type="button"
               onClick={onRevokeOtherSessions}
               aria-label={t('security.signOutOtherSessions')}
-              className="flex shrink-0 items-center gap-1 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-900 transition-colors hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
+              className="flex shrink-0 items-center gap-1 rounded-lg bg-stone-100 px-3 py-1.5 text-xs font-medium text-stone-900 transition-colors hover:bg-stone-200 dark:bg-stone-700 dark:text-stone-100 dark:hover:bg-stone-600"
             >
               <LogOutIcon size={14} />{' '}
               <span className="hidden sm:inline">{t('security.signOutOtherSessions')}</span>
@@ -291,10 +291,10 @@ export function SettingsSecurityPage() {
           {sessions.map((session) => (
             <li
               key={session.id}
-              className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 px-3 py-2 dark:border-gray-700"
+              className="flex items-center justify-between gap-4 rounded-lg border border-stone-200 px-3 py-2 dark:border-stone-700"
             >
               <div className="min-w-0">
-                <p className="truncate text-sm text-gray-900 dark:text-gray-100">
+                <p className="truncate text-sm text-stone-900 dark:text-stone-100">
                   {session.deviceLabel ?? session.userAgent ?? t('security.unknownDevice')}
                   {session.current && (
                     <span className="ml-2 text-xs font-medium text-green-600">
@@ -302,7 +302,7 @@ export function SettingsSecurityPage() {
                     </span>
                   )}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-stone-500 dark:text-stone-400">
                   {session.location ? `${session.location} · ` : ''}
                   {session.ipAddress ?? t('security.unknownIp')} · {t('security.lastActive')}{' '}
                   {new Date(session.lastUsedAt).toLocaleString()}
@@ -327,30 +327,30 @@ export function SettingsSecurityPage() {
       {/* ── Security activity ── */}
       <Card id="security-activity" className="scroll-mt-4 space-y-4 p-5">
         <div>
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
             {t('security.securityActivityTitle')}
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             {t('security.securityActivityDescription')}
           </p>
         </div>
         {securityActivityError && <Alert>{securityActivityError}</Alert>}
         {!securityActivityError && securityActivity === null && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
+          <p className="text-sm text-stone-500 dark:text-stone-400">{t('common.loading')}</p>
         )}
         {!securityActivityError && securityActivity?.length === 0 && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             {t('security.noSecurityActivityYet')}
           </p>
         )}
         {!securityActivityError && securityActivity && securityActivity.length > 0 && (
-          <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
+          <ul className="divide-y divide-stone-200 rounded-lg border border-stone-200 dark:divide-stone-700 dark:border-stone-700">
             {securityActivity.map((event) => (
               <li key={event.id} className="px-3 py-2 text-sm">
-                <p className="text-gray-900 dark:text-gray-100">
+                <p className="text-stone-900 dark:text-stone-100">
                   {t(`security.event.${event.eventType}`, { defaultValue: event.eventType })}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-stone-500 dark:text-stone-400">
                   {t(`security.device.${describeDevice(event.userAgent)}`)}
                   {event.ipAddress ? ` · ${event.ipAddress}` : ''}
                   {' · '}

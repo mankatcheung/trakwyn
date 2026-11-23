@@ -80,25 +80,25 @@ export function ApiTokensCard() {
     <Card className="space-y-4 p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
             {t('integrations.apiTokensTitle')}
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             {t('integrations.apiTokensDescription')}
           </p>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
             {t('integrations.mcpHint')}{' '}
             <a
               href="https://github.com/mankatcheung/trakwyn#mcp-server"
               target="_blank"
               rel="noreferrer"
-              className="text-blue-600 hover:underline"
+              className="text-blue-800 dark:text-blue-400 hover:underline"
             >
               {t('integrations.mcpHintLink')}
             </a>
           </p>
           {billingStatus?.enforced && !billingStatus.features.apiAccess && (
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
               {t('integrations.tokenFreePlanNote')}
             </p>
           )}
@@ -124,8 +124,8 @@ export function ApiTokensCard() {
       {newApiToken && (
         <div className="space-y-3">
           <p className="text-sm text-green-600">{t('integrations.tokenCreatedNote')}</p>
-          <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
-            <code className="flex-1 font-mono text-sm break-all text-gray-900 dark:text-gray-100">
+          <div className="flex items-center gap-2 rounded-lg bg-stone-50 p-3 dark:bg-stone-800">
+            <code className="flex-1 font-mono text-sm break-all text-stone-900 dark:text-stone-100">
               {newApiToken.token}
             </code>
             <Button
@@ -193,7 +193,7 @@ export function ApiTokensCard() {
               </Button>
             )}
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-stone-500 dark:text-stone-400">
             {apiTokenScope === 'read'
               ? t('integrations.scopeReadHelp')
               : t('integrations.scopeFullHelp')}
@@ -202,11 +202,11 @@ export function ApiTokensCard() {
       )}
 
       {apiTokens.length > 0 && (
-        <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
+        <ul className="divide-y divide-stone-200 rounded-lg border border-stone-200 dark:divide-stone-700 dark:border-stone-700">
           {apiTokens.map((token) => (
             <li key={token.id} className="flex items-center justify-between gap-4 px-3 py-2">
               <div className="min-w-0">
-                <p className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                <p className="flex items-center gap-2 text-sm font-medium text-stone-900 dark:text-stone-100">
                   <span className="truncate">{token.name}</span>
                   <Badge tone={token.scope === 'read' ? 'gray' : 'yellow'}>
                     {token.scope === 'read'
@@ -214,7 +214,7 @@ export function ApiTokensCard() {
                       : t('integrations.scopeFull')}
                   </Badge>
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-stone-500 dark:text-stone-400">
                   {t('integrations.createdOn', {
                     date: new Date(token.createdAt).toLocaleDateString(),
                   })}

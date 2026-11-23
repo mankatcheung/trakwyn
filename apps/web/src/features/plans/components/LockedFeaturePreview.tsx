@@ -33,8 +33,8 @@ function SampleOffers() {
     <div className="space-y-3">
       {SAMPLE_ROWS.map((row, i) => (
         <div key={i} className="flex items-center gap-3">
-          <div className={`h-3 rounded-sm bg-gray-300 dark:bg-gray-600 ${row.width}`} />
-          <span className="ml-auto text-sm font-medium text-gray-700 dark:text-gray-300">
+          <div className={`h-3 rounded-sm bg-stone-300 dark:bg-stone-600 ${row.width}`} />
+          <span className="ml-auto text-sm font-medium text-stone-700 dark:text-stone-300">
             {row.value}
           </span>
         </div>
@@ -52,16 +52,16 @@ function LockedMessage({ feature }: { feature: LockedPreviewFeature }) {
         <LockIcon size={12} aria-hidden="true" />
         {t('lockedPreview.badge')}
       </span>
-      <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+      <h2 className="text-sm font-medium text-stone-900 dark:text-stone-100">
         {t(`lockedPreview.${feature}.title`)}
       </h2>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
+      <p className="text-sm text-stone-600 dark:text-stone-400">
         {t(`lockedPreview.${feature}.benefit`)}
       </p>
       <Link
         to="/settings/plan"
         onClick={() => trackLockedPreviewClick(feature)}
-        className="inline-block text-sm font-medium text-blue-600 underline"
+        className="inline-block text-sm font-medium text-blue-800 dark:text-blue-400 underline"
       >
         {t('plan.seePlans')}
       </Link>
@@ -86,7 +86,7 @@ export function LockedFeaturePreview({ feature, className }: LockedFeaturePrevie
       <div aria-hidden="true" className="pointer-events-none blur-sm select-none">
         {feature === 'analytics' ? <SampleAnalytics /> : <SampleOffers />}
       </div>
-      <div className="absolute inset-0 flex items-center justify-center bg-white/60 p-4 dark:bg-gray-900/60">
+      <div className="absolute inset-0 flex items-center justify-center bg-white/60 p-4 dark:bg-stone-900/60">
         <LockedMessage feature={feature} />
       </div>
     </Card>
@@ -111,9 +111,9 @@ export function LockedFeatureOverlay({ feature, children }: LockedFeatureOverlay
       <div aria-hidden="true" inert className="pointer-events-none blur-md select-none">
         {children}
       </div>
-      <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50">
+      <div className="absolute inset-0 bg-white/50 dark:bg-stone-900/50">
         <div className="sticky top-24 flex justify-center px-4 pt-16">
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+          <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-lg dark:border-stone-700 dark:bg-stone-800">
             <LockedMessage feature={feature} />
           </div>
         </div>

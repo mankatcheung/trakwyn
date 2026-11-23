@@ -104,16 +104,16 @@ body {
   padding-top: env(safe-area-inset-top);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
-  /* Matches the bg-gray-50/dark:bg-gray-900 every page sets on its own root
+  /* Matches the bg-stone-50/dark:bg-stone-900 every page sets on its own root
      div — without this, the moment between the old page unmounting and the
      new one mounting (route-transition below re-keys and remounts on every
      navigation) shows the browser's default white canvas through the
      unstyled <main> behind it. */
-  background-color: #f9fafb;
+  background-color: #fafaf9;
 }
 
 .dark body {
-  background-color: #111827;
+  background-color: #1c1917;
 }
 
 body,
@@ -222,14 +222,12 @@ body * {
 
 /* NProgress customizations */
 #nprogress .bar {
-  background: #3b82f6;
+  background: #1e40af;
   height: 3px;
 }
 
 #nprogress .peg {
-  box-shadow:
-    0 0 10px #3b82f6,
-    0 0 5px #3b82f6;
+  box-shadow: none;
 }
 
 .dark #nprogress .bar {
@@ -237,9 +235,7 @@ body * {
 }
 
 .dark #nprogress .peg {
-  box-shadow:
-    0 0 10px #60a5fa,
-    0 0 5px #60a5fa;
+  box-shadow: none;
 }
 
 /*

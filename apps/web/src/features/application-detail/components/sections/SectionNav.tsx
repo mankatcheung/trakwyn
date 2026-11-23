@@ -42,13 +42,13 @@ export function SectionNav({ active, counts, pending = false, onOpen }: SectionN
   return (
     <nav
       ref={ref}
-      className="sticky top-20 hidden h-fit max-h-[calc(100vh-6rem)] w-52 shrink-0 flex-col gap-4 overflow-y-auto rounded-xl border border-gray-200 bg-white p-2 md:flex dark:border-gray-700 dark:bg-gray-800"
+      className="sticky top-20 hidden h-fit max-h-[calc(100vh-6rem)] w-52 shrink-0 flex-col gap-4 overflow-y-auto rounded-xl border border-stone-200 bg-white p-2 md:flex dark:border-stone-700 dark:bg-stone-800"
       aria-label={t('applicationDetail.sectionNavAria')}
       aria-busy={pending}
     >
       {SECTION_GROUPS.map((group) => (
         <div key={group.titleKey} className="flex flex-col gap-0.5">
-          <h2 className="px-2 pb-1 text-[11px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">
+          <h2 className="px-2 pb-1 text-xs font-medium text-stone-400 dark:text-stone-500">
             {t(group.titleKey)}
           </h2>
           {group.sections.map((section) => {
@@ -64,14 +64,14 @@ export function SectionNav({ active, counts, pending = false, onOpen }: SectionN
                 className={`${section.wideOnly ? 'hidden lg:flex' : 'flex'} items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-medium transition-colors ${
                   isActive
                     ? `bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 ${pending ? 'animate-pulse' : ''}`
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-200'
+                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-700/50 dark:hover:text-stone-200'
                 }`}
               >
                 <section.icon size={16} />
                 <span className="flex-1 truncate">{t(section.labelKey)}</span>{' '}
                 {generated !== null && <SectionGeneratedMarker generated={generated} />}
                 {count !== null && count > 0 && (
-                  <span className={`text-[11px] font-bold ${isActive ? '' : 'text-gray-400'}`}>
+                  <span className={`text-xs font-medium ${isActive ? '' : 'text-stone-400'}`}>
                     {count}
                   </span>
                 )}

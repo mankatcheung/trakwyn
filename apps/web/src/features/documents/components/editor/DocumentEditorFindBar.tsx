@@ -23,9 +23,9 @@ interface DocumentEditorFindBarProps {
 }
 
 const INPUT_CLASS =
-  'min-w-0 flex-1 rounded-sm border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100';
+  'min-w-0 flex-1 rounded-sm border border-stone-300 bg-white px-2 py-1 text-sm text-stone-900 disabled:cursor-not-allowed disabled:opacity-50 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100';
 const BUTTON_CLASS =
-  'rounded-sm border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700';
+  'rounded-sm border border-stone-300 px-2 py-1 text-xs font-medium text-stone-700 hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-700';
 
 /**
  * The find and replace bar above the document (JEF-580). The search itself is
@@ -124,7 +124,7 @@ export function DocumentEditorFindBar({
     <div
       role="search"
       aria-label={t('documents.editor.find')}
-      className="space-y-2 border-b border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800"
+      className="space-y-2 border-b border-stone-200 bg-stone-50 px-3 py-2 dark:border-stone-700 dark:bg-stone-800"
     >
       <div className="flex flex-wrap items-center gap-2">
         <input
@@ -140,7 +140,7 @@ export function DocumentEditorFindBar({
         />
         <span
           role="status"
-          className="min-w-16 text-xs whitespace-nowrap text-gray-600 dark:text-gray-400"
+          className="min-w-16 text-xs whitespace-nowrap text-stone-600 dark:text-stone-400"
         >
           {counter}
         </span>

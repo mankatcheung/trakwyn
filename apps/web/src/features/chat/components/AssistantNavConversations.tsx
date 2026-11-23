@@ -30,14 +30,14 @@ export function AssistantNavConversations({
   const conversations = data?.conversations ?? [];
 
   return (
-    <div className="my-1 ml-2 space-y-0.5 border-l border-gray-200 dark:border-gray-700">
+    <div className="my-1 ml-2 space-y-0.5 border-l border-stone-200 dark:border-stone-700">
       {/* First among the subitems: an empty search param clears the active
           conversation, which is exactly what "new" means here. */}
       <Link
         to="/assistant"
         search={{}}
         onClick={onNavigate}
-        className="sidebar-nav-item flex items-center gap-2 rounded-r-lg py-1.5 pr-3 pl-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100"
+        className="sidebar-nav-item flex items-center gap-2 rounded-r-lg py-1.5 pr-3 pl-4 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-700 dark:hover:text-stone-100"
       >
         <PlusIcon size={14} />
         {t('assistant.newConversation')}
@@ -55,7 +55,7 @@ export function AssistantNavConversations({
             className={`sidebar-nav-item block truncate rounded-r-lg py-1.5 pr-3 pl-4 text-sm transition-colors ${
               isActive
                 ? 'bg-blue-50 font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-100'
+                : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-100'
             }`}
           >
             {c.title ?? t('assistant.newConversation')}
@@ -65,7 +65,7 @@ export function AssistantNavConversations({
       <Link
         to="/assistant/history"
         onClick={onNavigate}
-        className="sidebar-nav-item flex items-center gap-2 rounded-r-lg py-1.5 pr-3 pl-4 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-100"
+        className="sidebar-nav-item flex items-center gap-2 rounded-r-lg py-1.5 pr-3 pl-4 text-sm text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-100"
       >
         <MessageCircleIcon size={14} />
         {t('assistant.allChats')}

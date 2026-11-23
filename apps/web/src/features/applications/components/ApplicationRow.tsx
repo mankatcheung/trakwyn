@@ -32,9 +32,9 @@ export function ApplicationRow({ app, displayFields, selected, onToggle }: Appli
         className="group flex min-w-0 flex-1 items-center justify-between"
       >
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{app.company}</p>
+          <p className="text-sm font-medium text-stone-900 dark:text-stone-100">{app.company}</p>
           {(displayFields.role || (displayFields.location && app.location)) && (
-            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+            <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
               {[
                 displayFields.role ? app.role : null,
                 displayFields.location && app.location ? app.location : null,
@@ -48,13 +48,13 @@ export function ApplicationRow({ app, displayFields, selected, onToggle }: Appli
               {app.tags.slice(0, 3).map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center rounded-sm bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                  className="inline-flex items-center rounded-sm bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
                 >
                   {tag}
                 </span>
               ))}
               {app.tags.length > 3 && (
-                <span className="text-[10px] text-gray-400">+{app.tags.length - 3}</span>
+                <span className="text-xs text-stone-400">+{app.tags.length - 3}</span>
               )}
             </div>
           )}
@@ -64,7 +64,7 @@ export function ApplicationRow({ app, displayFields, selected, onToggle }: Appli
             <StarIcon size={13} className="shrink-0 fill-yellow-400 text-yellow-400" />
           )}
           {displayFields.date && (
-            <p className="hidden text-xs text-gray-400 sm:block">
+            <p className="hidden text-xs text-stone-400 sm:block">
               {app.appliedAt
                 ? new Date(app.appliedAt).toLocaleDateString()
                 : new Date(app.createdAt).toLocaleDateString()}
@@ -72,7 +72,7 @@ export function ApplicationRow({ app, displayFields, selected, onToggle }: Appli
           )}
           {displayFields.status && <StatusBadge status={app.status} />}
           {displayFields.ghosted && app.likelyGhosted && (
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
               {t('applications.likelyGhosted')}
             </span>
           )}

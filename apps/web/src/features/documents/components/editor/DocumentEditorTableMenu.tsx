@@ -43,7 +43,7 @@ export function DocumentEditorTableMenu({
       }
       updateDelay={100}
       options={{ placement: 'top', offset: 8, flip: true, shift: { padding: 8 } }}
-      className="z-40 w-max max-w-[min(28rem,calc(100vw-1rem))] rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800"
+      className="z-40 w-max max-w-[min(28rem,calc(100vw-1rem))] rounded-md border border-stone-200 bg-white shadow-lg dark:border-stone-600 dark:bg-stone-800"
     >
       <div
         role="toolbar"
@@ -62,7 +62,7 @@ export function DocumentEditorTableMenu({
             className={`flex items-center gap-1 rounded-sm px-1.5 py-1 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
               danger
                 ? 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20'
-                : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                : 'text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700'
             }`}
           >
             <Icon className="size-3.5" />

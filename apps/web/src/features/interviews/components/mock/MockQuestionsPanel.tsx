@@ -213,10 +213,10 @@ export function MockQuestionsPanel({
         aria-expanded={expanded}
         aria-controls={panelId}
         onClick={() => setExpanded((open) => !open)}
-        className={`flex min-h-11 w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm font-semibold sm:inline-flex sm:min-h-9 sm:w-auto ${
+        className={`flex min-h-11 w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm font-medium sm:inline-flex sm:min-h-9 sm:w-auto ${
           shownCount > 0
             ? 'border-violet-200 bg-violet-50 text-violet-800 dark:border-violet-800 dark:bg-violet-900/20 dark:text-violet-200'
-            : 'border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-300'
+            : 'border-stone-300 text-stone-600 dark:border-stone-600 dark:text-stone-300'
         }`}
       >
         <span className="flex items-center gap-2">
@@ -231,17 +231,17 @@ export function MockQuestionsPanel({
       </button>
 
       {expanded && (
-        <div id={panelId} className="space-y-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-800/50">
+        <div id={panelId} className="space-y-2 rounded-lg bg-stone-50 p-3 dark:bg-stone-800/50">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <h3 className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+              <h3 className="text-xs font-medium text-stone-500 dark:text-stone-400">
                 {t('interviews.practiceHeading')}
               </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-stone-500 dark:text-stone-400">
                 {t('interviews.practiceHint')}
               </p>
             </div>
-            <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">
+            <span className="shrink-0 text-xs text-stone-500 dark:text-stone-400">
               {t('interviews.questionsUsed', {
                 count: mockQuestionCount,
                 max: MOCK_QUESTION_LIMITS.QUESTIONS_PER_ROUND,
@@ -316,7 +316,7 @@ export function MockQuestionsPanel({
               onCancel={closeForms}
             />
           ) : atLimit ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-stone-500 dark:text-stone-400">
               {t('interviews.practiceLimitReached', {
                 max: MOCK_QUESTION_LIMITS.QUESTIONS_PER_ROUND,
               })}

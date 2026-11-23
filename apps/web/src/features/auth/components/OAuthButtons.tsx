@@ -17,7 +17,7 @@ export function OAuthButtons({ label, returnTo, onSelect }: OAuthButtonsProps) {
       <a
         href={`${API_ORIGIN}/auth/oauth/google/start${returnToQuery}`}
         onClick={() => onSelect?.('google')}
-        className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+        className="flex w-full items-center justify-center gap-2 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-700"
       >
         <OAuthProviderLogo provider="google" />
         {label} {t('common.withGoogle')}
@@ -25,7 +25,7 @@ export function OAuthButtons({ label, returnTo, onSelect }: OAuthButtonsProps) {
       <a
         href={`${API_ORIGIN}/auth/oauth/github/start${returnToQuery}`}
         onClick={() => onSelect?.('github')}
-        className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+        className="flex w-full items-center justify-center gap-2 rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-700"
       >
         <OAuthProviderLogo provider="github" />
         {label} {t('common.withGitHub')}

@@ -60,8 +60,8 @@ export function JdImportPanel({ onFill }: Props) {
 
   const tabClass = (active: boolean) =>
     active
-      ? 'px-3 py-1.5 text-xs font-medium rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-      : 'px-3 py-1.5 text-xs font-medium rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors';
+      ? 'px-3 py-1.5 text-xs font-medium rounded-md bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-100 shadow-sm'
+      : 'px-3 py-1.5 text-xs font-medium rounded-md text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors';
 
   return (
     <div className="overflow-hidden rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30">

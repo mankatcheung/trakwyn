@@ -11,7 +11,7 @@ describe('EmptyState', () => {
   it('defaults to the default size', () => {
     const { container } = render(<EmptyState message="No applications yet." />);
     const el = container.firstChild as HTMLElement;
-    expect(el.className).toContain('text-gray-500');
+    expect(el.className).toContain('text-stone-500');
   });
 
   it('merges className for padding, which is not baked in', () => {
@@ -39,6 +39,6 @@ describe('EmptyState', () => {
     const { container } = render(<EmptyState size="compact" message="No data yet." />);
     const el = container.firstChild as HTMLElement;
     expect(el.className).toContain('text-sm');
-    expect(el.className).toContain('text-gray-400');
+    expect(el.className).toContain('text-stone-400');
   });
 });

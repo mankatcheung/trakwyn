@@ -122,9 +122,9 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]">
       <div className="fixed inset-0 bg-black/50" onClick={() => setIsOpen(false)} />
-      <div className="relative w-full max-w-md overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800">
-        <div className="flex items-center gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-700">
-          <SearchIcon size={18} className="text-gray-400" />
+      <div className="relative w-full max-w-md overflow-hidden rounded-xl border border-stone-200 bg-white shadow-lg dark:border-stone-700 dark:bg-stone-800">
+        <div className="flex items-center gap-3 border-b border-stone-200 px-4 py-3 dark:border-stone-700">
+          <SearchIcon size={18} className="text-stone-400" />
           <input
             ref={inputRef}
             type="text"
@@ -132,15 +132,15 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none dark:text-gray-100"
+            className="flex-1 bg-transparent text-sm text-stone-900 placeholder-stone-400 outline-none dark:text-stone-100"
           />
-          <kbd className="hidden items-center gap-1 rounded-sm bg-gray-100 px-2 py-0.5 text-xs text-gray-500 sm:inline-flex dark:bg-gray-700 dark:text-gray-400">
+          <kbd className="hidden items-center gap-1 rounded-sm bg-stone-100 px-2 py-0.5 text-xs text-stone-500 sm:inline-flex dark:bg-stone-700 dark:text-stone-400">
             ESC
           </kbd>
         </div>
         <ul className="max-h-64 overflow-auto py-2">
           {filtered.length === 0 && (
-            <li className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+            <li className="px-4 py-3 text-sm text-stone-500 dark:text-stone-400">
               {t('commands.noResults')}
             </li>
           )}
@@ -149,8 +149,8 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
               key={cmd.id}
               className={`flex cursor-pointer items-center gap-3 px-4 py-2.5 text-sm ${
                 i === selectedIndex
-                  ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
-                  : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50'
+                  ? 'bg-blue-50 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                  : 'text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700/50'
               }`}
               onClick={() => {
                 cmd.action();
@@ -158,10 +158,10 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
               }}
               onMouseEnter={() => setSelectedIndex(i)}
             >
-              <span className="text-gray-400">{cmd.icon}</span>
+              <span className="text-stone-400">{cmd.icon}</span>
               <span className="flex-1">{cmd.label}</span>
               {cmd.shortcut && (
-                <kbd className="rounded-sm bg-gray-100 px-1.5 py-0.5 text-xs text-gray-400 dark:bg-gray-700">
+                <kbd className="rounded-sm bg-stone-100 px-1.5 py-0.5 text-xs text-stone-400 dark:bg-stone-700">
                   {cmd.shortcut}
                 </kbd>
               )}

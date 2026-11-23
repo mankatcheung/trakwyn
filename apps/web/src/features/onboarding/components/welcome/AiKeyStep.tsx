@@ -36,7 +36,7 @@ export function AiKeyStep() {
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/40">
+    <div className="rounded-lg border border-stone-200 bg-stone-50 p-4 dark:border-stone-700 dark:bg-stone-900/40">
       <AddLlmApiKeyForm providerOptions={LLM_PROVIDER_OPTIONS} />
     </div>
   );

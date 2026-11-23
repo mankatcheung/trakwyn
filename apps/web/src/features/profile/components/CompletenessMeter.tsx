@@ -39,13 +39,13 @@ export function CompletenessMeter({ completeness }: CompletenessMeterProps) {
 
   return (
     <div className="space-y-2">
-      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{label}</p>
+      <p className="text-sm font-medium text-stone-900 dark:text-stone-100">{label}</p>
       <ProgressBar value={percent} max={100} aria-label={label} />
       {nextStep ? (
         <Link
           to="/profile"
           hash={CHECK_SECTION[nextStep]}
-          className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+          className="inline-flex items-center gap-1 text-sm font-medium text-blue-800 hover:underline dark:text-blue-400"
         >
           {t(CHECK_LABEL_KEY[nextStep], { min: MIN_SKILLS_FOR_COMPLETE_PROFILE })}
           <ArrowRightIcon size={14} />

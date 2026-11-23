@@ -68,9 +68,9 @@ export function McpAuthorizePage() {
   const loginReturnTo = `/oauth/authorize?${new URLSearchParams(search).toString()}`;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-900">
-      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-sm dark:bg-gray-800">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+    <main className="flex min-h-screen items-center justify-center bg-stone-50 px-4 dark:bg-stone-900">
+      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-sm dark:bg-stone-800">
+        <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
           {t('mcp.authorizeTitle')}
         </h1>
         {shownError ? (
@@ -80,7 +80,7 @@ export function McpAuthorizePage() {
               <Link
                 to="/login"
                 search={{ returnTo: loginReturnTo }}
-                className="text-sm text-blue-600 underline"
+                className="text-sm text-blue-800 dark:text-blue-400 underline"
               >
                 {t('auth.signIn', { defaultValue: 'Sign in' })}
               </Link>
@@ -88,10 +88,10 @@ export function McpAuthorizePage() {
           </div>
         ) : clientName ? (
           <div className="mt-5 space-y-5">
-            <p className="text-sm text-gray-600 dark:text-gray-300">
+            <p className="text-sm text-stone-600 dark:text-stone-300">
               <strong>{clientName}</strong> {t('mcp.authorizationRequest')}
             </p>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
+            <p className="text-sm text-stone-600 dark:text-stone-300">
               {t('mcp.requestedScope')} <strong>{search.scope}</strong>
             </p>
             <form action={submit} className="flex gap-3">
@@ -104,7 +104,7 @@ export function McpAuthorizePage() {
             </form>
           </div>
         ) : (
-          <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-4 text-sm text-stone-500 dark:text-stone-400">
             {t('common.loading', { defaultValue: 'Loading authorization request...' })}
           </p>
         )}

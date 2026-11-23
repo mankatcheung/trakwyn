@@ -182,10 +182,10 @@ export function InterviewQuestionsPanel({
         aria-expanded={expanded}
         aria-controls={panelId}
         onClick={() => setExpanded((open) => !open)}
-        className={`flex min-h-11 w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm font-semibold sm:inline-flex sm:min-h-9 sm:w-auto ${
+        className={`flex min-h-11 w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm font-medium sm:inline-flex sm:min-h-9 sm:w-auto ${
           shownCount > 0
             ? 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300'
-            : 'border-gray-300 text-gray-600 dark:border-gray-600 dark:text-gray-300'
+            : 'border-stone-300 text-stone-600 dark:border-stone-600 dark:text-stone-300'
         }`}
       >
         <span className="flex items-center gap-2">
@@ -200,12 +200,12 @@ export function InterviewQuestionsPanel({
       </button>
 
       {expanded && (
-        <div id={panelId} className="space-y-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-800/50">
+        <div id={panelId} className="space-y-2 rounded-lg bg-stone-50 p-3 dark:bg-stone-800/50">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+            <h3 className="text-xs font-medium text-stone-500 dark:text-stone-400">
               {t('interviews.questionsHeading')}
             </h3>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="text-xs text-stone-500 dark:text-stone-400">
               {t('interviews.questionsUsed', {
                 count: questionCount,
                 max: INTERVIEW_QUESTION_LIMITS.QUESTIONS_PER_ROUND,
@@ -235,23 +235,23 @@ export function InterviewQuestionsPanel({
             ) : (
               <article
                 key={q.id}
-                className="flex flex-col gap-2 rounded-lg border border-gray-200 bg-white p-3 sm:flex-row dark:border-gray-700 dark:bg-gray-800"
+                className="flex flex-col gap-2 rounded-lg border border-stone-200 bg-white p-3 sm:flex-row dark:border-stone-700 dark:bg-stone-800"
               >
                 <div className="min-w-0 flex-1 space-y-1">
-                  <p className="text-sm font-semibold wrap-break-word text-gray-900 dark:text-gray-100">
+                  <p className="text-sm font-medium wrap-break-word text-stone-900 dark:text-stone-100">
                     {q.question}
                   </p>
                   {q.answer ? (
-                    <p className="text-sm wrap-break-word whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+                    <p className="text-sm wrap-break-word whitespace-pre-wrap text-stone-700 dark:text-stone-300">
                       {q.answer}
                     </p>
                   ) : (
-                    <p className="text-sm text-gray-500 italic">
+                    <p className="text-sm text-stone-500 italic">
                       {t('interviews.noResponseYet')}{' '}
                       <button
                         type="button"
                         onClick={() => startEditing(q.id)}
-                        className="font-semibold text-blue-700 not-italic hover:underline dark:text-blue-400"
+                        className="font-medium text-blue-700 not-italic hover:underline dark:text-blue-400"
                       >
                         {t('interviews.addResponse')}
                       </button>
@@ -259,7 +259,7 @@ export function InterviewQuestionsPanel({
                   )}
                 </div>
                 {/* Below sm the actions sit under the text as 44px targets; from sm up they tuck in beside it. */}
-                <div className="flex shrink-0 items-center justify-end gap-1 border-t border-gray-100 pt-2 sm:items-start sm:gap-0.5 sm:border-t-0 sm:pt-0 dark:border-gray-700">
+                <div className="flex shrink-0 items-center justify-end gap-1 border-t border-stone-100 pt-2 sm:items-start sm:gap-0.5 sm:border-t-0 sm:pt-0 dark:border-stone-700">
                   <IconButton
                     className={ENTRY_ACTION_CLASS}
                     label={t('interviews.moveQuestionUp')}
@@ -308,7 +308,7 @@ export function InterviewQuestionsPanel({
               onCancel={() => setAdding(false)}
             />
           ) : atLimit ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-stone-500 dark:text-stone-400">
               {t('interviews.questionLimitReached', {
                 max: INTERVIEW_QUESTION_LIMITS.QUESTIONS_PER_ROUND,
               })}

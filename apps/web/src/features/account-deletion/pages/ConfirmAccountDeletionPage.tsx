@@ -50,10 +50,10 @@ export function ConfirmAccountDeletionPage() {
             date: formatDate(new Date(scheduledFor), DELETION_DATE_FORMAT),
           })}
         </Alert>
-        <p className="text-sm text-gray-600 dark:text-gray-300">
+        <p className="text-sm text-stone-600 dark:text-stone-300">
           {t('accountDeletion.scheduledCancelHint')}
         </p>
-        <Link to="/" className="text-sm text-blue-600 hover:underline">
+        <Link to="/" className="text-sm text-blue-800 dark:text-blue-400 hover:underline">
           {t('accountDeletion.backHome')}
         </Link>
       </AccountDeletionLayout>
@@ -62,12 +62,14 @@ export function ConfirmAccountDeletionPage() {
 
   return (
     <AccountDeletionLayout title={t('accountDeletion.confirmTitle')}>
-      <p className="text-sm text-gray-600 dark:text-gray-300">{t('accountDeletion.confirmBody')}</p>
+      <p className="text-sm text-stone-600 dark:text-stone-300">
+        {t('accountDeletion.confirmBody')}
+      </p>
       {error && <Alert>{error}</Alert>}
       <Button variant="destructive" fullWidth onClick={confirm} disabled={busy || !token}>
         {busy ? t('accountDeletion.confirming') : t('accountDeletion.confirmButton')}
       </Button>
-      <Link to="/" className="text-sm text-blue-600 hover:underline">
+      <Link to="/" className="text-sm text-blue-800 dark:text-blue-400 hover:underline">
         {t('accountDeletion.keepAccount')}
       </Link>
     </AccountDeletionLayout>

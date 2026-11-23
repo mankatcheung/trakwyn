@@ -73,9 +73,9 @@ describe('BottomNavItem', () => {
 
   it('colours the active item blue and the others grey', () => {
     const { rerender } = render(<BottomNavItem to="/j" icon={null} label="J" active />);
-    expect(screen.getByRole('link')).toHaveClass('text-blue-600');
+    expect(screen.getByRole('link')).toHaveClass('text-blue-800');
     rerender(<BottomNavItem to="/j" icon={null} label="J" active={false} />);
-    expect(screen.getByRole('link')).toHaveClass('text-gray-500');
+    expect(screen.getByRole('link')).toHaveClass('text-stone-500');
   });
 });
 

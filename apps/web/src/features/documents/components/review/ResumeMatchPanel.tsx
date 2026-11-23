@@ -36,7 +36,7 @@ function ScoreRing({ match }: { match: ResumeMatch }) {
         r={RADIUS}
         fill="none"
         strokeWidth="5"
-        className="text-gray-200 dark:text-gray-700"
+        className="text-stone-200 dark:text-stone-700"
         stroke="currentColor"
       />
       <circle
@@ -79,7 +79,7 @@ function KeywordList({
   if (keywords.length === 0) return null;
   return (
     <div>
-      <h4 className="mb-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">{title}</h4>
+      <h4 className="mb-1.5 text-xs font-medium text-stone-500 dark:text-stone-400">{title}</h4>
       <div className="flex flex-wrap gap-1.5">
         {keywords.map((kw) => (
           <span key={kw} className={`rounded-full px-2 py-0.5 text-xs ${chipClass}`}>
@@ -191,7 +191,7 @@ function MatchChip({
       <ComputeButton
         compute={compute}
         label={t('resumeMatch.generate')}
-        className={`${CHIP_CLASS} border-gray-300 bg-white text-blue-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-gray-700`}
+        className={`${CHIP_CLASS} border-stone-300 bg-white text-blue-700 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-blue-400 dark:hover:bg-stone-700`}
       />
     );
   }
@@ -220,14 +220,14 @@ function MatchDetails({ match, compute }: { match: ResumeMatch | undefined; comp
       {match && color && (
         <>
           <div
-            className={`flex flex-wrap items-center gap-3 rounded-xl border border-gray-100 p-3 dark:border-gray-700 ${color.bg}`}
+            className={`flex flex-wrap items-center gap-3 rounded-xl border border-stone-100 p-3 dark:border-stone-700 ${color.bg}`}
           >
             <ScoreRing match={match} />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+              <p className="text-sm font-medium text-stone-800 dark:text-stone-100">
                 {match.label}
               </p>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
                 {t('resumeMatch.generatedOn', {
                   date: formatDate(new Date(match.generatedAt), {
                     dateStyle: 'medium',
@@ -239,7 +239,7 @@ function MatchDetails({ match, compute }: { match: ResumeMatch | undefined; comp
             <ComputeButton
               compute={compute}
               label={t('resumeMatch.regenerate')}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700"
+              className="flex items-center gap-1.5 rounded-lg bg-blue-800 dark:bg-blue-700 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-600"
             />
           </div>
 
@@ -254,7 +254,7 @@ function MatchDetails({ match, compute }: { match: ResumeMatch | undefined; comp
           )}
 
           {match.summary && (
-            <p className="text-sm text-gray-700 dark:text-gray-300">{match.summary}</p>
+            <p className="text-sm text-stone-700 dark:text-stone-300">{match.summary}</p>
           )}
           <KeywordList
             title={t('resumeMatch.matchedKeywords')}

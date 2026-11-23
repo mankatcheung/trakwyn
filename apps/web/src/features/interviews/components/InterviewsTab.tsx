@@ -25,7 +25,7 @@ import { MockQuestionsPanel } from './mock/MockQuestionsPanel';
 import { RoundForm } from './RoundForm';
 
 const OUTCOME_STYLES: Record<string, string> = {
-  pending: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+  pending: 'bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300',
   passed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
   failed: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
   cancelled: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
@@ -181,7 +181,7 @@ export function InterviewsTab({
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-900 capitalize dark:text-gray-100">
+                    <span className="text-sm font-medium text-stone-900 capitalize dark:text-stone-100">
                       {t(`interviews.${round.type}`, { defaultValue: round.type })}
                     </span>
                     <span
@@ -191,18 +191,18 @@ export function InterviewsTab({
                     </span>
                   </div>
                   {round.interviewerName && (
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-stone-500">
                       {t('interviews.withInterviewer', { name: round.interviewerName })}
                     </p>
                   )}
                   {round.scheduledAt && (
-                    <p className="flex items-center gap-1 text-xs text-gray-400">
+                    <p className="flex items-center gap-1 text-xs text-stone-400">
                       <CheckIcon size={11} />
                       {new Date(round.scheduledAt).toLocaleString()}
                     </p>
                   )}
                   {round.notes && (
-                    <p className="mt-2 text-sm whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+                    <p className="mt-2 text-sm whitespace-pre-wrap text-stone-700 dark:text-stone-300">
                       {round.notes}
                     </p>
                   )}
@@ -210,7 +210,7 @@ export function InterviewsTab({
                 <div className="flex shrink-0 gap-1">
                   <button
                     onClick={() => setEditingRound(round)}
-                    className="rounded-sm p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                    className="rounded-sm p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700 dark:hover:bg-stone-700 dark:hover:text-stone-200"
                   >
                     <EditIcon size={14} />
                   </button>
@@ -229,7 +229,7 @@ export function InterviewsTab({
                         onSettled: invalidate,
                       });
                     }}
-                    className="rounded-sm p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                    className="rounded-sm p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
                   >
                     <Trash2Icon size={14} />
                   </button>
@@ -249,7 +249,7 @@ export function InterviewsTab({
                   />
                 </>
               )}
-              <p className="mt-2 text-xs text-gray-400">
+              <p className="mt-2 text-xs text-stone-400">
                 {new Date(round.createdAt).toLocaleString()}
               </p>
             </>

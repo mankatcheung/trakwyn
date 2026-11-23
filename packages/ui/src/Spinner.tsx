@@ -9,7 +9,7 @@ const SIZE_CLASSES: Record<SpinnerSize, string> = {
 };
 
 const TONE_CLASSES: Record<SpinnerTone, string> = {
-  gray: 'border-gray-300 border-t-transparent',
+  gray: 'border-stone-300 border-t-transparent',
   white: 'border-white border-t-transparent',
 };
 

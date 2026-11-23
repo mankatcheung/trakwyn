@@ -76,19 +76,19 @@ export function MockTalkingPoints({
       {bullets.length > 0 && (
         <div className="space-y-1 rounded-lg bg-violet-50/60 p-2 dark:bg-violet-900/10">
           <div className="flex flex-wrap items-center gap-2">
-            <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+            <h4 className="text-xs font-medium text-stone-700 dark:text-stone-300">
               {t('interviews.talkingPoints')}
             </h4>
             <AiGeneratedBadge />
             {question.talkingPointsGeneratedAt && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              <span className="text-xs text-stone-500 dark:text-stone-400">
                 {t('interviews.talkingPointsGeneratedOn', {
                   date: formatDate(question.talkingPointsGeneratedAt),
                 })}
               </span>
             )}
           </div>
-          <ul className="list-disc space-y-1 pl-5 text-sm text-gray-800 dark:text-gray-200">
+          <ul className="list-disc space-y-1 pl-5 text-sm text-stone-800 dark:text-stone-200">
             {bullets.map((bullet) => (
               <li key={bullet} className="wrap-break-word">
                 {bullet}

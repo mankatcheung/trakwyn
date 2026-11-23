@@ -37,11 +37,13 @@ export function SkillsReviewGroup({ drafts, disabled, onChange }: SkillsReviewGr
       labelOf={(v) => v.name}
       isValid={isSkillValid}
       summary={(v) => (
-        <p className="text-sm text-gray-900 dark:text-gray-100">
+        <p className="text-sm text-stone-900 dark:text-stone-100">
           <span className="font-medium">{v.name}</span>
-          {v.category && <span className="text-gray-500 dark:text-gray-400"> · {v.category}</span>}
+          {v.category && (
+            <span className="text-stone-500 dark:text-stone-400"> · {v.category}</span>
+          )}
           {v.proficiency && (
-            <span className="text-gray-500 dark:text-gray-400">
+            <span className="text-stone-500 dark:text-stone-400">
               {' · '}
               {t(`experience.${v.proficiency}`, { defaultValue: v.proficiency })}
             </span>
@@ -116,8 +118,8 @@ export function CertificationsReviewGroup({
       isValid={isCertificationValid}
       summary={(v) => (
         <>
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{v.name}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-sm font-medium text-stone-900 dark:text-stone-100">{v.name}</p>
+          <p className="text-xs text-stone-500 dark:text-stone-400">
             {[v.issuer, v.issuedAt && month(v.issuedAt)].filter(Boolean).join(' · ')}
           </p>
         </>
@@ -190,8 +192,8 @@ export function AwardsReviewGroup({ drafts, disabled, onChange }: AwardsReviewGr
       isValid={isAwardValid}
       summary={(v) => (
         <>
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{v.title}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-sm font-medium text-stone-900 dark:text-stone-100">{v.title}</p>
+          <p className="text-xs text-stone-500 dark:text-stone-400">
             {[v.issuer, v.date && month(v.date)].filter(Boolean).join(' · ')}
           </p>
         </>
@@ -247,10 +249,10 @@ export function LanguagesReviewGroup({ drafts, disabled, onChange }: LanguagesRe
       labelOf={(v) => v.name}
       isValid={isLanguageValid}
       summary={(v) => (
-        <p className="text-sm text-gray-900 dark:text-gray-100">
+        <p className="text-sm text-stone-900 dark:text-stone-100">
           <span className="font-medium">{v.name}</span>
           {v.proficiency && (
-            <span className="text-gray-500 dark:text-gray-400"> · {v.proficiency}</span>
+            <span className="text-stone-500 dark:text-stone-400"> · {v.proficiency}</span>
           )}
         </p>
       )}

@@ -64,7 +64,7 @@ export function QuestionEntryForm({
       <div>
         <FormLabel size="xs" htmlFor={answerId}>
           {answerLabel}{' '}
-          <span className="font-normal text-gray-500">{t('interviews.responseOptional')}</span>
+          <span className="font-normal text-stone-500">{t('interviews.responseOptional')}</span>
         </FormLabel>
         <Textarea
           id={answerId}

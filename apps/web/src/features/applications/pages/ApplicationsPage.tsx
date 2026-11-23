@@ -86,14 +86,14 @@ function ApplicationsPage() {
   return (
     <div className="mx-auto max-w-5xl p-4 pb-24 sm:p-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+        <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
           {t('applications.title')}
         </h1>
         <div className="flex items-center gap-2">
           <Link
             to="/applications/trash"
             aria-label={t('trash.title')}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-500 transition-colors hover:text-gray-800 dark:border-gray-700 dark:hover:text-gray-200"
+            className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-sm text-stone-500 transition-colors hover:text-stone-800 dark:border-stone-700 dark:hover:text-stone-200"
           >
             <TrashIcon size={15} />
             <span className="hidden sm:inline">{t('trash.title')}</span>
@@ -101,7 +101,7 @@ function ApplicationsPage() {
           <Link
             to="/applications/board"
             aria-label={t('applications.switchToBoardView')}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-500 transition-colors hover:text-gray-800 dark:border-gray-700 dark:hover:text-gray-200"
+            className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-sm text-stone-500 transition-colors hover:text-stone-800 dark:border-stone-700 dark:hover:text-stone-200"
           >
             <KanbanIcon size={15} />
             <span className="hidden sm:inline">{t('applications.board')}</span>
@@ -109,7 +109,7 @@ function ApplicationsPage() {
           <Link
             to="/applications/new"
             aria-label={t('applications.newApplicationAria')}
-            className="flex items-center gap-1.5 rounded-lg border border-transparent bg-blue-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            className="flex items-center gap-1.5 rounded-lg border border-transparent bg-blue-800 dark:bg-blue-700 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-600"
           >
             <PlusIcon size={15} />
             <span className="hidden sm:inline">{t('applications.new')}</span>
@@ -122,18 +122,18 @@ function ApplicationsPage() {
       <div className="relative mb-4">
         <SearchIcon
           size={15}
-          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-gray-400"
+          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-stone-400"
         />
         <input
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder={t('applications.searchPlaceholder')}
-          className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pr-8 pl-9 text-sm text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+          className="w-full rounded-xl border border-stone-200 bg-white py-2.5 pr-8 pl-9 text-sm text-stone-900 placeholder-stone-400 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
         />
         {searchInput && (
           <button
             onClick={() => setSearchInput('')}
-            className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute top-1/2 right-3 -translate-y-1/2 text-stone-400 hover:text-stone-600"
           >
             <XIcon size={14} />
           </button>
@@ -163,7 +163,7 @@ function ApplicationsPage() {
           className={`flex items-center justify-center gap-1.5 rounded-full border px-3 py-1.5 text-xs capitalize transition-colors ${
             starred
               ? 'border-yellow-400 bg-yellow-400 text-white'
-              : 'border-gray-200 bg-white text-gray-600 hover:border-yellow-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400'
+              : 'border-stone-200 bg-white text-stone-600 hover:border-yellow-400 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400'
           }`}
         >
           <StarIcon size={14} className={starred ? 'fill-white' : ''} />
@@ -176,7 +176,7 @@ function ApplicationsPage() {
           className={`flex items-center justify-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors ${
             likelyGhosted
               ? 'border-amber-500 bg-amber-500 text-white'
-              : 'border-gray-200 bg-white text-gray-600 hover:border-amber-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400'
+              : 'border-stone-200 bg-white text-stone-600 hover:border-amber-400 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400'
           }`}
         >
           <GhostIcon size={14} />
@@ -211,7 +211,7 @@ function ApplicationsPage() {
         />
       ) : (
         <div className="space-y-2">
-          <label className="flex cursor-pointer items-center gap-2 px-1 text-xs text-gray-500 select-none dark:text-gray-400">
+          <label className="flex cursor-pointer items-center gap-2 px-1 text-xs text-stone-500 select-none dark:text-stone-400">
             <Checkbox
               checked={allSelected}
               onChange={toggleAll}
@@ -234,7 +234,7 @@ function ApplicationsPage() {
 
           <div ref={sentinelRef} className="h-1" />
           {isFetchingNextPage && (
-            <div className="flex justify-center py-4 text-gray-400">
+            <div className="flex justify-center py-4 text-stone-400">
               <Spinner size="md" />
             </div>
           )}

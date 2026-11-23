@@ -142,7 +142,7 @@ export function EducationSection() {
       ) : (
         educations.length === 0 &&
         !formOpen && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             {t('experience.noEducationYet')}
           </p>
         )
@@ -151,17 +151,17 @@ export function EducationSection() {
       {educations.map((edu) => (
         <div key={edu.id} className={ENTRY_CLASS}>
           <div className="min-w-0">
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
               {edu.institution}
               {edu.degree && ` — ${edu.degree}`}
               {edu.field && ` ${t('experience.inField', { field: edu.field })}`}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-stone-500 dark:text-stone-400">
               {edu.startDate.slice(0, 10)} –{' '}
               {edu.endDate ? edu.endDate.slice(0, 10) : t('experience.present')}
             </p>
             {edu.description && (
-              <p className="mt-1 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">
+              <p className="mt-1 line-clamp-2 text-xs text-stone-500 dark:text-stone-400">
                 {edu.description}
               </p>
             )}

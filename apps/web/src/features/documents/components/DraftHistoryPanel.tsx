@@ -131,10 +131,10 @@ export function DraftHistoryPanel({
   return (
     <section
       aria-label={t('draftHistory.title')}
-      className="rounded-lg border border-gray-200 p-4 dark:border-gray-700"
+      className="rounded-lg border border-stone-200 p-4 dark:border-stone-700"
     >
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+        <h2 className="text-sm font-medium text-stone-900 dark:text-stone-100">
           {t('draftHistory.title')}
         </h2>
         <Button size="sm" variant="secondary" disabled={busy} onClick={() => save.mutate()}>
@@ -150,7 +150,7 @@ export function DraftHistoryPanel({
 
       {versions.isError && <Alert role="alert">{t('draftHistory.loadFailed')}</Alert>}
       {versions.data?.length === 0 && (
-        <p className="text-sm text-gray-500 dark:text-gray-400">{t('draftHistory.empty')}</p>
+        <p className="text-sm text-stone-500 dark:text-stone-400">{t('draftHistory.empty')}</p>
       )}
 
       <ul className="space-y-1">
@@ -160,14 +160,14 @@ export function DraftHistoryPanel({
               type="button"
               aria-pressed={selectedId === version.id}
               onClick={() => setSelectedId(version.id === selectedId ? null : version.id)}
-              className={`flex w-full flex-col rounded-sm px-2 py-1.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-800 ${
+              className={`flex w-full flex-col rounded-sm px-2 py-1.5 text-left text-sm hover:bg-stone-100 dark:hover:bg-stone-800 ${
                 selectedId === version.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
               }`}
             >
-              <span className="font-medium text-gray-800 dark:text-gray-200">
+              <span className="font-medium text-stone-800 dark:text-stone-200">
                 {t(SOURCE_KEYS[version.source])}
               </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              <span className="text-xs text-stone-500 dark:text-stone-400">
                 {when(version.createdAt)} ·{' '}
                 {t('draftHistory.characters', {
                   count: version.characterCount,
@@ -180,8 +180,8 @@ export function DraftHistoryPanel({
       </ul>
 
       {selectedId && (
-        <div className="mt-3 border-t border-gray-200 pt-3 dark:border-gray-700">
-          <h3 className="mb-1 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+        <div className="mt-3 border-t border-stone-200 pt-3 dark:border-stone-700">
+          <h3 className="mb-1 text-xs font-medium text-stone-500 dark:text-stone-400">
             {t('draftHistory.preview')}
           </h3>
           {preview.isError && <Alert role="alert">{t('draftHistory.loadFailed')}</Alert>}
@@ -189,7 +189,7 @@ export function DraftHistoryPanel({
             <>
               <pre
                 tabIndex={0}
-                className="max-h-64 overflow-auto rounded-sm bg-gray-50 p-2 text-xs whitespace-pre-wrap text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                className="max-h-64 overflow-auto rounded-sm bg-stone-50 p-2 text-xs whitespace-pre-wrap text-stone-800 dark:bg-stone-800 dark:text-stone-200"
               >
                 {preview.data.plainText}
               </pre>

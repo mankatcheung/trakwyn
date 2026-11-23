@@ -17,7 +17,10 @@ export const Default: Story = {
       icon={<BriefcaseIcon size={40} />}
       message="No applications yet."
       action={
-        <a href="#" className="mt-2 inline-block text-blue-600 hover:underline text-sm">
+        <a
+          href="#"
+          className="mt-2 inline-block text-blue-800 dark:text-blue-400 hover:underline text-sm"
+        >
           Add your first one →
         </a>
       }

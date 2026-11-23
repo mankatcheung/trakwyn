@@ -134,7 +134,7 @@ export function AddLlmApiKeyForm({ providerOptions, onSaved }: AddLlmApiKeyFormP
             href={dataUseUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1 inline-block text-xs text-gray-500 underline"
+            className="mt-1 inline-block text-xs text-stone-500 underline"
           >
             {t('integrations.dataUseLink', {
               provider: LLM_PROVIDER_LABEL[provider] ?? provider,
@@ -142,7 +142,7 @@ export function AddLlmApiKeyForm({ providerOptions, onSaved }: AddLlmApiKeyFormP
           </a>
         ) : (
           isCustomProvider && (
-            <p className="mt-1 text-xs text-gray-500">{t('integrations.customDataUseHint')}</p>
+            <p className="mt-1 text-xs text-stone-500">{t('integrations.customDataUseHint')}</p>
           )
         )}
       </div>
@@ -185,7 +185,7 @@ export function AddLlmApiKeyForm({ providerOptions, onSaved }: AddLlmApiKeyFormP
         <div>
           <FormLabel>
             {t('integrations.modelLabel')}{' '}
-            <span className="font-normal text-gray-400">
+            <span className="font-normal text-stone-400">
               ({t('integrations.modelOptionalNote')})
             </span>
           </FormLabel>

@@ -103,10 +103,10 @@ export function OnboardingChecklist({ data, hasApplications }: OnboardingCheckli
     <Card className="mb-10 p-5">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="text-lg font-medium text-stone-900 dark:text-stone-100">
             {t('onboardingChecklist.title')}
           </h2>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+          <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">
             {t('onboardingChecklist.description')}
           </p>
         </div>
@@ -124,18 +124,18 @@ export function OnboardingChecklist({ data, hasApplications }: OnboardingCheckli
           <li key={item.key}>
             <Link
               to={item.to}
-              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-stone-50 dark:hover:bg-stone-700/50"
             >
               {item.done ? (
                 <CheckCircle2Icon size={16} className="shrink-0 text-green-600" />
               ) : (
-                <CircleIcon size={16} className="shrink-0 text-gray-400" />
+                <CircleIcon size={16} className="shrink-0 text-stone-400" />
               )}
               <span
                 className={
                   item.done
-                    ? 'text-gray-500 line-through dark:text-gray-400'
-                    : 'text-gray-900 dark:text-gray-100'
+                    ? 'text-stone-500 line-through dark:text-stone-400'
+                    : 'text-stone-900 dark:text-stone-100'
                 }
               >
                 {item.label}

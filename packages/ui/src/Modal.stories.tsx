@@ -14,7 +14,7 @@ export const Default: Story = {
   render: () => (
     <Modal open onClose={() => {}} title="Delete application?">
       <div className="p-4 space-y-4">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-stone-600 dark:text-stone-400">
           This will permanently remove the application and its notes. This can&apos;t be undone.
         </p>
         <div className="flex justify-end gap-2">
@@ -34,8 +34,8 @@ export const NoTitle: Story = {
   render: () => (
     <Modal open onClose={() => {}}>
       <div className="p-6 text-center space-y-2">
-        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Link copied</p>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm font-medium text-stone-900 dark:text-stone-100">Link copied</p>
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           Share it with anyone to view this application.
         </p>
       </div>

@@ -81,7 +81,7 @@ describe('DocumentDraftEditor', () => {
     expect(page.style.getPropertyValue('--doc-padding')).toBe('40pt');
     // The page is white in dark mode too; only the surround follows the theme.
     expect(page.className).not.toContain('dark:');
-    expect(screen.getByTestId('document-page-surround').className).toContain('dark:bg-gray-900');
+    expect(screen.getByTestId('document-page-surround').className).toContain('dark:bg-stone-900');
   });
 
   it('asks for spellcheck and sets the document language on the editing area (JEF-579)', () => {

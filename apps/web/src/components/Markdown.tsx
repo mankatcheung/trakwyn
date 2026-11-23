@@ -32,20 +32,20 @@ const components: Components = {
         >
           {children}
         </a>
-        {host && <span className="text-gray-500 dark:text-gray-400"> ({host})</span>}
+        {host && <span className="text-stone-500 dark:text-stone-400"> ({host})</span>}
       </>
     );
   },
   // Never an <img>: the browser would fetch it unasked, and a prompt-injected
   // reply can put the user's data in its URL (JEF-464). Only the alt text shows.
   img: ({ alt }) =>
-    alt ? <span className="text-gray-500 dark:text-gray-400">[{alt}]</span> : null,
-  strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-  h1: ({ children }) => <h1 className="mb-2 text-base font-semibold last:mb-0">{children}</h1>,
-  h2: ({ children }) => <h2 className="mb-2 text-base font-semibold last:mb-0">{children}</h2>,
-  h3: ({ children }) => <h3 className="mb-2 text-sm font-semibold last:mb-0">{children}</h3>,
+    alt ? <span className="text-stone-500 dark:text-stone-400">[{alt}]</span> : null,
+  strong: ({ children }) => <strong className="font-medium">{children}</strong>,
+  h1: ({ children }) => <h1 className="mb-2 text-base font-medium last:mb-0">{children}</h1>,
+  h2: ({ children }) => <h2 className="mb-2 text-base font-medium last:mb-0">{children}</h2>,
+  h3: ({ children }) => <h3 className="mb-2 text-sm font-medium last:mb-0">{children}</h3>,
   blockquote: ({ children }) => (
-    <blockquote className="mb-2 border-l-2 border-gray-300 pl-3 text-gray-600 last:mb-0 dark:border-gray-600 dark:text-gray-400">
+    <blockquote className="mb-2 border-l-2 border-stone-300 pl-3 text-stone-600 last:mb-0 dark:border-stone-600 dark:text-stone-400">
       {children}
     </blockquote>
   ),

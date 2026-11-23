@@ -16,7 +16,7 @@ export const Default: Story = {
 
 export const InlineWithLabel: Story = {
   render: () => (
-    <div className="flex items-center gap-2 text-sm text-gray-400">
+    <div className="flex items-center gap-2 text-sm text-stone-400">
       <Spinner />
       Generating…
     </div>
@@ -34,7 +34,7 @@ export const InsideAButton: Story = {
 
 export const StandaloneMd: Story = {
   render: () => (
-    <div className="flex justify-center py-4 text-gray-400">
+    <div className="flex justify-center py-4 text-stone-400">
       <Spinner size="md" />
     </div>
   ),

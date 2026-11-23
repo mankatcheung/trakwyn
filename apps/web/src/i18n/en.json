@@ -892,7 +892,7 @@
   "jdImport.pastePlaceholder": "Paste the job description here…",
   "jdImport.parseFailed": "Failed to parse job description",
   "jdImport.parsing": "Parsing…",
-  "jdImport.filled": "Filled!",
+  "jdImport.filled": "Filled",
   "jdImport.autoFillFields": "Auto-fill fields",
   "jdImport.prefilledNote": "Fields will be pre-filled — you can review and edit before saving.",
   "resetPassword.title": "Reset your password",

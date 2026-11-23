@@ -143,7 +143,7 @@ export function ProjectsSection() {
       ) : (
         projects.length === 0 &&
         !formOpen && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             {t('experience.noProjectsYet')}
           </p>
         )
@@ -154,15 +154,15 @@ export function ProjectsSection() {
           {projects.map((project) => (
             <li
               key={project.id}
-              className="flex items-start justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+              className="flex items-start justify-between gap-3 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm dark:border-stone-700 dark:bg-stone-800"
             >
               <div>
-                <p className="font-medium text-gray-900 dark:text-gray-100">{project.name}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="font-medium text-stone-900 dark:text-stone-100">{project.name}</p>
+                <p className="text-xs text-stone-500 dark:text-stone-400">
                   {[project.role, project.startDate?.slice(0, 7)].filter(Boolean).join(' · ')}
                 </p>
                 {project.description && (
-                  <p className="mt-1 whitespace-pre-line text-gray-700 dark:text-gray-300">
+                  <p className="mt-1 whitespace-pre-line text-stone-700 dark:text-stone-300">
                     {project.description}
                   </p>
                 )}

@@ -3,8 +3,8 @@ import type { LabelHTMLAttributes } from 'react';
 export type FormLabelSize = 'sm' | 'xs';
 
 const SIZE_CLASSES: Record<FormLabelSize, string> = {
-  sm: 'text-sm font-medium text-gray-700 dark:text-gray-300',
-  xs: 'text-xs font-medium text-gray-500',
+  sm: 'text-sm font-medium text-stone-700 dark:text-stone-300',
+  xs: 'text-xs font-medium text-stone-500',
 };
 
 export interface FormLabelProps extends LabelHTMLAttributes<HTMLLabelElement> {

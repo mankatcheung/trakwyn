@@ -165,7 +165,7 @@ describe('JdImportPanel', () => {
     });
   });
 
-  it('shows "Filled!" after successful auto-fill', async () => {
+  it('shows "Filled" after successful auto-fill', async () => {
     mockGqlRequest.mockResolvedValue({
       parseJobDescription: {
         company: null,
@@ -184,7 +184,7 @@ describe('JdImportPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: /auto-fill fields/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('Filled!')).toBeInTheDocument();
+      expect(screen.getByText('Filled')).toBeInTheDocument();
     });
   });
 

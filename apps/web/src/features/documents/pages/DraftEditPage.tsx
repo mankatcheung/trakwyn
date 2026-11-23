@@ -59,7 +59,7 @@ export function DraftEditPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="text-sm text-gray-500 dark:text-gray-400">
+        <div className="text-sm text-stone-500 dark:text-stone-400">
           {t('documentDraftEdit.loadingDraft')}
         </div>
       </div>
@@ -87,14 +87,18 @@ export function DraftEditPage() {
           />
           <div className="min-w-0">
             <DraftTitleField title={draft.title} placeholder={typeLabel} onCommit={renameTitle} />
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-stone-500 dark:text-stone-400">
               {typeLabel}
               {lastSaved && (
                 <span className="ml-2">
                   · {t('documentDraftEdit.savedAt', { time: lastSaved.toLocaleTimeString() })}
                 </span>
               )}
-              {saving && <span className="ml-2 text-blue-600">{t('applicationForm.saving')}</span>}
+              {saving && (
+                <span className="ml-2 text-blue-800 dark:text-blue-400">
+                  {t('applicationForm.saving')}
+                </span>
+              )}
             </p>
           </div>
         </div>

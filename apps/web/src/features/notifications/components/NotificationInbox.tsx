@@ -48,7 +48,7 @@ export const NOTIFICATION_ICON: Record<NotificationType, React.ReactNode> = {
  */
 export function NotificationRowSkeleton() {
   return (
-    <div className="flex items-start gap-2 border-b border-gray-100 px-4 py-3 last:border-0 dark:border-gray-700">
+    <div className="flex items-start gap-2 border-b border-stone-100 px-4 py-3 last:border-0 dark:border-stone-700">
       <Skeleton className="mt-0.5 size-4 shrink-0 rounded-full" />
       <div className="min-w-0 flex-1 space-y-1.5">
         <Skeleton className="h-3.5 w-3/4 rounded-sm" />
@@ -87,7 +87,7 @@ function BellIconWithBadge({ unreadCount }: { unreadCount: number }) {
       <BellIcon size={18} />
       {unreadCount > 0 && (
         <span className="absolute top-1 right-1 flex size-2">
-          <span className="absolute inline-flex size-full animate-ping rounded-full bg-red-400 opacity-75" />
+          <span className="absolute inline-flex size-full rounded-full bg-red-400 opacity-75" />
           <span className="relative inline-flex size-2 rounded-full bg-red-500" />
         </span>
       )}
@@ -112,7 +112,7 @@ export function NotificationInboxLink({ className = '' }: { className?: string }
           ? t('notificationInbox.notificationsUnreadAria', { count: unreadCount })
           : t('notificationInbox.title')
       }
-      className={`relative inline-flex items-center justify-center rounded-lg p-1.5 text-gray-400 transition-colors hover:text-gray-700 dark:hover:text-gray-200 ${className}`}
+      className={`relative inline-flex items-center justify-center rounded-lg p-1.5 text-stone-400 transition-colors hover:text-stone-700 dark:hover:text-stone-200 ${className}`}
     >
       <BellIconWithBadge unreadCount={unreadCount} />
     </Link>

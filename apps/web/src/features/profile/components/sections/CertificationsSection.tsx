@@ -139,7 +139,7 @@ export function CertificationsSection() {
       ) : (
         certifications.length === 0 &&
         !formOpen && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             {t('experience.noCertificationsYet')}
           </p>
         )
@@ -150,11 +150,11 @@ export function CertificationsSection() {
           {certifications.map((cert) => (
             <li
               key={cert.id}
-              className="group flex items-start justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+              className="group flex items-start justify-between gap-3 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm dark:border-stone-700 dark:bg-stone-800"
             >
               <div>
-                <p className="font-medium text-gray-900 dark:text-gray-100">{cert.name}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="font-medium text-stone-900 dark:text-stone-100">{cert.name}</p>
+                <p className="text-xs text-stone-500 dark:text-stone-400">
                   {[cert.issuer, cert.issuedAt?.slice(0, 7)].filter(Boolean).join(' · ')}
                 </p>
               </div>

@@ -41,13 +41,13 @@ function ConversationList({ conversations }: { conversations: Conversation[] }) 
           <Link
             to="/assistant"
             search={{ conversation: c.id }}
-            className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white py-3 pr-12 pl-4 transition-colors hover:border-blue-300 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-700"
+            className="flex items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white py-3 pr-12 pl-4 transition-colors hover:border-blue-300 dark:border-stone-700 dark:bg-stone-800 dark:hover:border-blue-700"
           >
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+              <p className="truncate text-sm font-medium text-stone-900 dark:text-stone-100">
                 {c.title ?? t('assistant.newConversation')}
               </p>
-              <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+              <p className="mt-0.5 text-xs text-stone-400 dark:text-stone-500">
                 {timeAgo(c.updatedAt, t)}
                 {label(runsOnFor(c)) ? ` · ${label(runsOnFor(c))}` : ''}
               </p>
@@ -59,7 +59,7 @@ function ConversationList({ conversations }: { conversations: Conversation[] }) 
             aria-label={t('conversationHistory.deleteAria', {
               title: c.title ?? t('assistant.newConversation'),
             })}
-            className="absolute top-1/2 right-3 -translate-y-1/2 p-1.5 text-gray-400 transition-colors hover:text-red-600 dark:hover:text-red-400"
+            className="absolute top-1/2 right-3 -translate-y-1/2 p-1.5 text-stone-400 transition-colors hover:text-red-600 dark:hover:text-red-400"
           >
             <Trash2Icon size={14} />
           </button>
@@ -94,18 +94,18 @@ export function ConversationHistoryPage() {
           <Link
             to="/assistant"
             aria-label={t('conversationHistory.backAria')}
-            className="-ml-2 rounded-lg p-2 text-gray-400 transition-colors hover:text-gray-900 dark:hover:text-gray-100"
+            className="-ml-2 rounded-lg p-2 text-stone-400 transition-colors hover:text-stone-900 dark:hover:text-stone-100"
           >
             <ArrowLeftIcon size={18} />
           </Link>
-          <h1 className="min-w-0 truncate text-xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="min-w-0 truncate text-xl font-medium text-stone-900 dark:text-stone-100">
             {t('assistant.conversationHistory')}
           </h1>
         </div>
         <Link
           to="/assistant"
           aria-label={t('assistant.newConversation')}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-blue-800 transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
         >
           <PlusIcon size={14} />
           <span className="hidden sm:inline">{t('assistant.newConversation')}</span>
@@ -116,7 +116,7 @@ export function ConversationHistoryPage() {
         <SearchIcon
           size={16}
           aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-gray-400"
+          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-stone-400"
         />
         <input
           type="search"
@@ -124,7 +124,7 @@ export function ConversationHistoryPage() {
           onChange={(event) => setSearchInput(event.target.value)}
           placeholder={t('conversationHistory.searchPlaceholder')}
           aria-label={t('conversationHistory.searchPlaceholder')}
-          className="w-full rounded-lg border border-gray-300 bg-white py-2 pr-3 pl-9 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+          className="w-full rounded-lg border border-stone-300 bg-white py-2 pr-3 pl-9 text-sm text-stone-900 placeholder:text-stone-400 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:placeholder:text-stone-500"
         />
       </div>
 
@@ -147,7 +147,7 @@ export function ConversationHistoryPage() {
             icon={<MessageCircleIcon size={28} />}
             message={<span className="text-sm">{t('conversationHistory.noConversationsYet')}</span>}
             action={
-              <Link to="/assistant" className="text-sm text-blue-600 underline dark:text-blue-400">
+              <Link to="/assistant" className="text-sm text-blue-800 underline dark:text-blue-400">
                 {t('conversationHistory.startOne')}
               </Link>
             }

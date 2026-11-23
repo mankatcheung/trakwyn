@@ -137,10 +137,10 @@ function StepUpReauthDialog({
     <Modal open onClose={onCancel} size="sm">
       <div className="space-y-4 p-6">
         <div>
-          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+          <h3 className="text-base font-medium text-stone-900 dark:text-stone-100">
             {t('stepUpReauth.title')}
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             {t('stepUpReauth.description')}
           </p>
         </div>
@@ -159,7 +159,7 @@ function StepUpReturnNotice({ result, onClose }: { result: 'ok' | 'error'; onClo
   return (
     <Modal open onClose={onClose} size="sm">
       <div className="space-y-4 p-6">
-        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+        <h3 className="text-base font-medium text-stone-900 dark:text-stone-100">
           {t('stepUpReauth.title')}
         </h3>
         {result === 'ok' ? (

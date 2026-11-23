@@ -246,7 +246,9 @@ export function ChatConversationView({
           <>
             {messages.length === 0 && (
               <div className="space-y-3">
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t('chat.emptyPrompt')}</p>
+                <p className="text-sm text-stone-500 dark:text-stone-400">
+                  {t('chat.emptyPrompt')}
+                </p>
                 {suggestedQuestions && suggestedQuestions.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {suggestedQuestions.map((q) => (
@@ -254,7 +256,7 @@ export function ChatConversationView({
                         key={q}
                         type="button"
                         onClick={() => void handleSend(q)}
-                        className="rounded-full border border-gray-300 px-3 py-1.5 text-xs text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                        className="rounded-full border border-stone-300 px-3 py-1.5 text-xs text-stone-600 transition-colors hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
                       >
                         {q}
                       </button>
@@ -270,8 +272,8 @@ export function ChatConversationView({
                   <div
                     className={`max-w-[80%] rounded-xl px-4 py-2 text-sm ${
                       m.role === 'user'
-                        ? 'bg-blue-600 wrap-break-word whitespace-pre-wrap text-white'
-                        : 'border border-gray-200 bg-white text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200'
+                        ? 'bg-blue-800 dark:bg-blue-700 wrap-break-word whitespace-pre-wrap text-white'
+                        : 'border border-stone-200 bg-white text-stone-800 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200'
                     }`}
                   >
                     {m.role === 'assistant' ? <Markdown content={m.content} /> : m.content}
@@ -300,13 +302,13 @@ export function ChatConversationView({
         {send.isPending &&
           (streamingText ? (
             <div className="flex justify-start">
-              <div className="max-w-[80%] rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+              <div className="max-w-[80%] rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm text-stone-800 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200">
                 <Markdown content={streamingText} />
               </div>
             </div>
           ) : (
             <div className="flex justify-start">
-              <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm text-gray-400 dark:border-gray-700 dark:bg-gray-800">
+              <div className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm text-stone-400 dark:border-stone-700 dark:bg-stone-800">
                 <Spinner />
                 {LOADING_MESSAGES[loadingMessageIndex]}
               </div>
@@ -348,7 +350,7 @@ export function ChatConversationView({
       </div>
 
       {!conversationId && <QuotaHint resource="conversations" className="px-2 pb-1" />}
-      <div className="shrink-0 border-t border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
+      <div className="shrink-0 border-t border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-900">
         {onTrakwynAi && (
           <AiCreditsMeter variant="inline" className={compact ? 'px-2 pt-2' : 'pt-2'} />
         )}

@@ -40,10 +40,10 @@ export function DocumentVersionOutcomesPanel() {
 
   return (
     <Card className="p-6">
-      <h2 className="mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+      <h2 className="mb-1 text-sm font-medium text-stone-700 dark:text-stone-300">
         {t('documentOutcomes.title')}
       </h2>
-      <p className="mb-4 text-xs text-gray-400 dark:text-gray-500">
+      <p className="mb-4 text-xs text-stone-400 dark:text-stone-500">
         {t('documentOutcomes.description')}
       </p>
 
@@ -57,39 +57,39 @@ export function DocumentVersionOutcomesPanel() {
             return (
               <div
                 key={`${o.documentType}::${o.version ?? ''}::${index}`}
-                className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-gray-100 py-2 last:border-0 sm:flex-nowrap dark:border-gray-700"
+                className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-stone-100 py-2 last:border-0 sm:flex-nowrap dark:border-stone-700"
               >
                 <span
-                  className={`shrink-0 rounded-sm px-1.5 py-0.5 text-[10px] font-medium ${
+                  className={`shrink-0 rounded-sm px-1.5 py-0.5 text-xs font-medium ${
                     DOCUMENT_TYPE_BADGE_STYLE[o.documentType] ??
-                    'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                    'bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300'
                   }`}
                 >
                   {DOCUMENT_TYPE_LABEL[o.documentType] ?? o.documentType}
                 </span>
-                <span className="min-w-36 flex-1 text-sm wrap-break-word text-gray-900 sm:min-w-0 sm:truncate dark:text-gray-100">
+                <span className="min-w-36 flex-1 text-sm wrap-break-word text-stone-900 sm:min-w-0 sm:truncate dark:text-stone-100">
                   {generated
                     ? t('documentOutcomes.generatedLabel')
                     : (o.version ?? (
-                        <span className="text-gray-400 italic">
+                        <span className="text-stone-400 italic">
                           {t('documentOutcomes.noVersion')}
                         </span>
                       ))}
                 </span>
-                <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">
+                <span className="shrink-0 text-xs text-stone-500 dark:text-stone-400">
                   {t('documentOutcomes.interviewsCount', {
                     interviewCount: o.interviewCount,
                     applicationCount: o.applicationCount,
                   })}
                 </span>
-                <div className="h-1.5 w-16 shrink-0 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
+                <div className="h-1.5 w-16 shrink-0 overflow-hidden rounded-full bg-stone-100 dark:bg-stone-700">
                   <div className="h-full bg-purple-500" style={{ width: `${o.interviewRate}%` }} />
                 </div>
-                <span className="w-10 shrink-0 text-right text-xs font-medium text-gray-700 dark:text-gray-300">
+                <span className="w-10 shrink-0 text-right text-xs font-medium text-stone-700 dark:text-stone-300">
                   {o.interviewRate}%
                 </span>
                 {smallSample && (
-                  <span className="shrink-0 text-[10px] text-gray-400 dark:text-gray-500">
+                  <span className="shrink-0 text-xs text-stone-400 dark:text-stone-500">
                     {t('interviewAnalytics.smallSample')}
                   </span>
                 )}
