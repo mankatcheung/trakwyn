@@ -78,9 +78,16 @@ export function DashboardScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerText} testID="dashboard-greeting">
           <Text style={styles.greeting}>{t('welcomeBack')}</Text>
-          <Text style={styles.title}>{displayName || t('title')}</Text>
+          <Text
+            style={styles.title}
+            numberOfLines={1}
+            ellipsizeMode="middle"
+            testID="dashboard-greeting-name"
+          >
+            {displayName || t('title')}
+          </Text>
         </View>
         {displayName ? (
           <View style={styles.avatar} testID="dashboard-avatar">
@@ -264,11 +271,14 @@ function createStyles(colors: ThemeColors) {
     container: { flex: 1, backgroundColor: colors.background },
     content: { padding: 16, gap: 24, paddingBottom: 40 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    // flex: 1 with minWidth: 0 lets a long email shrink instead of pushing the avatar off-screen (JEF-669).
+    headerText: { flex: 1, minWidth: 0, marginRight: 12 },
     greeting: { fontSize: 13, color: colors.textSubtle, marginBottom: 2 },
     title: { fontSize: 26, fontWeight: '700', color: colors.text },
     avatar: {
       width: 44,
       height: 44,
+      flexShrink: 0,
       borderRadius: 22,
       alignItems: 'center',
       justifyContent: 'center',
