@@ -1,0 +1,44 @@
+# F-16 — The dashboard and analytics screens, on an account with one application.
+#
+# Both screens are built from aggregate queries (the onboarding checklist, the
+# recent applications, the stage funnel) that no other flow reads. A new
+# account is the useful starting point for the checklist, and the application
+# the flow creates is what the other two have to show.
+appId: com.trakwyn.app
+---
+- runFlow: subflows/launch-signed-out.yml
+- runFlow: subflows/register-new-account.yml
+
+- evalScript: ${output.company = 'Dash Co ' + Date.now()}
+
+# A brand-new account has not done anything the checklist asks for.
+- tapOn:
+    id: 'tab-home'
+- assertVisible:
+    id: 'onboarding-checklist'
+
+- runFlow:
+    file: subflows/create-application.yml
+    env:
+      COMPANY: ${output.company}
+      ROLE: Backend Engineer
+
+# Recent applications on the dashboard.
+- tapOn:
+    id: 'tab-home'
+- scrollUntilVisible:
+    element: '.*${output.company}.*'
+- assertVisible: '.*${output.company}.*'
+
+- scrollUntilVisible:
+    element:
+      id: 'dashboard-view-analytics'
+- waitForAnimationToEnd
+- tapOn:
+    id: 'dashboard-view-analytics'
+# The funnel is the second card, below what a small phone shows.
+- scrollUntilVisible:
+    element:
+      id: 'stage-funnel-card'
+- assertVisible:
+    id: 'stage-funnel-card'

@@ -1,0 +1,33 @@
+# F-15 — Request account deletion.
+#
+# Deletion is the most consequential setting, and its request path is the one
+# that asks for the account's own email back before it will send anything. The
+# flow stops at the request: nothing is deleted until the emailed link is
+# opened, which a flow cannot do, and the request is undoable from the same
+# screen.
+#
+# A just-registered session is fresh, so the step-up dialog (password,
+# Google or mailed code) is not expected. If one ever appears here, the flow
+# fails on the assertion at the end, and that is a finding, not noise.
+appId: com.trakwyn.app
+---
+- runFlow: subflows/launch-signed-out.yml
+- runFlow: subflows/register-new-account.yml
+
+- tapOn:
+    id: 'tab-settings'
+- scrollUntilVisible:
+    element:
+      id: 'settings-danger-zone-row'
+- waitForAnimationToEnd
+- tapOn:
+    id: 'settings-danger-zone-row'
+
+- tapOn:
+    id: 'delete-account-email-input'
+- inputText: ${output.email}
+- pressKey: Enter
+- tapOn:
+    id: 'delete-account-button'
+- assertVisible:
+    id: 'delete-account-request-sent'

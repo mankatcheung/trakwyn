@@ -183,7 +183,11 @@ export function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
           {saveError ? <Text style={styles.error}>{saveError}</Text> : null}
-          {saved ? <Text style={styles.success}>{t('profile.saved')}</Text> : null}
+          {saved ? (
+            <Text style={styles.success} testID="profile-saved">
+              {t('profile.saved')}
+            </Text>
+          ) : null}
 
           <View style={styles.avatarRow}>
             {profile.avatarUrl ? (

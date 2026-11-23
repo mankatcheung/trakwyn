@@ -1,6 +1,6 @@
 # Mobile e2e flows
 
-Twelve Maestro flows: the app's spine (JEF-300, F-1…F-7) and the write paths around it (JEF-668, F-8…F-12). They drive a
+Seventeen Maestro flows: the app's spine (JEF-300, F-1…F-7) and the write paths around it (JEF-668, F-8…F-17). They drive a
 real release build on an Android emulator or an iOS simulator against a real
 API — the tier no Jest project can reach, because nothing below it starts a
 process, installs a bundle, or touches a keychain.
