@@ -28,7 +28,12 @@ appId: com.trakwyn.app
 # screen reads "Delete": the alert's title and message say "Bin" or "Trash".
 - tapOn: '(?i)delete'
 
-# Deleting pops back to the list, which no longer has the row.
+# Deleting pops the detail screen, but the detail route resolves to (home)'s
+# copy, so what is left on screen is the dashboard, not the list. Go to the
+# Applications tab explicitly, as create-application.yml does.
+- tapOn:
+    id: 'tab-applications'
+# The row is gone from the list.
 - assertNotVisible: '.*${output.company}.*'
 
 - tapOn:
@@ -41,15 +46,7 @@ appId: com.trakwyn.app
 # Restoring removes it from Trash.
 - assertNotVisible: '.*${output.company}.*'
 
-- runFlow:
-    when:
-      platform: Android
-    commands:
-      - back
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - tapOn:
-          id: 'BackButton'
+# The tab bar returns to the list on both platforms.
+- tapOn:
+    id: 'tab-applications'
 - assertVisible: '.*${output.company}.*'
