@@ -91,7 +91,7 @@ export function SlashMenu({
             id={listId}
             role="listbox"
             aria-label={t('documents.editor.slash.menu')}
-            className="fixed z-50 max-h-72 w-60 overflow-y-auto rounded-md border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-600 dark:bg-gray-800"
+            className="fixed z-50 max-h-72 w-60 overflow-y-auto rounded-md border border-stone-200 bg-white p-1 shadow-lg dark:border-stone-600 dark:bg-stone-800"
             // Clicking an entry must not move focus out of the editor.
             onMouseDown={(event) => event.preventDefault()}
           >
@@ -108,7 +108,7 @@ export function SlashMenu({
                   className={`flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm ${
                     selected
                       ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                      : 'text-gray-700 dark:text-gray-200'
+                      : 'text-stone-700 dark:text-stone-200'
                   }`}
                 >
                   <item.Icon className="size-4 shrink-0" aria-hidden="true" />

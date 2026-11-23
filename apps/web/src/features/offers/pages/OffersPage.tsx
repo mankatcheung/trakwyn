@@ -57,7 +57,9 @@ export function OffersPage() {
   if (offersLocked) {
     return (
       <div className="mx-auto max-w-6xl space-y-4 px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('offers.title')}</h1>
+        <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
+          {t('offers.title')}
+        </h1>
         <LockedFeaturePreview feature="offers" />
       </div>
     );
@@ -84,7 +86,7 @@ export function OffersPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+        <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
           {t('offers.allOffersTitle')}
         </h1>
         <Button onClick={handleCompare} disabled={selectedIds.length < 2 || comparing}>
@@ -103,12 +105,12 @@ export function OffersPage() {
         <>
           <div className="mb-6">
             <div className="mb-3 flex items-center justify-between">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-stone-600 dark:text-stone-400">
                 {t('offerCompare.selectHint')}
               </p>
               <button
                 onClick={toggleSelectAll}
-                className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                className="text-sm font-medium text-blue-800 dark:text-blue-400 hover:text-blue-700"
               >
                 {allSelected ? t('offers.deselectAll') : t('offers.selectAll')}
               </button>
@@ -121,32 +123,32 @@ export function OffersPage() {
                   className={`rounded-lg border p-4 text-left transition-colors ${
                     selectedIds.includes(offer.id)
                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                      : 'border-gray-200 hover:border-gray-300 dark:border-gray-700'
+                      : 'border-stone-200 hover:border-stone-300 dark:border-stone-700'
                   }`}
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                      <div className="text-sm text-stone-500 dark:text-stone-400">
                         {company} — {role}
                       </div>
-                      <div className="font-semibold text-gray-900 dark:text-gray-100">
+                      <div className="font-medium text-stone-900 dark:text-stone-100">
                         {formatSalary(offer.baseSalary)}/{offer.period}
                       </div>
                       {offer.bonus && (
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                        <div className="text-sm text-stone-600 dark:text-stone-400">
                           +{formatSalary(offer.bonus)} {t('offerCompare.bonusSuffix')}
                         </div>
                       )}
                     </div>
                     {selectedIds.includes(offer.id) && (
-                      <CheckIcon className="size-5 text-blue-600" />
+                      <CheckIcon className="size-5 text-blue-800 dark:text-blue-400" />
                     )}
                   </div>
                   <Link
                     to="/applications/$applicationId/offers"
                     params={{ applicationId: offer.applicationId }}
                     onClick={(e) => e.stopPropagation()}
-                    className="mt-2 inline-block text-xs text-blue-600 hover:underline"
+                    className="mt-2 inline-block text-xs text-blue-800 dark:text-blue-400 hover:underline"
                   >
                     {t('applicationDetail.manageOffers')}
                   </Link>
@@ -156,37 +158,37 @@ export function OffersPage() {
           </div>
 
           {comparisons.length > 0 && (
-            <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="overflow-hidden rounded-lg border border-stone-200 dark:border-stone-700">
               <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-800">
+                <thead className="bg-stone-50 dark:bg-stone-800">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <th className="px-4 py-3 text-left text-sm font-medium text-stone-700 dark:text-stone-300">
                       {t('offerCompare.companyHeader')}
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <th className="px-4 py-3 text-left text-sm font-medium text-stone-700 dark:text-stone-300">
                       {t('offerCompare.roleHeader')}
                     </th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <th className="px-4 py-3 text-right text-sm font-medium text-stone-700 dark:text-stone-300">
                       {t('offerCompare.baseYearlyHeader')}
                     </th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <th className="px-4 py-3 text-right text-sm font-medium text-stone-700 dark:text-stone-300">
                       {t('offerCompare.totalCompHeader')}
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <th className="px-4 py-3 text-left text-sm font-medium text-stone-700 dark:text-stone-300">
                       {t('offerForm.equityLabel')}
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <th className="px-4 py-3 text-left text-sm font-medium text-stone-700 dark:text-stone-300">
                       {t('offerForm.benefitsLabel')}
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="divide-y divide-stone-200 dark:divide-stone-700">
                   {comparisons.map((comp, index) => (
                     <tr
                       key={comp.offer.id}
                       className={index === 0 ? 'bg-green-50 dark:bg-green-900/10' : ''}
                     >
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <td className="px-4 py-3 text-sm font-medium text-stone-900 dark:text-stone-100">
                         {comp.company}
                         {index === 0 && (
                           <span className="ml-2 text-xs font-normal text-green-600">
@@ -194,19 +196,19 @@ export function OffersPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                      <td className="px-4 py-3 text-sm text-stone-600 dark:text-stone-400">
                         {comp.role}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-gray-900 dark:text-gray-100">
+                      <td className="px-4 py-3 text-right text-sm text-stone-900 dark:text-stone-100">
                         {formatSalary(comp.normalizedYearlySalary)}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      <td className="px-4 py-3 text-right text-sm font-medium text-stone-900 dark:text-stone-100">
                         {formatSalary(comp.totalCompensation)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                      <td className="px-4 py-3 text-sm text-stone-600 dark:text-stone-400">
                         {comp.offer.equity || '—'}
                       </td>
-                      <td className="max-w-[200px] truncate px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                      <td className="max-w-[200px] truncate px-4 py-3 text-sm text-stone-600 dark:text-stone-400">
                         {comp.offer.benefits || '—'}
                       </td>
                     </tr>

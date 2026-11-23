@@ -81,10 +81,10 @@ export function SettingsNotificationsPage() {
   return (
     <div className="space-y-8">
       <Card className="p-5">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+        <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
           {t('notifications.title')}
         </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           {t('notifications.chooseEmails')}
         </p>
         {prefsLoading ? (
@@ -95,16 +95,16 @@ export function SettingsNotificationsPage() {
           </div>
         ) : (
           prefs && (
-            <div className="mt-4 divide-y divide-gray-100 dark:divide-gray-700">
+            <div className="mt-4 divide-y divide-stone-100 dark:divide-stone-700">
               <div className="flex flex-col gap-2 py-3 first:pt-0 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
                 <div>
                   <label
                     htmlFor="digest-frequency"
-                    className="block text-sm font-medium text-gray-900 dark:text-gray-100"
+                    className="block text-sm font-medium text-stone-900 dark:text-stone-100"
                   >
                     {t('notifications.digestLabel')}
                   </label>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-stone-500 dark:text-stone-400">
                     {t('notifications.digestHelp')}
                   </p>
                 </div>
@@ -126,7 +126,7 @@ export function SettingsNotificationsPage() {
               <div className="flex items-center justify-between gap-6 py-3">
                 <label
                   htmlFor="follow-up-reminders"
-                  className="text-sm font-medium text-gray-900 dark:text-gray-100"
+                  className="text-sm font-medium text-stone-900 dark:text-stone-100"
                 >
                   {t('notifications.followUpReminderEmails')}
                 </label>
@@ -140,11 +140,11 @@ export function SettingsNotificationsPage() {
                 <div>
                   <label
                     htmlFor="weekly-application-goal"
-                    className="block text-sm font-medium text-gray-900 dark:text-gray-100"
+                    className="block text-sm font-medium text-stone-900 dark:text-stone-100"
                   >
                     {t('notifications.weeklyGoalLabel')}
                   </label>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-stone-500 dark:text-stone-400">
                     {t('notifications.weeklyGoalHelp')}
                   </p>
                 </div>
@@ -155,7 +155,7 @@ export function SettingsNotificationsPage() {
                   max={100}
                   value={prefs.weeklyApplicationGoal}
                   onChange={(e) => void onChangeWeeklyGoal(Number(e.target.value))}
-                  className="block w-28 shrink-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                  className="block w-28 shrink-0 rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 dark:border-stone-600 dark:bg-stone-700 dark:text-stone-100"
                 />
               </div>
             </div>
@@ -164,10 +164,10 @@ export function SettingsNotificationsPage() {
       </Card>
 
       <Card className="p-5">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+        <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
           {t('notifications.pushTitle')}
         </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           {t('notifications.pushDescription')}
         </p>
         <QuotaHint resource="pushSubscriptions" className="mt-1" />
@@ -180,7 +180,7 @@ export function SettingsNotificationsPage() {
           <div className="mt-4 flex items-center justify-between gap-6">
             <label
               htmlFor="push-notifications"
-              className="text-sm font-medium text-gray-900 dark:text-gray-100"
+              className="text-sm font-medium text-stone-900 dark:text-stone-100"
             >
               {push.isPermissionDenied
                 ? t('notifications.pushBlocked')
@@ -196,7 +196,7 @@ export function SettingsNotificationsPage() {
             />
           </div>
         ) : (
-          <p className="mt-4 text-sm text-gray-400 dark:text-gray-500">
+          <p className="mt-4 text-sm text-stone-400 dark:text-stone-500">
             {t('notifications.pushUnsupported')}
           </p>
         )}

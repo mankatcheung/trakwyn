@@ -92,20 +92,20 @@ export function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-900">
+    <main className="flex min-h-screen items-center justify-center bg-stone-50 px-4 dark:bg-stone-900">
       <div className="w-full max-w-sm space-y-6">
         <Link to="/" className="flex items-center justify-center gap-2">
           <LogoMark size={28} />
-          <span className="text-xl font-bold text-gray-900 dark:text-gray-100">Trakwyn</span>
+          <span className="text-xl font-medium text-stone-900 dark:text-stone-100">Trakwyn</span>
         </Link>
-        <div className="space-y-6 rounded-xl bg-white p-8 shadow-sm dark:bg-gray-800">
+        <div className="space-y-6 rounded-xl bg-white p-8 shadow-sm dark:bg-stone-800">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
               {t('auth.signIn')}
             </h1>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
               {t('auth.noAccount')}{' '}
-              <Link to="/register" className="text-blue-600 underline">
+              <Link to="/register" className="text-blue-800 dark:text-blue-400 underline">
                 {t('auth.register')}
               </Link>
             </p>
@@ -131,10 +131,13 @@ export function LoginPage() {
 
             <div>
               <div className="mb-1 flex items-center justify-between">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300">
                   {t('auth.password')}
                 </label>
-                <Link to="/forgot-password" className="text-xs text-blue-600 hover:underline">
+                <Link
+                  to="/forgot-password"
+                  className="text-xs text-blue-800 dark:text-blue-400 hover:underline"
+                >
                   {t('auth.forgotPassword')}
                 </Link>
               </div>
@@ -214,18 +217,18 @@ function TotpStep({
   });
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-900">
+    <main className="flex min-h-screen items-center justify-center bg-stone-50 px-4 dark:bg-stone-900">
       <div className="w-full max-w-sm space-y-6">
         <div className="flex items-center justify-center gap-2">
           <LogoMark size={28} />
-          <span className="text-xl font-bold text-gray-900 dark:text-gray-100">Trakwyn</span>
+          <span className="text-xl font-medium text-stone-900 dark:text-stone-100">Trakwyn</span>
         </div>
-        <div className="space-y-6 rounded-xl bg-white p-8 shadow-sm dark:bg-gray-800">
+        <div className="space-y-6 rounded-xl bg-white p-8 shadow-sm dark:bg-stone-800">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
               {t('auth.twoFactor')}
             </h1>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
               {t('auth.twoFactorHelp')}
             </p>
           </div>

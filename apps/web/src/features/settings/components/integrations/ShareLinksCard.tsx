@@ -81,10 +81,10 @@ export function ShareLinksCard() {
     <Card className="space-y-4 p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
             {t('integrations.shareLinksTitle')}
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             {t('integrations.shareLinksDescription')}
           </p>
           <QuotaHint resource="shareLinks" used={shareLinks.length} className="mt-1" />
@@ -109,8 +109,8 @@ export function ShareLinksCard() {
       {newShareLink && (
         <div className="space-y-3">
           <p className="text-sm text-green-600">{t('integrations.shareLinkCreatedNote')}</p>
-          <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
-            <code className="flex-1 font-mono text-sm break-all text-gray-900 dark:text-gray-100">
+          <div className="flex items-center gap-2 rounded-lg bg-stone-50 p-3 dark:bg-stone-800">
+            <code className="flex-1 font-mono text-sm break-all text-stone-900 dark:text-stone-100">
               {shareUrl(newShareLink.token)}
             </code>
             <Button
@@ -171,12 +171,14 @@ export function ShareLinksCard() {
       )}
 
       {shareLinks.length > 0 && (
-        <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
+        <ul className="divide-y divide-stone-200 rounded-lg border border-stone-200 dark:divide-stone-700 dark:border-stone-700">
           {shareLinks.map((link) => (
             <li key={link.id} className="flex items-center justify-between gap-4 px-3 py-2">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{link.name}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
+                  {link.name}
+                </p>
+                <p className="text-xs text-stone-500 dark:text-stone-400">
                   {t('integrations.createdOn', {
                     date: new Date(link.createdAt).toLocaleDateString(),
                   })}

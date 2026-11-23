@@ -105,7 +105,7 @@ export function MockQuestionGenerator({
 
   return (
     <div className="space-y-3 rounded-lg border-2 border-violet-500 bg-violet-50/40 p-3 dark:bg-violet-900/10">
-      <h4 className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100">
+      <h4 className="flex items-center gap-1.5 text-sm font-medium text-stone-900 dark:text-stone-100">
         <SparklesIcon size={14} aria-hidden="true" />
         {t('interviews.generateTitle')}
       </h4>
@@ -144,7 +144,7 @@ export function MockQuestionGenerator({
 
       {result && (
         <div className="space-y-2">
-          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+          <p className="text-xs font-medium text-stone-700 dark:text-stone-300">
             {t('interviews.suggestionsHeading', { count: suggestions.length })}
           </p>
           {contextNote && (
@@ -153,14 +153,14 @@ export function MockQuestionGenerator({
           <ul className="space-y-2">
             {suggestions.map((suggestion, index) => (
               <li key={`${index}-${suggestion}`}>
-                <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-white p-3 text-sm dark:border-gray-700 dark:bg-gray-800">
+                <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border border-stone-200 bg-white p-3 text-sm dark:border-stone-700 dark:bg-stone-800">
                   <input
                     type="checkbox"
                     className="mt-0.5 size-5 shrink-0"
                     checked={selected.has(index)}
                     onChange={() => toggle(index)}
                   />
-                  <span className="min-w-0 wrap-break-word text-gray-900 dark:text-gray-100">
+                  <span className="min-w-0 wrap-break-word text-stone-900 dark:text-stone-100">
                     {suggestion}
                   </span>
                 </label>
@@ -179,7 +179,7 @@ export function MockQuestionGenerator({
               })}
             </p>
           )}
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-stone-500 dark:text-stone-400">
             {t('interviews.selectedCount', { count: chosen.length })} ·{' '}
             {t('interviews.suggestionNote')}
           </p>

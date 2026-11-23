@@ -33,6 +33,6 @@ describe('StatusBadge', () => {
 
   it('falls back to the draft style for an unrecognized status', () => {
     render(<StatusBadge status="unknown_status" />);
-    expect(screen.getByText('unknown_status')).toHaveClass('bg-gray-100', 'text-gray-700');
+    expect(screen.getByText('unknown_status')).toHaveClass('bg-stone-100', 'text-stone-700');
   });
 });

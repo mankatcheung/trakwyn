@@ -29,7 +29,7 @@ export function BoardColumn({
     <div
       ref={setNodeRef}
       data-testid={`board-column-${status}`}
-      className={`flex w-60 shrink-0 flex-col rounded-xl border border-t-4 border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50 ${colors.columnBorder} transition-colors ${isOver ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+      className={`flex w-60 shrink-0 flex-col rounded-xl border border-t-4 border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-800/50 ${colors.columnBorder} transition-colors ${isOver ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
     >
       <div className="flex items-center justify-between px-3 py-2.5">
         {/* Dot and tinted heading, because the 4px top rule alone is easy to
@@ -41,11 +41,11 @@ export function BoardColumn({
             aria-hidden="true"
             data-testid={`column-dot-${status}`}
           />
-          <span className={`truncate text-xs font-semibold capitalize ${colors.columnHeading}`}>
+          <span className={`truncate text-xs font-medium capitalize ${colors.columnHeading}`}>
             {t(`status.${status}`)}
           </span>
         </span>
-        <span className="rounded-full bg-gray-200 px-1.5 py-0.5 text-xs text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+        <span className="rounded-full bg-stone-200 px-1.5 py-0.5 text-xs text-stone-500 dark:bg-stone-700 dark:text-stone-400">
           {ids.length}
         </span>
       </div>

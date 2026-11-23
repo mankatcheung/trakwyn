@@ -41,11 +41,11 @@ export function ProfileSection({
           <div>
             <h2
               id={`${id}-heading`}
-              className="flex items-center gap-2 text-base font-semibold text-gray-900 dark:text-gray-100"
+              className="flex items-center gap-2 text-base font-medium text-stone-900 dark:text-stone-100"
             >
               {icon} {title}
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{description}</p>
+            <p className="text-sm text-stone-500 dark:text-stone-400">{description}</p>
           </div>
           <Button variant="link" size="sm" onClick={onAdd} disabled={full}>
             <span className="flex items-center gap-1.5">
@@ -88,7 +88,7 @@ export function FormActions({ submitting, editing, onCancel }: FormActionsProps)
 }
 
 export const ENTRY_CLASS =
-  'flex items-start justify-between gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700';
+  'flex items-start justify-between gap-3 rounded-lg border border-stone-200 p-3 dark:border-stone-700';
 
 export const FORM_CLASS =
   'space-y-3 rounded-lg border border-blue-200 bg-blue-50/50 p-4 dark:border-blue-800 dark:bg-blue-900/10';

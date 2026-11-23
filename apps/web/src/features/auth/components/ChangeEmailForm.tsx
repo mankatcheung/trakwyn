@@ -51,9 +51,9 @@ export function ChangeEmailForm({
     <form
       {...formProps}
       noValidate
-      className="space-y-3 border-t border-gray-200 pt-4 dark:border-gray-700"
+      className="space-y-3 border-t border-stone-200 pt-4 dark:border-stone-700"
     >
-      <p className="text-sm text-gray-500 dark:text-gray-400">
+      <p className="text-sm text-stone-500 dark:text-stone-400">
         {t('verifyRequired.changeEmailIntro')}
       </p>
       {state.error && <Alert role="alert">{state.error}</Alert>}

@@ -51,10 +51,10 @@ export function AiActionBar({
   if (needsSetup) {
     return (
       <div className="space-y-2">
-        <p className="text-sm text-gray-700 dark:text-gray-300">{t('aiHelper.setupHelp')}</p>
+        <p className="text-sm text-stone-700 dark:text-stone-300">{t('aiHelper.setupHelp')}</p>
         <Link
           to="/settings/ai"
-          className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+          className="inline-flex items-center rounded-lg bg-blue-800 dark:bg-blue-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-900 dark:hover:bg-blue-600"
         >
           {t('aiHelper.setupAction')}
         </Link>

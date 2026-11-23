@@ -40,14 +40,14 @@ export function DocumentEditorChecks({ contentJson, onJump }: DocumentEditorChec
   return (
     <section
       aria-label={t('documentChecks.title')}
-      className="mt-4 rounded-lg border border-gray-200 dark:border-gray-700"
+      className="mt-4 rounded-lg border border-stone-200 dark:border-stone-700"
     >
       <button
         type="button"
         aria-expanded={open}
         aria-controls={listId}
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-2 px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-200"
+        className="flex w-full items-center justify-between gap-2 px-4 py-2 text-left text-sm font-medium text-stone-700 dark:text-stone-200"
       >
         <span className="inline-flex items-center gap-2">
           {t('documentChecks.title')}
@@ -63,18 +63,18 @@ export function DocumentEditorChecks({ contentJson, onJump }: DocumentEditorChec
       {open && (
         <ul
           id={listId}
-          className="space-y-2 border-t border-gray-200 px-4 py-3 text-sm dark:border-gray-700"
+          className="space-y-2 border-t border-stone-200 px-4 py-3 text-sm dark:border-stone-700"
         >
           {hints.length === 0 && (
-            <li className="text-gray-500 dark:text-gray-400">{t('documentChecks.empty')}</li>
+            <li className="text-stone-500 dark:text-stone-400">{t('documentChecks.empty')}</li>
           )}
           {hints.map((hint) => (
             <li key={hint.id} className="flex items-start justify-between gap-3">
-              <span className="text-gray-700 dark:text-gray-200">{t(hint.messageKey)}</span>
+              <span className="text-stone-700 dark:text-stone-200">{t(hint.messageKey)}</span>
               {hint.nodeIndex !== undefined && onJump && (
                 <button
                   type="button"
-                  className="shrink-0 font-medium text-blue-600 underline dark:text-blue-400"
+                  className="shrink-0 font-medium text-blue-800 underline dark:text-blue-400"
                   onClick={() => onJump(hint.nodeIndex!)}
                 >
                   {t('documentChecks.jump')}

@@ -21,21 +21,21 @@ export function ChatDockConversationPicker({ onSelect }: { onSelect: () => void 
   const conversations = (data?.conversations ?? []).slice(0, RECENT_LIMIT);
 
   return (
-    <div className="w-72 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800">
+    <div className="w-72 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-lg dark:border-stone-700 dark:bg-stone-800">
       <button
         type="button"
         onClick={() => {
           dock.openNew();
           onSelect();
         }}
-        className="flex w-full items-center gap-2 border-b border-gray-100 px-3 py-2.5 text-sm text-blue-600 transition-colors hover:bg-blue-50 dark:border-gray-700 dark:text-blue-400 dark:hover:bg-blue-900/20"
+        className="flex w-full items-center gap-2 border-b border-stone-100 px-3 py-2.5 text-sm text-blue-800 transition-colors hover:bg-blue-50 dark:border-stone-700 dark:text-blue-400 dark:hover:bg-blue-900/20"
       >
         <PlusIcon size={15} />
         {t('assistant.newConversation')}
       </button>
 
       {conversations.length === 0 ? (
-        <p className="px-3 py-4 text-center text-xs text-gray-400 dark:text-gray-500">
+        <p className="px-3 py-4 text-center text-xs text-stone-400 dark:text-stone-500">
           {t('conversationHistory.noConversationsYet')}
         </p>
       ) : (
@@ -48,12 +48,12 @@ export function ChatDockConversationPicker({ onSelect }: { onSelect: () => void 
                   dock.openConversation(c.id);
                   onSelect();
                 }}
-                className="w-full border-b border-gray-50 px-3 py-2.5 text-left transition-colors last:border-0 hover:bg-gray-50 dark:border-gray-700/50 dark:hover:bg-gray-700"
+                className="w-full border-b border-stone-50 px-3 py-2.5 text-left transition-colors last:border-0 hover:bg-stone-50 dark:border-stone-700/50 dark:hover:bg-stone-700"
               >
-                <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+                <p className="truncate text-sm font-medium text-stone-900 dark:text-stone-100">
                   {c.title ?? t('assistant.newConversation')}
                 </p>
-                <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+                <p className="mt-0.5 text-xs text-stone-400 dark:text-stone-500">
                   {timeAgo(c.updatedAt, t)}
                   {label(runsOnFor(c)) ? ` · ${label(runsOnFor(c))}` : ''}
                 </p>

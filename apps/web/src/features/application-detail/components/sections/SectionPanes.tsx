@@ -95,18 +95,18 @@ export function SectionPanes({
       {kept('other-documents', <DocumentList applicationId={applicationId} category="other" />)}
       {active === 'company-briefing' && <CompanyBriefingTab applicationId={applicationId} />}
       {active === 'offers' && (
-        <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <div className="space-y-3 rounded-xl border border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-800">
+          <h2 className="text-lg font-medium text-stone-900 dark:text-stone-100">
             {t('applicationDetail.offerComparisonTitle')}
           </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-stone-600 dark:text-stone-400">
             {t('applicationDetail.offerComparisonDescription')}
           </p>
           <div className="flex flex-wrap gap-2">
             <Link
               to="/applications/$applicationId/offers"
               params={{ applicationId }}
-              className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="rounded-lg bg-blue-800 dark:bg-blue-700 px-3 py-2 text-sm font-medium text-white hover:bg-blue-900 dark:hover:bg-blue-600"
             >
               {t('applicationDetail.manageOffers')}
             </Link>

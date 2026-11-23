@@ -11,7 +11,7 @@ export type SkeletonProps = HTMLAttributes<HTMLDivElement>;
  * @category Feedback
  */
 export function Skeleton({ className, ...rest }: SkeletonProps) {
-  const classes = ['bg-gray-100 dark:bg-gray-800 animate-pulse', className ?? '']
+  const classes = ['bg-stone-100 dark:bg-stone-800 animate-pulse', className ?? '']
     .filter(Boolean)
     .join(' ');
 

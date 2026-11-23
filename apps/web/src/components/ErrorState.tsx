@@ -32,7 +32,7 @@ export function ErrorState({ error, onRetry }: ErrorStateProps) {
   return (
     <div className="py-12 text-center">
       <AlertTriangleIcon size={40} className="mx-auto mb-3 text-red-500" />
-      <p className="text-gray-700 dark:text-gray-300">{getErrorMessage(error)}</p>
+      <p className="text-stone-700 dark:text-stone-300">{getErrorMessage(error)}</p>
       {onRetry && (
         <Button
           variant="link"

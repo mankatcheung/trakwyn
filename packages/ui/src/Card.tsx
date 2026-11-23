@@ -11,7 +11,7 @@ export type CardProps = HTMLAttributes<HTMLDivElement>;
  */
 export function Card({ className, children, ...rest }: CardProps) {
   const classes = [
-    'bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700',
+    'bg-white dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700',
     className ?? '',
   ]
     .filter(Boolean)

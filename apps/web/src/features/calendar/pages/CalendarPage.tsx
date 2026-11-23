@@ -146,16 +146,18 @@ export function CalendarPage() {
   return (
     <div className="mx-auto max-w-3xl p-4 sm:p-8">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{t('nav.calendar')}</h1>
-        <div className="flex gap-1 rounded-lg bg-gray-100 p-0.5 dark:bg-gray-800">
+        <h1 className="text-xl font-medium text-stone-900 dark:text-stone-100">
+          {t('nav.calendar')}
+        </h1>
+        <div className="flex gap-1 rounded-lg bg-stone-100 p-0.5 dark:bg-stone-800">
           {VIEW_MODES.map(({ mode, label }) => (
             <button
               key={mode}
               onClick={() => changeViewMode(mode)}
               className={`rounded-md px-3 py-1 text-sm transition-colors ${
                 viewMode === mode
-                  ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-gray-100'
-                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                  ? 'bg-white text-stone-900 shadow-sm dark:bg-stone-700 dark:text-stone-100'
+                  : 'text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200'
               }`}
             >
               {label}
@@ -168,17 +170,17 @@ export function CalendarPage() {
         <button
           onClick={() => goToPeriod(-1)}
           aria-label={t('calendarPage.previousPeriod', { period: t(`calendarPage.${viewMode}`) })}
-          className="rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+          className="rounded-lg p-1.5 text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700"
         >
           <ChevronLeftIcon size={18} />
         </button>
-        <span className="w-48 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
+        <span className="w-48 text-center text-sm font-medium text-stone-700 dark:text-stone-300">
           {periodLabel}
         </span>
         <button
           onClick={() => goToPeriod(1)}
           aria-label={t('calendarPage.nextPeriod', { period: t(`calendarPage.${viewMode}`) })}
-          className="rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+          className="rounded-lg p-1.5 text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700"
         >
           <ChevronRightIcon size={18} />
         </button>
@@ -196,7 +198,7 @@ export function CalendarPage() {
                 {WEEKDAY_LABELS.map((d) => (
                   <div
                     key={d}
-                    className="py-1 text-center text-xs font-medium text-gray-400 dark:text-gray-500"
+                    className="py-1 text-center text-xs font-medium text-stone-400 dark:text-stone-500"
                   >
                     {d}
                   </div>
@@ -216,13 +218,13 @@ export function CalendarPage() {
                       onClick={() => setSelectedDay(key === selectedDay ? null : key)}
                       className={`flex aspect-square flex-col items-center gap-1 rounded-lg p-1.5 text-sm transition-colors ${
                         !inMonth
-                          ? 'text-gray-300 dark:text-gray-600'
-                          : 'text-gray-700 dark:text-gray-300'
+                          ? 'text-stone-300 dark:text-stone-600'
+                          : 'text-stone-700 dark:text-stone-300'
                       } ${
                         isSelected
                           ? 'bg-blue-50 ring-1 ring-blue-400 dark:bg-blue-900/20'
-                          : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                      } ${isToday ? 'font-bold' : ''}`}
+                          : 'hover:bg-stone-100 dark:hover:bg-stone-700'
+                      } ${isToday ? 'font-medium' : ''}`}
                     >
                       <span>{date.getDate()}</span>
                       {eventTypes.length > 0 && (
@@ -244,19 +246,19 @@ export function CalendarPage() {
 
           <div className="mt-6">
             {!dayInFocus && (
-              <p className="py-4 text-center text-sm text-gray-400 dark:text-gray-500">
+              <p className="py-4 text-center text-sm text-stone-400 dark:text-stone-500">
                 {t('calendarPage.selectDayPrompt')}
               </p>
             )}
             {dayInFocus && focusedEvents.length === 0 && (
-              <p className="py-4 text-center text-sm text-gray-400 dark:text-gray-500">
+              <p className="py-4 text-center text-sm text-stone-400 dark:text-stone-500">
                 {t('calendarPage.noEventsOnDay')}
               </p>
             )}
             {dayInFocus && focusedEvents.length > 0 && (
               <div className="space-y-2">
                 {viewMode !== 'day' && (
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
                     {dateFromDayKey(dayInFocus).toLocaleDateString(undefined, {
                       weekday: 'long',
                       month: 'long',
@@ -269,18 +271,18 @@ export function CalendarPage() {
                     key={e.id}
                     to="/applications/$applicationId"
                     params={{ applicationId: e.applicationId }}
-                    className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
+                    className="flex items-center gap-3 rounded-lg border border-stone-200 p-3 transition-colors hover:bg-stone-50 dark:border-stone-700 dark:hover:bg-stone-700"
                   >
                     <span className={`size-2 shrink-0 rounded-full ${EVENT_DOT_STYLES[e.type]}`} />
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
                         {EVENT_LABEL[e.type]}
                         {e.type === 'interview' && e.interviewRoundType
                           ? ` (${e.interviewRoundType})`
                           : ''}{' '}
                         — {e.company}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{e.role}</p>
+                      <p className="text-xs text-stone-500 dark:text-stone-400">{e.role}</p>
                     </div>
                   </Link>
                 ))}

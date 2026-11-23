@@ -100,14 +100,14 @@ export function NotificationsPage() {
 
   return (
     <div className="mx-auto max-w-2xl p-4 sm:p-8">
-      <h1 className="mb-6 text-2xl font-bold text-gray-900 sm:mb-8 dark:text-gray-100">
+      <h1 className="mb-6 text-2xl font-medium text-stone-900 sm:mb-8 dark:text-stone-100">
         {t('notificationInbox.title')}
       </h1>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+      <div className="overflow-hidden rounded-xl border border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-800">
         {items.length > 0 && (
-          <div className="flex items-center justify-between border-b border-gray-100 px-4 py-2 dark:border-gray-700">
-            <label className="flex cursor-pointer items-center gap-2 text-xs text-gray-500 select-none dark:text-gray-400">
+          <div className="flex items-center justify-between border-b border-stone-100 px-4 py-2 dark:border-stone-700">
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-stone-500 select-none dark:text-stone-400">
               <Checkbox
                 size="sm"
                 checked={allSelected}
@@ -156,14 +156,14 @@ export function NotificationsPage() {
           </p>
         )}
         {!isLoading && !isError && items.length === 0 && (
-          <p className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+          <p className="px-4 py-8 text-center text-sm text-stone-500 dark:text-stone-400">
             {t('notificationInbox.allCaughtUp')}
           </p>
         )}
         {items.map((notification) => (
           <div
             key={notification.id}
-            className={`flex items-start gap-3 border-b border-gray-100 px-4 py-3 last:border-0 dark:border-gray-700 ${
+            className={`flex items-start gap-3 border-b border-stone-100 px-4 py-3 last:border-0 dark:border-stone-700 ${
               notification.read ? '' : 'bg-blue-50/50 dark:bg-blue-900/10'
             }`}
           >
@@ -186,16 +186,16 @@ export function NotificationsPage() {
                 <span
                   className={`block text-sm ${
                     notification.read
-                      ? 'text-gray-700 dark:text-gray-300'
-                      : 'font-semibold text-gray-900 dark:text-gray-100'
+                      ? 'text-stone-700 dark:text-stone-300'
+                      : 'font-medium text-stone-900 dark:text-stone-100'
                   }`}
                 >
                   {notification.title}
                 </span>
-                <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
+                <span className="mt-0.5 block text-xs text-stone-500 dark:text-stone-400">
                   {notification.body}
                 </span>
-                <span className="mt-1 block text-[11px] text-gray-400">
+                <span className="mt-1 block text-xs text-stone-400">
                   {timeAgo(notification.createdAt, t)}
                 </span>
               </span>
@@ -207,7 +207,7 @@ export function NotificationsPage() {
         ))}
         <div ref={sentinelRef} className="h-1" />
         {isFetchingNextPage && (
-          <div className="flex justify-center py-3 text-gray-400">
+          <div className="flex justify-center py-3 text-stone-400">
             <Spinner size="md" />
           </div>
         )}

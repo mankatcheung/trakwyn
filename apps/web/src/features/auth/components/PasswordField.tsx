@@ -15,7 +15,7 @@ export function PasswordField(props: PasswordFieldProps) {
         type="button"
         onClick={() => setVisible((v) => !v)}
         aria-pressed={visible}
-        className="absolute inset-y-0 right-0 px-3 text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+        className="absolute inset-y-0 right-0 px-3 text-xs font-medium text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
       >
         {visible ? t('registerPage.hidePassword') : t('registerPage.showPassword')}
       </button>

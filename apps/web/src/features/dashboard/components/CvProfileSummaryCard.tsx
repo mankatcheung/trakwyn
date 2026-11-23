@@ -37,13 +37,13 @@ export function CvProfileSummaryCard() {
   return (
     <Card className="mb-10 p-5" data-testid="cv-profile-card">
       <div className="mb-4 flex items-center justify-between gap-4">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <h2 className="flex items-center gap-2 text-lg font-medium text-stone-900 dark:text-stone-100">
           <IdCardIcon size={18} /> {t('dashboard.cvProfileTitle')}
         </h2>
         {!profile.isLoading && !isEmpty && (
           <Link
             to="/profile"
-            className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+            className="flex items-center gap-1.5 text-sm font-medium text-blue-800 hover:underline dark:text-blue-400"
           >
             <PencilIcon size={14} /> {t('dashboard.cvProfileEdit')}
           </Link>
@@ -54,12 +54,12 @@ export function CvProfileSummaryCard() {
         <Skeleton className="h-16 rounded-lg" />
       ) : isEmpty ? (
         <div className="space-y-3">
-          <p className="text-sm text-gray-600 dark:text-gray-300">
+          <p className="text-sm text-stone-600 dark:text-stone-300">
             {t('dashboard.cvProfileEmpty')}
           </p>
           <Link
             to="/profile"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-800 dark:bg-blue-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-600"
           >
             {t('dashboard.cvProfileFillIn')}
           </Link>
@@ -69,15 +69,15 @@ export function CvProfileSummaryCard() {
           <div className="space-y-2">
             {role && (
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-stone-500 dark:text-stone-400">
                   {t('dashboard.cvProfileLatestRole')}
                 </p>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
                   {t('experience.titleAtCompany', { title: role.title, company: role.company })}
                 </p>
               </div>
             )}
-            <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 dark:text-gray-300">
+            <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-stone-600 dark:text-stone-300">
               <li>{t('dashboard.cvProfileRoles', { count: workExperiences.length })}</li>
               <li>{t('dashboard.cvProfileEducation', { count: educations.length })}</li>
               <li>{t('dashboard.cvProfileSkills', { count: skills.length })}</li>

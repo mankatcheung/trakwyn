@@ -107,10 +107,10 @@ export function CookieConsent() {
         <div
           role="region"
           aria-label={t('cookieConsent.bannerAria')}
-          className="fixed inset-x-0 bottom-0 z-50 border-t border-gray-200 bg-white p-4 shadow-lg sm:p-6 dark:border-gray-700 dark:bg-gray-800"
+          className="fixed inset-x-0 bottom-0 z-50 border-t border-stone-200 bg-white p-4 shadow-lg sm:p-6 dark:border-stone-700 dark:bg-stone-800"
         >
           <div className="mx-auto flex max-w-4xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
+            <p className="text-sm text-stone-700 dark:text-stone-300">
               {t('cookieConsent.bannerDescription')}
             </p>
             <div className="flex shrink-0 flex-wrap gap-2">
@@ -135,28 +135,28 @@ export function CookieConsent() {
         size="sm"
       >
         <div className="space-y-4 p-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-stone-600 dark:text-stone-400">
             {t('cookieConsent.preferencesDescription')}
           </p>
 
-          <div className="flex items-start justify-between gap-4 rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+          <div className="flex items-start justify-between gap-4 rounded-lg border border-stone-200 p-3 dark:border-stone-700">
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
                 {t('cookieConsent.necessaryTitle')}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-stone-500 dark:text-stone-400">
                 {t('cookieConsent.necessaryDescription')}
               </p>
             </div>
             <Checkbox checked disabled aria-label={t('cookieConsent.necessaryTitle')} />
           </div>
 
-          <div className="flex items-start justify-between gap-4 rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+          <div className="flex items-start justify-between gap-4 rounded-lg border border-stone-200 p-3 dark:border-stone-700">
             <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
                 {t('cookieConsent.analyticsTitle')}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-stone-500 dark:text-stone-400">
                 {t('cookieConsent.analyticsDescription')}
               </p>
             </div>

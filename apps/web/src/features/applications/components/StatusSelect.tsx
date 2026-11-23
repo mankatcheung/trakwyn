@@ -148,8 +148,8 @@ export function StatusSelect({
     'flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg border transition-colors',
     'focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed',
     isDark
-      ? 'bg-gray-800 dark:bg-gray-600 border-gray-700 dark:border-gray-500 text-white'
-      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300',
+      ? 'bg-stone-800 dark:bg-stone-600 border-stone-700 dark:border-stone-500 text-white'
+      : 'bg-white dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300',
     className ?? '',
   ]
     .filter(Boolean)
@@ -206,8 +206,8 @@ export function StatusSelect({
           onKeyDown={onListKeyDown}
           className={`absolute z-50 mt-1 max-h-72 min-w-full overflow-y-auto rounded-lg border py-1 shadow-lg focus:outline-none ${
             isDark
-              ? 'border-gray-700 bg-gray-800 text-white dark:border-gray-600 dark:bg-gray-700'
-              : 'border-gray-200 bg-white text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200'
+              ? 'border-stone-700 bg-stone-800 text-white dark:border-stone-600 dark:bg-stone-700'
+              : 'border-stone-200 bg-white text-stone-700 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200'
           }`}
         >
           {options.map((option, index) => {
@@ -224,8 +224,8 @@ export function StatusSelect({
                 className={`flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm whitespace-nowrap ${
                   active
                     ? isDark
-                      ? 'bg-gray-700 dark:bg-gray-600'
-                      : 'bg-gray-100 dark:bg-gray-700'
+                      ? 'bg-stone-700 dark:bg-stone-600'
+                      : 'bg-stone-100 dark:bg-stone-700'
                     : ''
                 }`}
               >

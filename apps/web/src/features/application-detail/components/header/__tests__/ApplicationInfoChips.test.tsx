@@ -81,6 +81,6 @@ describe('ApplicationInfoChips', () => {
 
     const chip = screen.getByText(dateText('2026-06-20T12:00:00.000Z'));
     expect(chip).not.toHaveClass('bg-amber-100');
-    expect(chip).toHaveClass('bg-gray-100');
+    expect(chip).toHaveClass('bg-stone-100');
   });
 });

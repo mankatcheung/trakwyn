@@ -13,7 +13,10 @@ export interface ProgressBarProps extends HTMLAttributes<HTMLDivElement> {
  */
 export function ProgressBar({ value, max, className, ...rest }: ProgressBarProps) {
   const percent = Math.min(100, Math.max(0, (value / max) * 100));
-  const classes = ['h-2 overflow-hidden rounded-full bg-white/80 dark:bg-gray-700', className ?? '']
+  const classes = [
+    'h-2 overflow-hidden rounded-full bg-white/80 dark:bg-stone-700',
+    className ?? '',
+  ]
     .filter(Boolean)
     .join(' ');
 
@@ -27,7 +30,7 @@ export function ProgressBar({ value, max, className, ...rest }: ProgressBarProps
       {...rest}
     >
       <div
-        className="h-full rounded-full bg-blue-600 transition-all"
+        className="h-full rounded-full bg-blue-800 dark:bg-blue-700 transition-[width]"
         style={{ width: `${percent}%` }}
       />
     </div>

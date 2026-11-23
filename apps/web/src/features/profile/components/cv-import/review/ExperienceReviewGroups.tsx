@@ -35,15 +35,15 @@ export function WorkReviewGroup({ drafts, disabled, onChange }: WorkReviewGroupP
       isValid={isWorkValid}
       summary={(v) => (
         <>
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+          <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
             {t('experience.titleAtCompany', { title: v.title, company: v.company })}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-stone-500 dark:text-stone-400">
             {range(v.startDate, v.endDate)}
             {v.location && ` · ${v.location}`}
           </p>
           {v.description && (
-            <p className="mt-1 line-clamp-2 text-xs text-gray-600 dark:text-gray-300">
+            <p className="mt-1 line-clamp-2 text-xs text-stone-600 dark:text-stone-300">
               {v.description}
             </p>
           )}
@@ -123,8 +123,8 @@ export function EducationReviewGroup({ drafts, disabled, onChange }: EducationRe
       isValid={isEducationValid}
       summary={(v) => (
         <>
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{v.institution}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-sm font-medium text-stone-900 dark:text-stone-100">{v.institution}</p>
+          <p className="text-xs text-stone-500 dark:text-stone-400">
             {[v.degree, v.field && t('experience.inField', { field: v.field })]
               .filter(Boolean)
               .join(' ')}
@@ -202,12 +202,12 @@ export function ProjectsReviewGroup({ drafts, disabled, onChange }: ProjectsRevi
       isValid={isProjectValid}
       summary={(v) => (
         <>
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{v.name}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-sm font-medium text-stone-900 dark:text-stone-100">{v.name}</p>
+          <p className="text-xs text-stone-500 dark:text-stone-400">
             {[v.role, v.startDate && range(v.startDate, v.endDate)].filter(Boolean).join(' · ')}
           </p>
           {v.description && (
-            <p className="mt-1 line-clamp-2 text-xs text-gray-600 dark:text-gray-300">
+            <p className="mt-1 line-clamp-2 text-xs text-stone-600 dark:text-stone-300">
               {v.description}
             </p>
           )}

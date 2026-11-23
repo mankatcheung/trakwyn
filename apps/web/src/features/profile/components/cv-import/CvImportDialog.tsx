@@ -218,7 +218,7 @@ function CvImportFlow({ onClose }: { onClose: () => void }) {
     <Modal open onClose={saving ? () => undefined : close} title={t('cvImport.title')} size="lg">
       {phase === 'choose' && (
         <div className="space-y-4 p-4 sm:p-5">
-          <p className="text-sm text-gray-600 dark:text-gray-300">{t('cvImport.intro')}</p>
+          <p className="text-sm text-stone-600 dark:text-stone-300">{t('cvImport.intro')}</p>
           {problem && (
             <Alert role="alert">
               <AiErrorMessage code={problem.code} fallback={problem.message} />
@@ -235,7 +235,7 @@ function CvImportFlow({ onClose }: { onClose: () => void }) {
               'flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed px-4 py-10 text-center transition-colors focus-within:ring-2 focus-within:ring-blue-500',
               dragging
                 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                : 'border-gray-300 hover:border-blue-400 dark:border-gray-600',
+                : 'border-stone-300 hover:border-blue-400 dark:border-stone-600',
             ].join(' ')}
           >
             <input
@@ -250,15 +250,15 @@ function CvImportFlow({ onClose }: { onClose: () => void }) {
                 if (file) void readFile(file);
               }}
             />
-            <UploadIcon size={28} className="text-gray-400" />
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            <UploadIcon size={28} className="text-stone-400" />
+            <span className="text-sm font-medium text-stone-900 dark:text-stone-100">
               {t('cvImport.dropPrompt')}
             </span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="text-xs text-stone-500 dark:text-stone-400">
               {t('cvImport.dropHint', { size: CV_IMPORT_MAX_MB })}
             </span>
           </label>
-          <p className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <p className="flex items-start gap-2 text-xs text-stone-500 dark:text-stone-400">
             <LockIcon size={13} className="mt-0.5 shrink-0" />
             {t('cvImport.privacy')}
           </p>
@@ -270,10 +270,10 @@ function CvImportFlow({ onClose }: { onClose: () => void }) {
       {phase === 'reading' && (
         <div role="status" className="flex flex-col items-center gap-3 px-4 py-14 text-center">
           <Spinner size="md" />
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+          <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
             {t('cvImport.reading', { name: fileName })}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">{t('cvImport.readingHint')}</p>
+          <p className="text-xs text-stone-500 dark:text-stone-400">{t('cvImport.readingHint')}</p>
           <Button variant="ghost" size="sm" onClick={cancelReading}>
             {t('common.cancel')}
           </Button>
@@ -295,7 +295,7 @@ function CvImportFlow({ onClose }: { onClose: () => void }) {
               </Alert>
             )}
           </div>
-          <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-2 border-t border-gray-200 bg-white px-4 py-3 sm:px-5 dark:border-gray-700 dark:bg-gray-800">
+          <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-2 border-t border-stone-200 bg-white px-4 py-3 sm:px-5 dark:border-stone-700 dark:bg-stone-800">
             <Button variant="ghost" onClick={chooseAnother} disabled={saving}>
               {t('cvImport.chooseAnother')}
             </Button>

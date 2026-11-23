@@ -94,7 +94,7 @@ export function DocumentEditorBubbleMenu({
       shouldShow={shouldShow}
       updateDelay={100}
       options={{ placement: 'top', offset: 8, flip: true, shift: { padding: 8 } }}
-      className="z-40 rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800"
+      className="z-40 rounded-md border border-stone-200 bg-white shadow-lg dark:border-stone-600 dark:bg-stone-800"
       onKeyDown={(event) => {
         if (event.key !== 'Escape') return;
         event.stopPropagation();

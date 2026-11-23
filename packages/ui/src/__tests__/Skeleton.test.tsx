@@ -8,7 +8,7 @@ describe('Skeleton', () => {
     const el = container.firstChild as HTMLElement;
     expect(el.tagName).toBe('DIV');
     expect(el.className).toContain('animate-pulse');
-    expect(el.className).toContain('bg-gray-100');
+    expect(el.className).toContain('bg-stone-100');
   });
 
   it('merges additional className for sizing and rounding', () => {

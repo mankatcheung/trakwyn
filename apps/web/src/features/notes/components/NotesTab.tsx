@@ -123,7 +123,7 @@ export function NotesTab({ applicationId, enabled }: NotesTabProps) {
             }}
             disabled={!noteContent.trim() || createNote.isPending || notesFull}
             aria-label={t('applicationDetail.addNote')}
-            className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-800 dark:bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-900 dark:hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <PlusIcon size={14} />{' '}
             <span className="hidden sm:inline">{t('applicationDetail.addNote')}</span>
@@ -153,7 +153,7 @@ export function NotesTab({ applicationId, enabled }: NotesTabProps) {
                   disabled={!editingNote.content.trim() || updateNote.isPending}
                   aria-label={updateNote.isPending ? t('applicationForm.saving') : t('common.save')}
                   aria-busy={updateNote.isPending}
-                  className="flex cursor-pointer items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex cursor-pointer items-center gap-1 rounded-lg bg-blue-800 dark:bg-blue-700 px-3 py-1.5 text-xs text-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <CheckIcon size={14} />{' '}
                   <span className="hidden sm:inline">
@@ -164,7 +164,7 @@ export function NotesTab({ applicationId, enabled }: NotesTabProps) {
                   onClick={() => setEditingNote(null)}
                   disabled={updateNote.isPending}
                   aria-label={t('common.cancel')}
-                  className="flex cursor-pointer items-center gap-1 px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex cursor-pointer items-center gap-1 px-3 py-1.5 text-xs text-stone-500 hover:text-stone-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <XIcon size={14} /> <span className="hidden sm:inline">{t('common.cancel')}</span>
                 </button>
@@ -172,14 +172,14 @@ export function NotesTab({ applicationId, enabled }: NotesTabProps) {
             </>
           ) : (
             <div className="flex justify-between gap-3">
-              <p className="flex-1 text-sm whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+              <p className="flex-1 text-sm whitespace-pre-wrap text-stone-700 dark:text-stone-300">
                 {note.content}
               </p>
               <div className="flex shrink-0 gap-1">
                 <button
                   onClick={() => setEditingNote(note)}
                   aria-label={t('common.edit')}
-                  className="cursor-pointer rounded-sm p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                  className="cursor-pointer rounded-sm p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700 dark:hover:bg-stone-700 dark:hover:text-stone-200"
                 >
                   <EditIcon size={14} />
                 </button>
@@ -197,14 +197,14 @@ export function NotesTab({ applicationId, enabled }: NotesTabProps) {
                     });
                   }}
                   aria-label={t('common.delete')}
-                  className="cursor-pointer rounded-sm p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                  className="cursor-pointer rounded-sm p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
                 >
                   <Trash2Icon size={14} />
                 </button>
               </div>
             </div>
           )}
-          <p className="mt-2 text-xs text-gray-400">{new Date(note.createdAt).toLocaleString()}</p>
+          <p className="mt-2 text-xs text-stone-400">{new Date(note.createdAt).toLocaleString()}</p>
         </Card>
       ))}
     </div>

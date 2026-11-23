@@ -129,7 +129,9 @@ export function AwardsSection() {
       ) : (
         awards.length === 0 &&
         !formOpen && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">{t('experience.noAwardsYet')}</p>
+          <p className="text-sm text-stone-500 dark:text-stone-400">
+            {t('experience.noAwardsYet')}
+          </p>
         )
       )}
 
@@ -138,11 +140,11 @@ export function AwardsSection() {
           {awards.map((award) => (
             <li
               key={award.id}
-              className="flex items-start justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+              className="flex items-start justify-between gap-3 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm dark:border-stone-700 dark:bg-stone-800"
             >
               <div>
-                <p className="font-medium text-gray-900 dark:text-gray-100">{award.title}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="font-medium text-stone-900 dark:text-stone-100">{award.title}</p>
+                <p className="text-xs text-stone-500 dark:text-stone-400">
                   {[award.issuer, award.date?.slice(0, 7)].filter(Boolean).join(' · ')}
                 </p>
               </div>

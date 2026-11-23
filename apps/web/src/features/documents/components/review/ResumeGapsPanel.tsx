@@ -33,7 +33,7 @@ interface ResumeGapsPanelProps {
 type GapKind = 'requirement' | 'metric';
 
 const ROW_CLASS =
-  'flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-100 px-3 py-2 dark:border-gray-700';
+  'flex flex-wrap items-center justify-between gap-2 rounded-lg border border-stone-100 px-3 py-2 dark:border-stone-700';
 
 function useGapActions(applicationId: string, onAdded: () => void) {
   const qc = useQueryClient();
@@ -94,9 +94,9 @@ function RequirementRow({ requirement, actions }: { requirement: string; actions
   const busy = actions.addSkill.isPending || actions.dismiss.isPending;
   return (
     <li className={ROW_CLASS}>
-      <span className="text-sm text-gray-700 dark:text-gray-300">
+      <span className="text-sm text-stone-700 dark:text-stone-300">
         {t('resumeGaps.haveYouUsed')}{' '}
-        <strong className="font-semibold text-gray-900 dark:text-gray-100">{requirement}</strong>?
+        <strong className="font-medium text-stone-900 dark:text-stone-100">{requirement}</strong>?
       </span>
       <span className="flex gap-2">
         <Button
@@ -154,8 +154,8 @@ function RoleRow({ role, actions }: { role: RoleWithoutMetrics; actions: Actions
   const problem = state.error;
 
   return (
-    <li className="rounded-lg border border-gray-100 px-3 py-2 dark:border-gray-700">
-      <label htmlFor={inputId} className="text-sm text-gray-700 dark:text-gray-300">
+    <li className="rounded-lg border border-stone-100 px-3 py-2 dark:border-stone-700">
+      <label htmlFor={inputId} className="text-sm text-stone-700 dark:text-stone-300">
         {t('resumeGaps.roleHasNoNumbers', { title: role.title, company: role.company })}
       </label>
       <form {...formProps} className="mt-2 flex flex-wrap gap-2">
@@ -218,24 +218,24 @@ export function ResumeGapsPanel({ applicationId }: ResumeGapsPanelProps) {
   return (
     <section
       aria-labelledby="resume-gaps-title"
-      className="mb-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
+      className="mb-4 rounded-xl border border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-800"
     >
       <h2
         id="resume-gaps-title"
-        className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100"
+        className="flex items-center gap-1.5 text-sm font-medium text-stone-900 dark:text-stone-100"
       >
         <SparklesIcon size={16} aria-hidden="true" />
         {t('resumeGaps.title')}
       </h2>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('resumeGaps.intro')}</p>
+      <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{t('resumeGaps.intro')}</p>
 
       {!gaps.requirementsRead && (
-        <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">{t('resumeGaps.notRead')}</p>
+        <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">{t('resumeGaps.notRead')}</p>
       )}
 
       {gaps.requirementGaps.length > 0 && (
         <div className="mt-3">
-          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+          <h3 className="text-xs font-medium text-stone-500 dark:text-stone-400">
             {t('resumeGaps.requirementsHeading')}
           </h3>
           <ul className="mt-1.5 space-y-1.5">
@@ -248,7 +248,7 @@ export function ResumeGapsPanel({ applicationId }: ResumeGapsPanelProps) {
 
       {gaps.rolesWithoutMetrics.length > 0 && (
         <div className="mt-3">
-          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+          <h3 className="text-xs font-medium text-stone-500 dark:text-stone-400">
             {t('resumeGaps.metricsHeading')}
           </h3>
           <ul className="mt-1.5 space-y-1.5">
