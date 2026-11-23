@@ -47,7 +47,7 @@ describe('ErrorBoundary', () => {
     );
 
     expect(captureException).toHaveBeenCalledExactlyOnceWith(error, { action: 'render' });
-    expect(rendered.container.textContent).toContain('Something went wrong.');
+    expect(rendered.container.textContent).toContain('Something went wrong');
     expect(rendered.container.querySelector('button')?.textContent).toBe('Reload');
     // The error's own message is not shown: it may quote page content.
     expect(rendered.container.textContent).not.toContain('render failed');
