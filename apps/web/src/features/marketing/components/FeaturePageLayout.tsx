@@ -44,26 +44,26 @@ export function FeaturePageLayout({
 }: FeaturePageLayoutProps) {
   const { t } = useLocale();
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-900">
       <MarketingHeader activeFeatures />
 
       <main>
         {/* Hero */}
         <section className="relative overflow-hidden py-20 sm:py-24">
-          <div className="absolute inset-0 -z-10 bg-linear-to-b from-blue-50 to-gray-50 dark:from-gray-900 dark:to-gray-900" />
+          <div className="absolute inset-0 -z-10 bg-linear-to-b from-blue-50 to-stone-50 dark:from-stone-900 dark:to-stone-900" />
           <div className="mx-auto max-w-2xl px-4 text-center sm:px-6 lg:px-8">
-            <div className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600">
+            <div className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-600 dark:text-stone-400">
               <EyebrowIcon className="size-3.5" />
               {eyebrowLabel}
             </div>
-            <h1 className="mt-3 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl dark:text-gray-100">
+            <h1 className="mt-3 text-4xl font-medium tracking-tight text-stone-900 sm:text-5xl dark:text-stone-100">
               {title}
             </h1>
-            <p className="mt-4 text-lg/8 text-gray-600 dark:text-gray-400">{description}</p>
+            <p className="mt-4 text-lg/8 text-stone-600 dark:text-stone-400">{description}</p>
             <Link
               to="/register"
               onClick={() => trackCta('start_free', 'feature_hero')}
-              className="mt-8 inline-block rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+              className="mt-8 inline-block rounded-lg bg-blue-800 px-6 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-900"
             >
               {t('landing.startFree')}
             </Link>
@@ -79,14 +79,17 @@ export function FeaturePageLayout({
         {benefits.map((benefit, i) => {
           const reversed = i % 2 === 1;
           return (
-            <div key={benefit.title} className={reversed ? 'bg-gray-100 dark:bg-gray-800/30' : ''}>
+            <div
+              key={benefit.title}
+              className={reversed ? 'bg-stone-100 dark:bg-stone-800/30' : ''}
+            >
               <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
                 <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
                   <div className={reversed ? 'lg:order-2' : ''}>
-                    <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl dark:text-gray-100">
+                    <h2 className="text-2xl font-medium text-stone-900 sm:text-3xl dark:text-stone-100">
                       {benefit.title}
                     </h2>
-                    <p className="mt-3 text-base/7 text-gray-600 dark:text-gray-400">
+                    <p className="mt-3 text-base/7 text-stone-600 dark:text-stone-400">
                       {benefit.description}
                     </p>
                   </div>
@@ -98,12 +101,12 @@ export function FeaturePageLayout({
         })}
 
         {/* CTA */}
-        <section className="bg-blue-600 px-4 py-20 text-center sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-white">{ctaHeadline}</h2>
+        <section className="bg-blue-950 px-4 py-20 text-center sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-medium text-white">{ctaHeadline}</h2>
           <Link
             to="/register"
             onClick={() => trackCta('get_started_free', 'feature_closing')}
-            className="mt-7 inline-block rounded-lg bg-white px-7 py-3 text-sm font-semibold text-blue-600 transition-colors hover:bg-blue-50"
+            className="mt-7 inline-block rounded-lg bg-white px-7 py-3 text-sm font-medium text-stone-900 transition-colors hover:bg-stone-100"
           >
             {t('landing.startFree')}
           </Link>

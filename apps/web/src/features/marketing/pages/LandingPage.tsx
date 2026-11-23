@@ -96,7 +96,7 @@ export function LandingPage() {
   const authLabel = isLoggedIn ? t('landing.goDashboard') : t('landing.signIn');
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-900">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(STRUCTURED_DATA) }}
@@ -106,32 +106,34 @@ export function LandingPage() {
       <main>
         {/* Hero */}
         <section className="relative overflow-hidden py-24 sm:py-32">
-          <div className="absolute inset-0 -z-10 bg-linear-to-b from-blue-50 to-gray-50 dark:from-gray-900 dark:to-gray-900" />
+          <div className="absolute inset-0 -z-10 bg-linear-to-b from-blue-50 to-stone-50 dark:from-stone-900 dark:to-stone-900" />
           <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl dark:text-gray-100">
+            <h1 className="text-4xl font-medium tracking-tight text-stone-900 sm:text-6xl dark:text-stone-100">
               {t('landing.heroTitleLine1')}
               <br />
-              <span className="text-blue-600">{t('landing.heroTitleLine2')}</span>
+              <span className="text-blue-800 dark:text-blue-400">
+                {t('landing.heroTitleLine2')}
+              </span>
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg/8 text-gray-600 dark:text-gray-400">
+            <p className="mx-auto mt-6 max-w-2xl text-lg/8 text-stone-600 dark:text-stone-400">
               {t('landing.heroDescription')}
             </p>
             <div className="mt-10 flex items-center justify-center gap-4">
               <Link
                 to="/register"
                 onClick={() => trackCta('start_free', 'hero')}
-                className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+                className="rounded-lg bg-blue-800 px-6 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-900"
               >
                 {t('landing.startFree')}
               </Link>
               <Link
                 to={authLink}
-                className="rounded-lg border border-gray-300 px-6 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                className="rounded-lg border border-stone-300 px-6 py-3 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
               >
                 {authLabel}
               </Link>
             </div>
-            <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-4 text-sm text-stone-500 dark:text-stone-400">
               {t('landing.heroTrustLine')}
             </p>
           </div>
@@ -151,10 +153,10 @@ export function LandingPage() {
         <section className="py-24 sm:py-32">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl dark:text-gray-100">
+              <h2 className="text-3xl font-medium tracking-tight text-stone-900 sm:text-4xl dark:text-stone-100">
                 {t('landing.everything')}
               </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-600 dark:text-gray-400">
+              <p className="mx-auto mt-4 max-w-2xl text-lg text-stone-600 dark:text-stone-400">
                 {t('landing.everythingDescription')}
               </p>
             </div>
@@ -166,9 +168,10 @@ export function LandingPage() {
             <div className="mt-10 text-center">
               <Link
                 to="/features"
-                className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+                className="inline-flex items-center gap-1 text-sm font-medium text-blue-800 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
               >
-                {t('landing.seeEverything')} →
+                {t('landing.seeEverything')}
+                <ArrowRight className="size-3.5" aria-hidden="true" />
               </Link>
             </div>
           </div>
@@ -187,26 +190,29 @@ export function LandingPage() {
         />
 
         {/* How it works */}
-        <section className="bg-gray-100 py-24 sm:py-32 dark:bg-gray-800/30">
+        <section className="bg-stone-100 py-24 sm:py-32 dark:bg-stone-800/30">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl dark:text-gray-100">
+              <h2 className="text-3xl font-medium tracking-tight text-stone-900 sm:text-4xl dark:text-stone-100">
                 {t('landing.getStartedMinutes')}
               </h2>
             </div>
             <div className="mt-12 space-y-6">
               {stepKeys.map((stepKey, i) => (
                 <div key={stepKey} className="flex items-start gap-4">
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
-                    {i + 1}
+                  <div className="w-8 shrink-0 border-t-2 border-blue-800 pt-1.5 font-mono text-sm text-stone-500 tabular-nums dark:border-blue-400 dark:text-stone-400">
+                    {String(i + 1).padStart(2, '0')}
                   </div>
-                  <p className="pt-0.5 text-lg text-gray-700 dark:text-gray-300">{t(stepKey)}</p>
+                  <p className="pt-0.5 text-lg text-stone-700 dark:text-stone-300">{t(stepKey)}</p>
                 </div>
               ))}
             </div>
-            <p className="mt-10 text-center text-base text-gray-600 dark:text-gray-400">
+            <p className="mt-10 text-center text-base text-stone-600 dark:text-stone-400">
               {t('landing.planFraming')}{' '}
-              <Link to="/pricing" className="font-semibold text-blue-600 hover:text-blue-700">
+              <Link
+                to="/pricing"
+                className="font-medium text-blue-800 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+              >
                 {t('landing.seePricing')}
               </Link>
             </p>
@@ -214,12 +220,12 @@ export function LandingPage() {
               <Link
                 to="/register"
                 onClick={() => trackCta('get_started_free', 'closing')}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-800 px-6 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-900"
               >
                 {t('landing.startFree')}
                 <ArrowRight className="size-4" />
               </Link>
-              <p className="mx-auto mt-4 max-w-xl text-sm text-gray-600 dark:text-gray-400">
+              <p className="mx-auto mt-4 max-w-xl text-sm text-stone-600 dark:text-stone-400">
                 {t('landing.passesNote')}
               </p>
             </div>

@@ -27,7 +27,7 @@ export function ThemedScreenshot({
   const dark = getScreenshot(name, 'dark');
   const alt = t(light.altKey);
   const shared =
-    'h-auto w-full rounded-2xl border border-gray-200 shadow-lg shadow-gray-900/5 dark:border-gray-800';
+    'h-auto w-full rounded-2xl border border-stone-200 shadow-sm dark:border-stone-800';
   return (
     <>
       <img
