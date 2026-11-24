@@ -9,12 +9,13 @@ import { ThemedScreenshot } from '#/features/marketing/components/ThemedScreensh
 import { getScreenshot } from '#/features/marketing/lib/screenshots';
 
 describe('ThemedScreenshot', () => {
-  it('loads the light image eagerly and both at high priority when priority is set', () => {
+  it('keeps both images lazy and at high priority when priority is set', () => {
     render(<ThemedScreenshot name="board" priority />);
 
     const [light, dark] = screen.getAllByAltText('t:screenshots.board.alt');
-    expect(light).toHaveAttribute('loading', 'eager');
-    // A hidden eager image is still fetched, so the dark one stays lazy.
+    // A hidden eager image is still fetched, so neither is eager; the page's
+    // head preloads the visible variant (heroPreloadLinks).
+    expect(light).toHaveAttribute('loading', 'lazy');
     expect(dark).toHaveAttribute('loading', 'lazy');
     expect(light).toHaveAttribute('fetchpriority', 'high');
     expect(dark).toHaveAttribute('fetchpriority', 'high');

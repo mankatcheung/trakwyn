@@ -15,10 +15,11 @@ export function ThemedScreenshot({
 }: {
   name: ScreenshotName;
   /**
-   * An above-the-fold image (the likely LCP): high priority, and the light
-   * image is eager. The dark image stays lazy, because a hidden eager image is
-   * still fetched and most visitors would download it for nothing; in dark mode
-   * it is visible and loads as soon as layout is known, at high priority.
+   * An above-the-fold image (the likely LCP): high priority. Both images stay
+   * lazy, because a hidden eager image is still fetched and most visitors would
+   * download it for nothing. The page's `head` preloads the variant for the
+   * visitor's colour scheme (`heroPreloadLinks`, JEF-682), so it is requested
+   * from the HTML instead of after layout; the lazy `<img>` then reuses it.
    */
   priority?: boolean;
 }) {
@@ -35,7 +36,7 @@ export function ThemedScreenshot({
         width={light.width}
         height={light.height}
         alt={alt}
-        loading={priority ? 'eager' : 'lazy'}
+        loading="lazy"
         fetchPriority={priority ? 'high' : undefined}
         decoding="async"
         className={`${shared} dark:hidden`}

@@ -111,13 +111,14 @@ describe('LandingPage', () => {
     expect(demo.compareDocumentPosition(features)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
-  it('loads the hero board screenshot eagerly at high priority, with its size set (JEF-530)', () => {
+  it('marks the hero board screenshot high priority, lazy (the head preloads it), with its size set (JEF-530, JEF-682)', () => {
     mockHasSessionCookie.mockReturnValue(false);
 
     render(<LandingPage />);
 
     const [light, dark] = screen.getAllByAltText('screenshots.board.alt');
-    expect(light).toHaveAttribute('loading', 'eager');
+    // Neither is eager: a hidden eager image is still fetched.
+    expect(light).toHaveAttribute('loading', 'lazy');
     expect(dark).toHaveAttribute('loading', 'lazy');
     for (const img of [light, dark]) {
       expect(img).toHaveAttribute('fetchpriority', 'high');
