@@ -1506,6 +1506,8 @@
   "pricing.pass6Price": "$49",
   "pricing.passNote": "一次付款，到期自動結束，不會續訂。",
   "pricing.bestValue": "最超值",
+  "pricing.recommended": "推薦",
+  "pricing.billingDetails": "付款詳情",
   "pricing.perMonthEquivalent": "折合每月 {{price}}",
   "pricing.savePercent": "平 {{percent}}%",
   "pricing.freeApplications": "50",
