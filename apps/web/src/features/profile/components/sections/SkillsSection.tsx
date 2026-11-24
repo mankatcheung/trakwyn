@@ -126,7 +126,9 @@ export function SkillsSection() {
       ) : (
         skills.length === 0 &&
         !formOpen && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">{t('experience.noSkillsYet')}</p>
+          <p className="text-sm text-stone-500 dark:text-stone-400">
+            {t('experience.noSkillsYet')}
+          </p>
         )
       )}
 
@@ -135,11 +137,11 @@ export function SkillsSection() {
           {skills.map((skill) => (
             <div
               key={skill.id}
-              className="group flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800"
+              className="group flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm dark:border-stone-700 dark:bg-stone-800"
             >
-              <span className="text-gray-900 dark:text-gray-100">{skill.name}</span>
+              <span className="text-stone-900 dark:text-stone-100">{skill.name}</span>
               {skill.proficiency && (
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+                <span className="text-xs text-stone-500 dark:text-stone-400">
                   · {t(`experience.${skill.proficiency}`, { defaultValue: skill.proficiency })}
                 </span>
               )}

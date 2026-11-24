@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import en from '#/i18n/en.json';
@@ -8,9 +8,11 @@ import {
   SCREENSHOT_SCALE,
   SCREENSHOT_SCREENS,
   SCREENSHOT_THEMES,
+  screenshotSize,
   SCREENSHOTS,
 } from '#/features/marketing/lib/screenshots';
 
+const srcDir = join(import.meta.dirname, '..', '..', '..', '..');
 const publicDir = join(import.meta.dirname, '..', '..', '..', '..', '..', 'public');
 
 /** Width and height from a lossy ('VP8 '), lossless ('VP8L') or extended ('VP8X') WebP header. */
@@ -43,6 +45,42 @@ describe('screenshot manifest', () => {
     const shot = getScreenshot('board', 'light');
     expect(shot.width).toBe(board.viewport.width * SCREENSHOT_SCALE);
     expect(shot.height).toBe(board.viewport.height * SCREENSHOT_SCALE);
+  });
+
+  it('sizes a crop as its crop size times the device scale factor (JEF-674)', () => {
+    const crop = SCREENSHOT_SCREENS.find((s) => s.name === 'crop-board-header');
+    expect(crop).toBeDefined();
+    const shot = getScreenshot('crop-board-header', 'dark');
+    expect(shot.width).toBe(crop!.crop.width * SCREENSHOT_SCALE);
+    expect(shot.height).toBe(crop!.crop.height * SCREENSHOT_SCALE);
+    expect(screenshotSize(crop!)).toEqual(crop!.crop);
+  });
+
+  it('gives every crop a data-screenshot target and every target a crop', () => {
+    const screens: readonly { name: string; target?: string; crop?: unknown }[] =
+      SCREENSHOT_SCREENS;
+    screens.forEach((screen) => {
+      expect(Boolean(screen.target), `${screen.name} target`).toBe(Boolean(screen.crop));
+      expect(screen.name.startsWith('crop-')).toBe(Boolean(screen.target));
+    });
+  });
+
+  it('has a hook in the app for every crop target', () => {
+    const targets = SCREENSHOT_SCREENS.flatMap((s) => ('target' in s ? [s.target] : []));
+    expect(targets.length).toBeGreaterThan(0);
+    const files = readdirSync(srcDir, { recursive: true, encoding: 'utf8' }).filter(
+      (f) => /\.tsx$/.test(f) && !f.includes('__tests__'),
+    );
+    const source = files.map((f) => readFileSync(join(srcDir, f), 'utf8')).join('\n');
+    targets.forEach((target) => {
+      // A plain attribute, or an expression (the board column's is built from
+      // its status, the assistant reply's depends on the message role).
+      const found =
+        source.includes(`data-screenshot="${target}"`) ||
+        (source.includes(`'${target}'`) && source.includes('data-screenshot={')) ||
+        (target.startsWith('board-column-') && source.includes('data-screenshot={`board-column-'));
+      expect(found, `no data-screenshot="${target}" in src`).toBe(true);
+    });
   });
 
   it('throws for an unknown screenshot', () => {

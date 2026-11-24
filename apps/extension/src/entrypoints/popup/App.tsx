@@ -419,8 +419,7 @@ export function App() {
   if (screen.type === 'saved') {
     return (
       <div className="container center">
-        <div className="success-icon">✅</div>
-        <h2>Saved!</h2>
+        <h2>Saved</h2>
         <p className="muted">
           <strong>{screen.company}</strong> — {screen.role}
         </p>
@@ -437,7 +436,6 @@ export function App() {
   if (screen.type === 'error') {
     return (
       <div className="container center">
-        <div className="error-icon">⚠️</div>
         <p className="error-text">{screen.message}</p>
         <button onClick={() => loadReadyScreen()} className="btn btn-ghost">
           Try again
@@ -496,11 +494,11 @@ export function App() {
         />
       ) : clip.tab ? (
         <div className="empty-state">
-          <p>Couldn&apos;t read this page.</p>
+          <p>Couldn&apos;t read this page</p>
         </div>
       ) : (
         <div className="empty-state">
-          <p>Navigate to a job posting to clip it.</p>
+          <p>Open a job posting to clip it</p>
           <p className="muted">
             Supported: LinkedIn, Indeed, Glassdoor, Greenhouse, Lever, and more.
           </p>

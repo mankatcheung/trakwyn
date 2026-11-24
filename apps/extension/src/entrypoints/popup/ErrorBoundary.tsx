@@ -29,8 +29,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (!this.state.failed) return this.props.children;
     return (
       <div className="container center">
-        <div className="error-icon">⚠️</div>
-        <p className="error-text">Something went wrong.</p>
+        <p className="error-text">Something went wrong</p>
         <button onClick={() => window.location.reload()} className="btn btn-ghost">
           Reload
         </button>

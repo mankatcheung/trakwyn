@@ -360,10 +360,10 @@ function createStyles(colors: ThemeColors) {
       gap: 12,
     },
     cardHeaderText: { flex: 1, gap: 2 },
-    title: { fontSize: 16, fontWeight: '700', color: colors.text },
+    title: { fontSize: 16, fontWeight: '500', color: colors.text },
     description: { fontSize: 13, color: colors.textSubtle },
-    link: { color: colors.primary, fontSize: 13, fontWeight: '600' },
-    linkDanger: { color: colors.danger, fontSize: 13, fontWeight: '600' },
+    link: { color: colors.primary, fontSize: 13, fontWeight: '500' },
+    linkDanger: { color: colors.danger, fontSize: 13, fontWeight: '500' },
     emptyText: { fontSize: 13, color: colors.textFaint },
     addButton: {
       width: 32,
@@ -373,7 +373,7 @@ function createStyles(colors: ThemeColors) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    addButtonText: { fontSize: 18, fontWeight: '600', color: colors.text, lineHeight: 20 },
+    addButtonText: { fontSize: 18, fontWeight: '500', color: colors.text, lineHeight: 20 },
     badge: {
       backgroundColor: colors.surfaceAlt,
       borderRadius: 9999,
@@ -382,10 +382,9 @@ function createStyles(colors: ThemeColors) {
     },
     badgeFull: { backgroundColor: colors.warningSurface },
     badgeText: {
-      fontSize: 10,
-      fontWeight: '700',
+      fontSize: 12,
+      fontWeight: '500',
       color: colors.textMuted,
-      textTransform: 'uppercase',
     },
     badgeTextFull: { color: colors.warning },
     form: { gap: 8 },
@@ -419,7 +418,7 @@ function createStyles(colors: ThemeColors) {
       justifyContent: 'center',
       paddingHorizontal: 14,
     },
-    buttonText: { color: colors.text, fontSize: 14, fontWeight: '600' },
+    buttonText: { color: colors.text, fontSize: 14, fontWeight: '500' },
     error: {
       color: colors.danger,
       backgroundColor: colors.dangerSurface,
@@ -442,7 +441,7 @@ function createStyles(colors: ThemeColors) {
     },
     rowText: { flex: 1, gap: 3 },
     rowTitleLine: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-    rowTitle: { fontSize: 14, fontWeight: '600', color: colors.text },
+    rowTitle: { fontSize: 14, fontWeight: '500', color: colors.text },
     rowMeta: { fontSize: 12, color: colors.textFaint },
   });
 }

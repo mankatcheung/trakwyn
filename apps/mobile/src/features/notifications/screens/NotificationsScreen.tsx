@@ -114,7 +114,7 @@ function createStyles(colors: ThemeColors) {
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
-    headerAction: { color: colors.primary, fontSize: 13, fontWeight: '600' },
+    headerAction: { color: colors.primary, fontSize: 13, fontWeight: '500' },
     loading: { marginTop: 40 },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
     emptyText: { fontSize: 14, color: colors.textSubtle },

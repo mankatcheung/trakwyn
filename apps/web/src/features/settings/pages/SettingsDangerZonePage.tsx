@@ -65,7 +65,7 @@ export function SettingsDangerZonePage() {
       {/* ── Danger zone ── */}
       <Card className="space-y-4 border-red-200 bg-red-50 p-5 dark:border-red-900 dark:bg-red-900/20">
         <div>
-          <h2 className="text-base font-semibold text-red-600">{t('data.dangerZoneTitle')}</h2>
+          <h2 className="text-base font-medium text-red-600">{t('data.dangerZoneTitle')}</h2>
           <p className="text-sm text-red-500 dark:text-red-400">
             {t('data.dangerZoneDescription')}
           </p>

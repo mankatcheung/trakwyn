@@ -8,13 +8,14 @@ import { getErrorMessage } from '../../../lib/errors';
 import type { CalendarEvent, CalendarEventKind, CalendarViewMode } from '../types';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import { fixedColors } from '../../../theme/colors';
 import { useLanguage } from '../../../i18n/LanguageContext';
 
 function eventDotColor(colors: ThemeColors): Record<CalendarEventKind, string> {
   return {
     applied: colors.primary,
-    followUp: '#f59e0b',
-    interview: '#a855f7',
+    followUp: fixedColors.followUp,
+    interview: fixedColors.interview,
   };
 }
 
@@ -295,7 +296,7 @@ function createStyles(colors: ThemeColors) {
       paddingBottom: 12,
       gap: 12,
     },
-    headerTitle: { flex: 1, fontSize: 28, fontWeight: '800', color: colors.text },
+    headerTitle: { flex: 1, fontSize: 28, fontWeight: '500', color: colors.text },
     periodNav: { flexDirection: 'row', gap: 8 },
     periodArrowButton: {
       width: 36,
@@ -310,7 +311,7 @@ function createStyles(colors: ThemeColors) {
     periodArrow: { fontSize: 18, color: colors.textMuted, lineHeight: 20 },
     periodLabel: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: '500',
       color: colors.textMuted,
       minWidth: 160,
       textAlign: 'center',
@@ -337,22 +338,20 @@ function createStyles(colors: ThemeColors) {
       fontWeight: '500',
       textAlign: 'center',
     },
-    viewModeTextActive: { color: colors.text, fontWeight: '700' },
+    viewModeTextActive: { color: colors.text, fontWeight: '500' },
     loading: { marginTop: 40 },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 8 },
     error: { color: colors.danger, fontSize: 14, textAlign: 'center' },
-    link: { color: colors.primary, fontSize: 13, fontWeight: '600' },
+    link: { color: colors.primary, fontSize: 13, fontWeight: '500' },
     scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
     weekdayRow: { flexDirection: 'row' },
     weekdayLabel: {
       flex: 1,
       textAlign: 'center',
-      fontSize: 11,
-      fontWeight: '600',
-      letterSpacing: 0.04,
+      fontSize: 12,
+      fontWeight: '500',
       color: colors.textFaint,
       paddingVertical: 4,
-      textTransform: 'uppercase',
     },
     grid: { flexDirection: 'row', flexWrap: 'wrap' },
     dayCell: {
@@ -372,12 +371,12 @@ function createStyles(colors: ThemeColors) {
     dayNumberBadgeSelected: { backgroundColor: colors.primary },
     dayNumber: { fontSize: 15, color: colors.textMuted },
     dayNumberDim: { color: colors.borderStrong },
-    dayNumberToday: { fontWeight: '700', color: colors.primary },
-    dayNumberSelected: { fontWeight: '700', color: colors.onPrimary },
+    dayNumberToday: { fontWeight: '500', color: colors.primary },
+    dayNumberSelected: { fontWeight: '500', color: colors.onPrimary },
     dotRow: { flexDirection: 'row', gap: 2 },
     dot: { width: 6, height: 6, borderRadius: 3 },
     eventsSection: { marginTop: 8, gap: 10 },
-    focusedDayLabel: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 2 },
+    focusedDayLabel: { fontSize: 18, fontWeight: '500', color: colors.text, marginBottom: 2 },
     hintText: { textAlign: 'center', color: colors.textFaint, fontSize: 13, paddingVertical: 16 },
     eventRow: {
       flexDirection: 'row',
@@ -391,11 +390,11 @@ function createStyles(colors: ThemeColors) {
       paddingHorizontal: 14,
     },
     eventTime: { width: 44, alignItems: 'flex-start' },
-    eventTimeValue: { fontSize: 15, fontWeight: '700', color: colors.text },
-    eventTimeMeridiem: { fontSize: 11, color: colors.textFaint, fontWeight: '600' },
+    eventTimeValue: { fontSize: 15, fontWeight: '500', color: colors.text },
+    eventTimeMeridiem: { fontSize: 12, color: colors.textFaint, fontWeight: '500' },
     eventBar: { width: 3, alignSelf: 'stretch', borderRadius: 2 },
     eventText: { flex: 1, gap: 2 },
-    eventTitle: { fontSize: 15, fontWeight: '600', color: colors.text },
+    eventTitle: { fontSize: 15, fontWeight: '500', color: colors.text },
     eventRole: { fontSize: 13, color: colors.textSubtle },
   });
 }

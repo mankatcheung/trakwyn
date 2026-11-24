@@ -43,7 +43,7 @@ export function AppearanceScreen() {
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background, padding: 20, gap: 10 },
-    label: { fontSize: 14, fontWeight: '600', color: colors.text },
+    label: { fontSize: 14, fontWeight: '500', color: colors.text },
     optionList: { gap: 10 },
     option: {
       flexDirection: 'row',
@@ -59,7 +59,7 @@ function createStyles(colors: ThemeColors) {
     },
     optionSelected: { backgroundColor: colors.primarySurface, borderColor: colors.primary },
     optionText: { fontSize: 15, color: colors.textMuted, fontWeight: '500' },
-    optionTextSelected: { color: colors.primary, fontWeight: '700' },
-    checkmark: { fontSize: 16, fontWeight: '700', color: colors.primary },
+    optionTextSelected: { color: colors.primary, fontWeight: '500' },
+    checkmark: { fontSize: 16, fontWeight: '500', color: colors.primary },
   });
 }

@@ -174,7 +174,7 @@ export function DocumentUploadPanel({
       <>
         {fileInput}
         {uploading && (
-          <p role="status" className="text-sm text-gray-500 dark:text-gray-400">
+          <p role="status" className="text-sm text-stone-500 dark:text-stone-400">
             {t('documents.uploading')}
           </p>
         )}
@@ -185,11 +185,11 @@ export function DocumentUploadPanel({
   }
 
   return (
-    <div className="space-y-3 rounded-xl border border-blue-200 bg-white p-4 dark:border-blue-700 dark:bg-gray-800">
+    <div className="space-y-3 rounded-xl border border-blue-200 bg-white p-4 dark:border-blue-700 dark:bg-stone-800">
       {fileInput}
-      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+      <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
         {t('documents.uploaded')}{' '}
-        <span className="font-normal text-gray-600 dark:text-gray-400">{pendingUpload.name}</span>
+        <span className="font-normal text-stone-600 dark:text-stone-400">{pendingUpload.name}</span>
       </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {allowedTypes.length > 1 && (
@@ -256,7 +256,7 @@ export function StorageLeft({ usage }: { usage: StorageUsage }) {
       </p>
     );
   }
-  const color = level === 'warning' ? 'text-amber-600' : 'text-gray-500 dark:text-gray-400';
+  const color = level === 'warning' ? 'text-amber-600' : 'text-stone-500 dark:text-stone-400';
   return (
     <p className={`text-xs ${color}`}>
       {t('storage.left', { amount: formatStorageSize(storageLeftBytes(usage)) })}

@@ -174,7 +174,7 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.primarySurface,
     },
     bulletsHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-    heading: { fontSize: 13, fontWeight: '700', color: colors.text },
+    heading: { fontSize: 13, fontWeight: '500', color: colors.text },
     generatedOn: { fontSize: 12, color: colors.textSubtle },
     bullet: { fontSize: 14, lineHeight: 20, color: colors.text },
     button: {
@@ -185,7 +185,7 @@ function createStyles(colors: ThemeColors) {
       borderWidth: 1,
       borderColor: colors.primary,
     },
-    buttonText: { color: colors.primary, fontSize: 14, fontWeight: '600' },
+    buttonText: { color: colors.primary, fontSize: 14, fontWeight: '500' },
     modal: { flex: 1, backgroundColor: colors.background },
     modalHeader: {
       flexDirection: 'row',
@@ -197,10 +197,10 @@ function createStyles(colors: ThemeColors) {
       borderBottomColor: colors.border,
     },
     headerSpacer: { width: 48 },
-    modalTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
-    linkMuted: { color: colors.textSubtle, fontSize: 15, fontWeight: '600' },
+    modalTitle: { fontSize: 16, fontWeight: '500', color: colors.text },
+    linkMuted: { color: colors.textSubtle, fontSize: 15, fontWeight: '500' },
     modalBody: { padding: 16, gap: 12 },
-    questionText: { fontSize: 15, fontWeight: '600', color: colors.text },
+    questionText: { fontSize: 15, fontWeight: '500', color: colors.text },
     note: { fontSize: 13, color: colors.warning },
     error: {
       color: colors.danger,

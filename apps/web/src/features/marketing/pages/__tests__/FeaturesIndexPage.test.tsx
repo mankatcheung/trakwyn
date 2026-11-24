@@ -29,6 +29,63 @@ vi.mock('#/lib/i18n', () => ({
 import { FeaturesIndexPage } from '#/features/marketing/pages/FeaturesIndexPage';
 
 describe('FeaturesIndexPage', () => {
+  it('shows a real screenshot, in both themes, beside each deep dive (JEF-674)', () => {
+    render(<FeaturesIndexPage />);
+
+    [
+      'screenshots.board.alt',
+      'screenshots.cropAssistantReply.alt',
+      'screenshots.cropResumeEditor.alt',
+      'screenshots.cropStageFunnel.alt',
+    ].forEach((key) => {
+      expect(screen.getAllByAltText((en as Record<string, string>)[key])).toHaveLength(2);
+    });
+    // Every image on the page is a real capture, never a drawn placeholder.
+    screen.getAllByRole('img').forEach((img) => {
+      expect(img.getAttribute('src')).toMatch(/^\/screenshots\/[a-z-]+-(light|dark)\.webp$/);
+    });
+  });
+
+  it('leads with the product: a hero screenshot between the heading and the first deep dive (JEF-675)', () => {
+    render(<FeaturesIndexPage />);
+
+    const [light, dark] = screen.getAllByAltText(
+      (en as Record<string, string>)['screenshots.applicationDetail.alt'],
+    );
+    expect(light).toHaveAttribute('loading', 'eager');
+    expect(light).toHaveAttribute('fetchpriority', 'high');
+    expect(dark).toHaveAttribute('src', '/screenshots/application-detail-dark.webp');
+    const heading = screen.getByRole('heading', { level: 1 });
+    const firstDeepDive = screen.getAllByAltText(
+      (en as Record<string, string>)['screenshots.board.alt'],
+    )[0];
+    expect(heading.compareDocumentPosition(light)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(light.compareDocumentPosition(firstDeepDive)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('has no alternating background bands and lists the rest instead of a card grid (JEF-676)', () => {
+    const { container } = render(<FeaturesIndexPage />);
+
+    // The closing CTA is the only filled band left in the page body.
+    expect(
+      container.querySelectorAll('main section.bg-stone-100, main section.bg-blue-950'),
+    ).toHaveLength(1);
+    expect(container.querySelectorAll('main div.bg-stone-100')).toHaveLength(0);
+    const list = screen.getByRole('heading', { name: /everything else/i }).nextElementSibling;
+    expect(list?.tagName).toBe('UL');
+    expect(list?.querySelectorAll(':scope > li')).toHaveLength(8);
+  });
+
+  it('closes with the shared stone CTA, not a blue block (JEF-676)', () => {
+    render(<FeaturesIndexPage />);
+
+    const cta = screen
+      .getByRole('heading', { name: en['features.index.ctaTitle'] })
+      .closest('section');
+    expect(cta).toHaveClass('bg-stone-100');
+    expect(cta).not.toHaveClass('bg-blue-950');
+  });
+
   it('links each deep-dive card to its feature page', () => {
     render(<FeaturesIndexPage />);
 

@@ -54,31 +54,29 @@ describe('MarketingHeader', () => {
     expect(screen.getByRole('link', { name: 'Features' })).toHaveAttribute('href', '/features');
   });
 
-  it('links Guides to /guides and bolds it only when activeGuides is set (JEF-531)', () => {
+  it('links Guides to /guides and underlines it only when activeGuides is set (JEF-531)', () => {
     mockHasSessionCookie.mockReturnValue(false);
     const { unmount } = render(<MarketingHeader />);
     expect(screen.getAllByRole('link', { name: 'Guides' })[0]).toHaveAttribute('href', '/guides');
-    expect(screen.getAllByRole('link', { name: 'Guides' })[0].className).not.toContain(
-      'font-semibold',
-    );
+    expect(screen.getAllByRole('link', { name: 'Guides' })[0].className).not.toContain('underline');
     unmount();
 
     render(<MarketingHeader activeGuides />);
-    expect(screen.getAllByRole('link', { name: 'Guides' })[0].className).toContain('font-semibold');
+    expect(screen.getAllByRole('link', { name: 'Guides' })[0].className).toContain('underline');
   });
 
-  it('bolds the Features link when activeFeatures is set', () => {
+  it('underlines the Features link when activeFeatures is set', () => {
     mockHasSessionCookie.mockReturnValue(false);
     render(<MarketingHeader activeFeatures />);
 
-    expect(screen.getByRole('link', { name: 'Features' }).className).toContain('font-semibold');
+    expect(screen.getByRole('link', { name: 'Features' }).className).toContain('underline');
   });
 
   it('does not bold the Features link outside /features', () => {
     mockHasSessionCookie.mockReturnValue(false);
     render(<MarketingHeader />);
 
-    expect(screen.getByRole('link', { name: 'Features' }).className).not.toContain('font-semibold');
+    expect(screen.getByRole('link', { name: 'Features' }).className).not.toContain('underline');
   });
 
   it('no longer links the setup guide from the header (JEF-678)', () => {
@@ -86,13 +84,6 @@ describe('MarketingHeader', () => {
     render(<MarketingHeader />);
 
     expect(screen.queryByRole('link', { name: 'Setup guide' })).not.toBeInTheDocument();
-  });
-
-  it('bolds the Guides link when activeGuides is set', () => {
-    mockHasSessionCookie.mockReturnValue(false);
-    render(<MarketingHeader activeGuides />);
-
-    expect(screen.getByRole('link', { name: 'Guides' }).className).toContain('font-semibold');
   });
 
   it('shows "Sign in" pointing at /login for a logged-out visitor', () => {

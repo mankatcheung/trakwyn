@@ -262,15 +262,15 @@ export function Menu({
       sheet ? 'min-h-[52px] px-4 text-base' : 'rounded-md px-2.5 py-2 text-sm whitespace-nowrap',
       item.disabled
         ? 'cursor-not-allowed opacity-50'
-        : 'hover:bg-gray-50 dark:hover:bg-gray-700 focus:bg-gray-50 dark:focus:bg-gray-700 focus:outline-none',
-      item.destructive ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-200',
+        : 'hover:bg-stone-50 dark:hover:bg-stone-700 focus:bg-stone-50 dark:focus:bg-stone-700 focus:outline-none',
+      item.destructive ? 'text-red-600 dark:text-red-400' : 'text-stone-700 dark:text-stone-200',
     ].join(' ');
 
   const renderItems = (sheet: boolean) =>
     items.map((item, index) => (
       <div key={item.id} className="contents">
         {item.separated && (
-          <div className="my-1 h-px bg-gray-100 dark:bg-gray-700" role="separator" />
+          <div className="my-1 h-px bg-stone-100 dark:bg-stone-700" role="separator" />
         )}
         <button
           type="button"
@@ -289,7 +289,7 @@ export function Menu({
           {item.current && (
             <CheckIcon
               size={sheet ? 18 : 16}
-              className="ml-auto text-blue-600"
+              className="ml-auto text-blue-800 dark:text-blue-400"
               aria-hidden="true"
             />
           )}
@@ -316,7 +316,7 @@ export function Menu({
             // be able to drop them (it dropped `min-w-56`, which is how the
             // panel shipped with no width at all).
             style={{ position: 'fixed', zIndex: 50, width: PANEL_WIDTH, ...position }}
-            className="rounded-lg border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+            className="rounded-lg border border-stone-200 bg-white p-1 shadow-lg dark:border-stone-700 dark:bg-stone-800"
           >
             {renderItems(false)}
           </div>,

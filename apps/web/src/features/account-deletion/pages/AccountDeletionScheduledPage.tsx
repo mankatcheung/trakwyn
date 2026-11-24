@@ -47,7 +47,7 @@ export function AccountDeletionScheduledPage({
 
   return (
     <AccountDeletionLayout title={t('accountDeletion.pendingTitle')}>
-      <p className="text-sm text-gray-600 dark:text-gray-300">
+      <p className="text-sm text-stone-600 dark:text-stone-300">
         {t('accountDeletion.pendingBody', {
           date: formatDate(new Date(deletionScheduledAt), DELETION_DATE_FORMAT),
         })}

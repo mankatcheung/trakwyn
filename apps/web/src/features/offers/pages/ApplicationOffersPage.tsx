@@ -127,7 +127,7 @@ export function ApplicationOffersPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="text-sm text-gray-500">{t('offerCompare.loadingOffers')}</div>
+        <div className="text-sm text-stone-500">{t('offerCompare.loadingOffers')}</div>
       </div>
     );
   }
@@ -148,13 +148,15 @@ export function ApplicationOffersPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('offers.title')}</h1>
+        <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
+          {t('offers.title')}
+        </h1>
         <div className="flex items-center gap-3">
           <QuotaHint resource="offers" used={offers.length} />
           <button
             onClick={openCreate}
             disabled={offersFull}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-800 dark:bg-blue-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-900 dark:hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <PlusIcon className="size-4" />
             {t('offers.addOffer')}
@@ -163,8 +165,8 @@ export function ApplicationOffersPage() {
       </div>
 
       {(showForm || editingOffer) && (
-        <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
-          <h2 className="mb-4 text-lg font-medium text-gray-900 dark:text-gray-100">
+        <div className="mb-6 rounded-lg border border-stone-200 bg-stone-50 p-4 dark:border-stone-700 dark:bg-stone-800/50">
+          <h2 className="mb-4 text-lg font-medium text-stone-900 dark:text-stone-100">
             {editingOffer ? t('offers.editOffer') : t('offers.newOffer')}
           </h2>
           <OfferForm
@@ -191,31 +193,31 @@ export function ApplicationOffersPage() {
           {offers.map((offer) => (
             <div
               key={offer.id}
-              className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
+              className="rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-800"
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  <div className="text-lg font-medium text-stone-900 dark:text-stone-100">
                     {formatSalary(offer.baseSalary, offer.currency, offer.period)}
                   </div>
                   {offer.bonus && (
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className="text-sm text-stone-600 dark:text-stone-400">
                       + {formatSalary(offer.bonus, offer.currency, offer.period)}{' '}
                       {t('offerCompare.bonusSuffix')}
                     </div>
                   )}
                   {offer.equity && (
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className="text-sm text-stone-600 dark:text-stone-400">
                       {t('offers.equityLabel', { equity: offer.equity })}
                     </div>
                   )}
                   {offer.benefits && (
-                    <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                    <div className="mt-1 text-sm text-stone-600 dark:text-stone-400">
                       {t('offers.benefitsLabel', { benefits: offer.benefits })}
                     </div>
                   )}
                   {offer.notes && (
-                    <div className="mt-1 text-sm text-gray-500 dark:text-gray-500">
+                    <div className="mt-1 text-sm text-stone-500 dark:text-stone-500">
                       {offer.notes}
                     </div>
                   )}
@@ -223,14 +225,14 @@ export function ApplicationOffersPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => openEdit(offer)}
-                    className="p-1.5 text-gray-400 transition-colors hover:text-blue-600"
+                    className="p-1.5 text-stone-400 transition-colors hover:text-blue-600"
                   >
                     <PencilIcon className="size-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(offer.id)}
                     disabled={removeOffer.isPending}
-                    className="p-1.5 text-gray-400 transition-colors hover:text-red-600 disabled:opacity-60"
+                    className="p-1.5 text-stone-400 transition-colors hover:text-red-600 disabled:opacity-60"
                   >
                     <TrashIcon className="size-4" />
                   </button>

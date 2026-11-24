@@ -34,10 +34,10 @@ export function InterviewRoundAnalyticsPanel() {
 
   return (
     <Card className="p-6">
-      <h2 className="mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+      <h2 className="mb-1 text-sm font-medium text-stone-700 dark:text-stone-300">
         {t('interviewAnalytics.title')}
       </h2>
-      <p className="mb-4 text-xs text-gray-400 dark:text-gray-500">
+      <p className="mb-4 text-xs text-stone-400 dark:text-stone-500">
         {t('interviewAnalytics.description')}
       </p>
 
@@ -56,22 +56,22 @@ export function InterviewRoundAnalyticsPanel() {
             return (
               <div
                 key={stat.type}
-                className="flex items-center gap-3 border-b border-gray-100 py-2 last:border-0 dark:border-gray-700"
+                className="flex items-center gap-3 border-b border-stone-100 py-2 last:border-0 dark:border-stone-700"
               >
-                <span className="w-20 shrink-0 text-sm text-gray-900 dark:text-gray-100">
+                <span className="w-20 shrink-0 text-sm text-stone-900 dark:text-stone-100">
                   {t(`interviews.${stat.type}`, { defaultValue: stat.type })}
                 </span>
-                <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">
+                <span className="shrink-0 text-xs text-stone-500 dark:text-stone-400">
                   {t('interviewAnalytics.passedOfDecided', { passed: stat.passed, decided })}
                 </span>
-                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-stone-100 dark:bg-stone-700">
                   <div className="h-full bg-green-500" style={{ width: `${passRate}%` }} />
                 </div>
-                <span className="w-10 shrink-0 text-right text-xs font-medium text-gray-700 dark:text-gray-300">
+                <span className="w-10 shrink-0 text-right text-xs font-medium text-stone-700 dark:text-stone-300">
                   {decided > 0 ? `${passRate}%` : '—'}
                 </span>
                 {smallSample && (
-                  <span className="shrink-0 text-[10px] text-gray-400 dark:text-gray-500">
+                  <span className="shrink-0 text-xs text-stone-400 dark:text-stone-500">
                     {t('interviewAnalytics.smallSample')}
                   </span>
                 )}
@@ -81,34 +81,34 @@ export function InterviewRoundAnalyticsPanel() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-4 dark:border-gray-700">
+      <div className="grid grid-cols-2 gap-4 border-t border-stone-100 pt-4 dark:border-stone-700">
         <div>
-          <p className="mb-1 text-xs text-gray-400 dark:text-gray-500">
+          <p className="mb-1 text-xs text-stone-400 dark:text-stone-500">
             {t('interviewAnalytics.roundsBeforeOffer')}
           </p>
-          <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <p className="text-lg font-medium text-stone-900 dark:text-stone-100">
             {formatRounds(analytics.roundsToOffer.median)}{' '}
-            <span className="text-xs font-normal text-gray-400">
+            <span className="text-xs font-normal text-stone-400">
               {t('interviewAnalytics.median')}
             </span>
           </p>
-          <p className="text-[10px] text-gray-400 dark:text-gray-500">
+          <p className="text-xs text-stone-400 dark:text-stone-500">
             {analytics.roundsToOffer.sampleSize > 0
               ? t('interviewAnalytics.offersCount', { count: analytics.roundsToOffer.sampleSize })
               : t('interviewAnalytics.noOffersYet')}
           </p>
         </div>
         <div>
-          <p className="mb-1 text-xs text-gray-400 dark:text-gray-500">
+          <p className="mb-1 text-xs text-stone-400 dark:text-stone-500">
             {t('interviewAnalytics.roundsBeforeRejection')}
           </p>
-          <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <p className="text-lg font-medium text-stone-900 dark:text-stone-100">
             {formatRounds(analytics.roundsToRejection.median)}{' '}
-            <span className="text-xs font-normal text-gray-400">
+            <span className="text-xs font-normal text-stone-400">
               {t('interviewAnalytics.median')}
             </span>
           </p>
-          <p className="text-[10px] text-gray-400 dark:text-gray-500">
+          <p className="text-xs text-stone-400 dark:text-stone-500">
             {analytics.roundsToRejection.sampleSize > 0
               ? t('interviewAnalytics.rejectionsCount', {
                   count: analytics.roundsToRejection.sampleSize,

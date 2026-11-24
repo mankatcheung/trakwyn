@@ -8,7 +8,7 @@ import {
 import { Card, ProgressBar } from '@trakwyn/ui';
 
 // The bar's default track is white-on-tint, which vanishes on a white card.
-const TRACK = 'bg-gray-200! dark:bg-gray-700!';
+const TRACK = 'bg-stone-200! dark:bg-stone-700!';
 const BAR_COLOR = {
   ok: TRACK,
   warning: `${TRACK} [&>div]:bg-amber-500`,
@@ -25,10 +25,10 @@ export function StorageCard() {
   return (
     <Card className="space-y-4 p-5">
       <div>
-        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+        <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
           {t('storage.title')}
         </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{t('storage.description')}</p>
+        <p className="text-sm text-stone-500 dark:text-stone-400">{t('storage.description')}</p>
       </div>
       <ProgressBar
         value={usage.usedBytes}
@@ -36,7 +36,7 @@ export function StorageCard() {
         aria-label={t('storage.title')}
         className={BAR_COLOR[level]}
       />
-      <p className="text-sm text-gray-900 dark:text-gray-100">
+      <p className="text-sm text-stone-900 dark:text-stone-100">
         {t('storage.usage', {
           used: formatStorageSize(usage.usedBytes),
           limit: formatStorageSize(usage.limitBytes),

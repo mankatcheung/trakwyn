@@ -113,13 +113,13 @@ function createStyles(colors: ThemeColors) {
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
-    title: { fontSize: 16, fontWeight: '700', color: colors.text },
-    linkMuted: { color: colors.textSubtle, fontSize: 15, fontWeight: '600' },
-    link: { color: colors.primary, fontSize: 15, fontWeight: '600' },
+    title: { fontSize: 16, fontWeight: '500', color: colors.text },
+    linkMuted: { color: colors.textSubtle, fontSize: 15, fontWeight: '500' },
+    link: { color: colors.primary, fontSize: 15, fontWeight: '500' },
     linkDisabled: { color: colors.textFaint },
     body: { flex: 1 },
     bodyContent: { padding: 16, gap: 10 },
-    question: { fontSize: 17, fontWeight: '700', color: colors.text, lineHeight: 24 },
+    question: { fontSize: 17, fontWeight: '500', color: colors.text, lineHeight: 24 },
     input: {
       borderWidth: 1,
       borderColor: colors.borderStrong,
@@ -143,7 +143,7 @@ function createStyles(colors: ThemeColors) {
       borderColor: colors.primary,
       backgroundColor: colors.primarySurface,
     },
-    secondaryButtonText: { color: colors.primary, fontSize: 15, fontWeight: '700' },
+    secondaryButtonText: { color: colors.primary, fontSize: 15, fontWeight: '500' },
     buttonDisabled: { opacity: 0.5 },
   });
 }

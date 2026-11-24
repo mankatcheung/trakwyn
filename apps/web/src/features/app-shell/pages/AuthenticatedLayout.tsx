@@ -155,7 +155,7 @@ export function AuthenticatedLayout() {
           is showing (100vh is the *largest* viewport). Pinning the shell to
           h-dvh lets a page say "fill the space" instead of computing its
           own total to subtract chrome from. */}
-      <div className="flex h-dvh bg-gray-50 dark:bg-gray-900">
+      <div className="flex h-dvh bg-stone-50 dark:bg-stone-900">
         <LazyCommandPalette />
         <LazyShortcutCheatSheet isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 
@@ -172,19 +172,19 @@ export function AuthenticatedLayout() {
         {/* Mobile sidebar drawer */}
         {sidebarVisible && (
           <aside
-            className={`fixed inset-y-0 left-0 z-50 flex w-64 transform flex-col bg-white shadow-xl transition-transform duration-300 ease-out lg:hidden dark:bg-gray-800 ${
+            className={`fixed inset-y-0 left-0 z-50 flex w-64 transform flex-col bg-white shadow-xl transition-transform duration-300 ease-out lg:hidden dark:bg-stone-800 ${
               sidebarOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
           >
-            <div className="flex items-center justify-between border-b border-gray-200 p-4 dark:border-gray-700">
-              <span className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-gray-100">
+            <div className="flex items-center justify-between border-b border-stone-200 p-4 dark:border-stone-700">
+              <span className="flex items-center gap-2 text-lg font-medium text-stone-900 dark:text-stone-100">
                 <LogoMark size={22} />
                 Trakwyn
               </span>
               <button
                 onClick={closeSidebar}
                 aria-label={t('authenticatedLayout.closeMenu')}
-                className="rounded-lg p-2 text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                className="rounded-lg p-2 text-stone-500 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
               >
                 <XIcon size={18} />
               </button>
@@ -196,8 +196,8 @@ export function AuthenticatedLayout() {
             >
               {renderMainNavItems()}
 
-              <div className="mt-3 border-t border-gray-200 pt-3 dark:border-gray-700">
-                <div className="flex items-center gap-2 px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+              <div className="mt-3 border-t border-stone-200 pt-3 dark:border-stone-700">
+                <div className="flex items-center gap-2 px-3 py-2 text-sm text-stone-500 dark:text-stone-400">
                   <AccountAvatarIcon avatarUrl={avatarUrl} size={18} />
                   {t('nav.settings')}
                 </div>
@@ -209,7 +209,7 @@ export function AuthenticatedLayout() {
                       className={`sidebar-nav-item flex items-center gap-2 rounded-lg py-1.5 pr-3 pl-5 text-sm transition-colors ${
                         pathname.startsWith(item.to)
                           ? 'bg-blue-50 font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
-                          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-100'
+                          : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-100'
                       }`}
                       style={{ animationDelay: `${(MAIN_NAV.length + i) * 50}ms` }}
                     >
@@ -221,31 +221,31 @@ export function AuthenticatedLayout() {
               </div>
             </nav>
 
-            <div className="mt-auto space-y-1 border-t border-gray-200 bg-white px-3 py-4 dark:border-gray-700 dark:bg-gray-800">
+            <div className="mt-auto space-y-1 border-t border-stone-200 bg-white px-3 py-4 dark:border-stone-700 dark:bg-stone-800">
               <button
                 onClick={handleLogout}
                 data-testid="mobile-sidebar-logout"
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-100"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-100"
               >
                 <LogOutIcon size={18} />
                 {t('nav.signOut')}
               </button>
-              <LegalFooterLinks className="mt-3 flex flex-col gap-1.5 border-t border-gray-100 px-3 pt-3 text-left text-[11px] text-gray-500 dark:border-gray-700 dark:text-gray-400 [&>button]:text-left" />
+              <LegalFooterLinks className="mt-3 flex flex-col gap-1.5 border-t border-stone-100 px-3 pt-3 text-left text-xs text-stone-500 dark:border-stone-700 dark:text-stone-400 [&>button]:text-left" />
             </div>
           </aside>
         )}
 
         {/* Mobile top header */}
-        <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4 lg:hidden dark:border-gray-700 dark:bg-gray-800">
+        <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b border-stone-200 bg-white px-4 lg:hidden dark:border-stone-700 dark:bg-stone-800">
           <div className="flex items-center gap-2">
             <button
               onClick={openSidebar}
               aria-label={t('authenticatedLayout.openMenu')}
-              className="rounded-lg p-2 text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              className="rounded-lg p-2 text-stone-500 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
             >
               <MenuIcon size={18} />
             </button>
-            <span className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-gray-100">
+            <span className="flex items-center gap-2 text-lg font-medium text-stone-900 dark:text-stone-100">
               <LogoMark size={22} />
               Trakwyn
             </span>
@@ -254,9 +254,9 @@ export function AuthenticatedLayout() {
         </header>
 
         {/* Desktop sidebar */}
-        <aside className="sidebar-desktop-entrance hidden w-60 shrink-0 flex-col border-r border-gray-200 bg-white lg:flex lg:h-full dark:border-gray-700 dark:bg-gray-800">
-          <div className="sidebar-entrance-item flex items-center justify-between border-b border-gray-200 px-6 py-5 dark:border-gray-700">
-            <span className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-gray-100">
+        <aside className="sidebar-desktop-entrance hidden w-60 shrink-0 flex-col border-r border-stone-200 bg-white lg:flex lg:h-full dark:border-stone-700 dark:bg-stone-800">
+          <div className="sidebar-entrance-item flex items-center justify-between border-b border-stone-200 px-6 py-5 dark:border-stone-700">
+            <span className="flex items-center gap-2 text-lg font-medium text-stone-900 dark:text-stone-100">
               <LogoMark size={22} />
               Trakwyn
             </span>
@@ -282,18 +282,18 @@ export function AuthenticatedLayout() {
             </div>
           </div>
 
-          <div className="mt-auto shrink-0 space-y-1 border-t border-gray-200 px-3 py-4 dark:border-gray-700">
+          <div className="mt-auto shrink-0 space-y-1 border-t border-stone-200 px-3 py-4 dark:border-stone-700">
             <button
               onClick={() => setShortcutsOpen(true)}
               onMouseEnter={preloadShortcutCheatSheet}
               onFocus={preloadShortcutCheatSheet}
-              className="sidebar-entrance-item flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-100"
+              className="sidebar-entrance-item flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-100"
               style={{ animationDelay: `${(MAIN_NAV.length + 1) * 50}ms` }}
               title={t('shortcuts.showShortcuts')}
             >
               <KeyboardIcon size={18} />
               {t('nav.shortcuts')}
-              <kbd className="ml-auto rounded-sm bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+              <kbd className="ml-auto rounded-sm bg-stone-100 px-1.5 py-0.5 font-mono text-xs text-stone-600 dark:bg-stone-700 dark:text-stone-300">
                 {getKeyModifier()}+/
               </kbd>
             </button>
@@ -304,13 +304,13 @@ export function AuthenticatedLayout() {
               <button
                 onClick={handleLogout}
                 data-testid="desktop-sidebar-logout"
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-100"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-100"
               >
                 <LogOutIcon size={18} />
                 {t('nav.signOut')}
               </button>
             </div>
-            <LegalFooterLinks className="mt-3 flex flex-col gap-1.5 border-t border-gray-100 px-3 pt-3 text-left text-[11px] text-gray-500 dark:border-gray-700 dark:text-gray-400 [&>button]:text-left" />
+            <LegalFooterLinks className="mt-3 flex flex-col gap-1.5 border-t border-stone-100 px-3 pt-3 text-left text-xs text-stone-500 dark:border-stone-700 dark:text-stone-400 [&>button]:text-left" />
           </div>
         </aside>
 
@@ -338,7 +338,7 @@ export function AuthenticatedLayout() {
           overlap. */}
         <nav
           aria-label={t('authenticatedLayout.bottomNavigation')}
-          className="fixed inset-x-0 bottom-0 z-40 flex h-[calc(4rem+env(safe-area-inset-bottom))] items-center border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden dark:border-gray-700 dark:bg-gray-800"
+          className="fixed inset-x-0 bottom-0 z-40 flex h-[calc(4rem+env(safe-area-inset-bottom))] items-center border-t border-stone-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden dark:border-stone-700 dark:bg-stone-800"
         >
           <BottomNavItem
             to="/dashboard"

@@ -42,16 +42,16 @@ export function VerifyEmailPage() {
   }, [token, t]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-900">
-      <div className="w-full max-w-sm space-y-6 rounded-xl bg-white p-8 shadow-sm dark:bg-gray-800">
+    <div className="flex min-h-screen items-center justify-center bg-stone-50 px-4 dark:bg-stone-900">
+      <div className="w-full max-w-sm space-y-6 rounded-xl bg-white p-8 shadow-sm dark:bg-stone-800">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
             {t('verifyEmail.title')}
           </h1>
         </div>
 
         {status === 'verifying' && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             {t('confirmBackupEmail.verifying')}
           </p>
         )}
@@ -60,8 +60,8 @@ export function VerifyEmailPage() {
 
         {status === 'error' && <Alert>{token ? errorMessage : t('verifyEmail.invalidLink')}</Alert>}
 
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          <Link to="/login" className="text-blue-600 hover:underline">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
+          <Link to="/login" className="text-blue-800 dark:text-blue-400 hover:underline">
             {t('auth.backToSignIn')}
           </Link>
         </p>

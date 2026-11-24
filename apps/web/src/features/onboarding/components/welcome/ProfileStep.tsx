@@ -12,9 +12,12 @@ export function ProfileStep() {
   const { t } = useLocale();
   return (
     <div className="space-y-4">
-      <p className="text-sm text-gray-700 dark:text-gray-300">
+      <p className="text-sm text-stone-700 dark:text-stone-300">
         {t('welcome.profileHint')}{' '}
-        <Link to="/profile" className="font-medium text-blue-600 hover:underline">
+        <Link
+          to="/profile"
+          className="font-medium text-blue-800 dark:text-blue-400 hover:underline"
+        >
           {t('welcome.profileFullLink')}
         </Link>
       </p>

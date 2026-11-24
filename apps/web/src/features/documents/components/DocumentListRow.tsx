@@ -38,7 +38,7 @@ function RowShell({
   const { t } = useLocale();
 
   const render = (chip: ReactNode, modals: ReactNode) => (
-    <li className="border-b border-gray-200 last:border-b-0 dark:border-gray-700">
+    <li className="border-b border-stone-200 last:border-b-0 dark:border-stone-700">
       {/*
         JEF-510: a grid, so the menu is always the top-right cell. Below `sm` the chips take their
         own left-aligned line under the text; from `sm` they sit before the menu on the first line.
@@ -61,7 +61,7 @@ function RowShell({
             {title}
             {badges}
           </div>
-          <span className="text-sm text-gray-600 dark:text-gray-400">{meta}</span>
+          <span className="text-sm text-stone-600 dark:text-stone-400">{meta}</span>
         </div>
         {chip && (
           <div className="col-span-2 col-start-2 row-start-2 flex flex-wrap items-center gap-2 sm:col-span-1 sm:col-start-3 sm:row-start-1">
@@ -78,7 +78,7 @@ function RowShell({
                 type="button"
                 {...props}
                 aria-label={t('documents.moreActions')}
-                className="flex size-9 items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+                className="flex size-9 items-center justify-center rounded-lg text-stone-600 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-700"
               >
                 <MoreVerticalIcon size={18} aria-hidden="true" />
               </button>
@@ -135,7 +135,7 @@ export function DraftRow({ applicationId, draft, withMatch, onDelete }: DraftRow
           to="/applications/$applicationId/documents/$draftId"
           params={editParams}
           title={draft.title}
-          className="truncate text-[15px] font-semibold text-gray-900 hover:underline dark:text-gray-100"
+          className="truncate text-[15px] font-medium text-stone-900 hover:underline dark:text-stone-100"
         >
           {draft.title}
         </Link>
@@ -202,13 +202,13 @@ export function FileRow({
     <RowShell
       applicationId={applicationId}
       tile={<FileTextIcon size={20} />}
-      tileClass="bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+      tileClass="bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300"
       title={
         <button
           type="button"
           onClick={open}
           title={document.name}
-          className="min-w-0 truncate text-left text-[15px] font-semibold text-gray-900 hover:underline dark:text-gray-100"
+          className="min-w-0 truncate text-left text-[15px] font-medium text-stone-900 hover:underline dark:text-stone-100"
         >
           {document.name}
         </button>
@@ -216,7 +216,7 @@ export function FileRow({
       badges={
         <>
           {extension && (
-            <Badge tone="gray" className="shrink-0 border border-gray-300 dark:border-gray-600">
+            <Badge tone="gray" className="shrink-0 border border-stone-300 dark:border-stone-600">
               {extension}
             </Badge>
           )}

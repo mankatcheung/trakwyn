@@ -38,7 +38,7 @@ export function DocumentEditorLinkForm({
     <form
       role="group"
       aria-label={t('documents.editor.link')}
-      className="flex flex-wrap items-center gap-1.5 border-t border-gray-200 p-1.5 dark:border-gray-700"
+      className="flex flex-wrap items-center gap-1.5 border-t border-stone-200 p-1.5 dark:border-stone-700"
       onSubmit={(event) => {
         event.preventDefault();
         apply();
@@ -64,11 +64,11 @@ export function DocumentEditorLinkForm({
           setValue(event.target.value);
           setInvalid(false);
         }}
-        className="min-w-0 flex-1 rounded-sm border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+        className="min-w-0 flex-1 rounded-sm border border-stone-300 bg-white px-2 py-1 text-sm text-stone-900 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
       />
       <button
         type="submit"
-        className="cursor-pointer rounded-sm bg-blue-600 px-2 py-1 text-sm text-white hover:bg-blue-700"
+        className="cursor-pointer rounded-sm bg-blue-800 dark:bg-blue-700 px-2 py-1 text-sm text-white hover:bg-blue-900 dark:hover:bg-blue-600"
       >
         {t('documents.editor.linkApply')}
       </button>
@@ -76,7 +76,7 @@ export function DocumentEditorLinkForm({
         <button
           type="button"
           onClick={remove}
-          className="cursor-pointer rounded-sm px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+          className="cursor-pointer rounded-sm px-2 py-1 text-sm text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700"
         >
           {t('documents.editor.linkRemove')}
         </button>

@@ -47,7 +47,7 @@ describe('AiMcpSetupPage', () => {
     render(<AiMcpSetupPage />);
 
     const guides = within(screen.getByRole('banner')).getByRole('link', { name: 'Guides' });
-    expect(guides.className).toContain('font-semibold');
+    expect(guides.className).toContain('underline');
   });
 
   it('leads with OAuth as the recommended way to connect a client', () => {

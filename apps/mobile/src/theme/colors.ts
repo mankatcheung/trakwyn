@@ -30,22 +30,26 @@ export interface ThemeColors {
   warningSurface: string;
 }
 
+// Neutrals and the accent mirror the web tokens (JEF-670/671: warm stone ramp,
+// ink-blue accent). The dark `primary` is a lighter accent blue (#8bbcfb)
+// rather than the web's #1d4ed8 fill, because one token serves as both text
+// and fill here and #8bbcfb passes AA as text on the dark surfaces.
 // Every foreground/background pairing below is asserted to clear WCAG AA
 // (4.5:1) by `__tests__/colors.test.ts` — change a value there and the test
 // tells you what it broke.
 export const lightColors: ThemeColors = {
-  background: '#f9fafb',
+  background: '#fafaf9',
   surface: '#ffffff',
-  surfaceAlt: '#f3f4f6',
-  border: '#e5e7eb',
-  borderStrong: '#d1d5db',
-  text: '#111827',
-  textMuted: '#374151',
-  textSubtle: '#4b5563',
-  // Off-scale on purpose: gray-500 (#6b7280) lands at 4.39:1 on `surfaceAlt`,
+  surfaceAlt: '#f5f5f4',
+  border: '#e7e5e4',
+  borderStrong: '#d6d3d1',
+  text: '#1c1917',
+  textMuted: '#44403c',
+  textSubtle: '#57534e',
+  // Off-scale on purpose: stone-500 (#78716c) lands at 4.39:1 on `surfaceAlt`,
   // just under AA, and this token carries placeholder and meta text.
-  textFaint: '#667085',
-  primary: '#2563eb',
+  textFaint: '#6b6560',
+  primary: '#1e40af',
   primarySurface: '#eff6ff',
   onPrimary: '#ffffff',
   danger: '#b91c1c',
@@ -62,28 +66,28 @@ export const lightColors: ThemeColors = {
 };
 
 export const darkColors: ThemeColors = {
-  background: '#0b1120',
-  surface: '#1f2937',
-  surfaceAlt: '#111827',
-  border: '#374151',
-  borderStrong: '#4b5563',
-  text: '#f9fafb',
-  textMuted: '#d1d5db',
-  textSubtle: '#9ca3af',
-  textFaint: '#8a93a3',
+  background: '#1c1917',
+  surface: '#292524',
+  surfaceAlt: '#44403c',
+  border: '#57534e',
+  borderStrong: '#78716c',
+  text: '#fafaf9',
+  textMuted: '#e7e5e4',
+  textSubtle: '#cdc8c4',
+  textFaint: '#b5afaa',
   // The accent tones lighten in dark mode, so anything sitting *on* a filled
   // accent (`onPrimary`, `onDanger`) has to darken to stay readable.
-  primary: '#60a5fa',
+  primary: '#8bbcfb',
   primarySurface: '#172554',
-  onPrimary: '#0b1120',
-  danger: '#f87171',
+  onPrimary: '#1c1917',
+  danger: '#fa8d8d',
   dangerBorder: '#7f1d1d',
   dangerSurface: '#3f1212',
-  onDanger: '#0b1120',
+  onDanger: '#1c1917',
   success: '#4ade80',
   successBorder: '#166534',
   successSurface: '#0f2a1a',
-  onSuccess: '#0b1120',
+  onSuccess: '#1c1917',
   warning: '#fbbf24',
   warningBorder: '#78350f',
   warningSurface: '#3a2a0a',
@@ -92,3 +96,22 @@ export const darkColors: ThemeColors = {
 export function getColorsForScheme(scheme: ColorScheme): ThemeColors {
   return scheme === 'dark' ? darkColors : lightColors;
 }
+
+/**
+ * Fixed hues that are not part of the light/dark ramp: chart series, the star
+ * and ghosted markers, and the drop-shadow colour. Kept here so no screen
+ * carries a hex literal. Brand marks in `OAuthProviderLogo` are the one
+ * documented exception, because those colours belong to the providers.
+ */
+export const fixedColors = {
+  shadow: '#000000',
+  star: '#eab308',
+  ghost: '#d97706',
+  onFilterPill: '#1c1917',
+  followUp: '#f59e0b',
+  interview: '#a855f7',
+  offered: '#f97316',
+  accepted: '#22c55e',
+  logoLight: '#1e40af',
+  logoDark: '#8bbcfb',
+} as const;

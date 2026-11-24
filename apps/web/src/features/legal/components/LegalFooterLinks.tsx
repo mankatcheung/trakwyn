@@ -19,22 +19,22 @@ export function LegalFooterLinks({ className }: LegalFooterLinksProps) {
     <div
       className={
         className ??
-        'flex items-center justify-center gap-4 text-xs text-gray-500 dark:text-gray-400'
+        'flex items-center justify-center gap-4 text-xs text-stone-500 dark:text-stone-400'
       }
     >
-      <Link to="/privacy" className="hover:text-gray-600 dark:hover:text-gray-300">
+      <Link to="/privacy" className="hover:text-stone-600 dark:hover:text-stone-300">
         {t('auth.privacyPolicy')}
       </Link>
-      <Link to="/terms" className="hover:text-gray-600 dark:hover:text-gray-300">
+      <Link to="/terms" className="hover:text-stone-600 dark:hover:text-stone-300">
         {t('auth.termsOfService')}
       </Link>
-      <Link to="/accessibility" className="hover:text-gray-600 dark:hover:text-gray-300">
+      <Link to="/accessibility" className="hover:text-stone-600 dark:hover:text-stone-300">
         {t('auth.accessibility')}
       </Link>
       <button
         type="button"
         onClick={requestOpenCookiePreferences}
-        className="hover:text-gray-600 dark:hover:text-gray-300"
+        className="hover:text-stone-600 dark:hover:text-stone-300"
       >
         {t('cookieConsent.footerLink')}
       </button>

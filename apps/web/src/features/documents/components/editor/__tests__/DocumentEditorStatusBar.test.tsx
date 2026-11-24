@@ -139,9 +139,9 @@ describe('DocumentEditorStatusBar (JEF-576)', () => {
 
   it('has text colours for both light and dark mode', () => {
     setup(paragraphs('hello'));
-    expect(bar().className).toMatch(/text-gray-600/);
-    expect(bar().className).toMatch(/dark:text-gray-400/);
-    expect(bar().className).toMatch(/dark:bg-gray-800/);
+    expect(bar().className).toMatch(/text-stone-600/);
+    expect(bar().className).toMatch(/dark:text-stone-400/);
+    expect(bar().className).toMatch(/dark:bg-stone-800/);
   });
 });
 

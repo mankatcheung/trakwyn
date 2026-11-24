@@ -51,7 +51,7 @@ export function AiPromptInput({
         placeholder={placeholderExamples[exampleIndex % (placeholderExamples.length || 1)]}
         onChange={(e) => onChange(e.target.value.slice(0, maxLength))}
       />
-      <p className="mt-1 text-right text-xs text-gray-500 dark:text-gray-400">
+      <p className="mt-1 text-right text-xs text-stone-500 dark:text-stone-400">
         {value.length}/{maxLength}
       </p>
     </div>

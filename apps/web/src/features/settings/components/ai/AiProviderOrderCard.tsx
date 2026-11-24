@@ -48,18 +48,18 @@ export function AiProviderOrderCard({
   return (
     <Card className="space-y-4 p-5">
       <div>
-        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+        <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
           {t('aiOrder.title')}
         </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{t('aiOrder.description')}</p>
+        <p className="text-sm text-stone-500 dark:text-stone-400">{t('aiOrder.description')}</p>
       </div>
 
       {hostedAi === true && <AiCreditsMeter />}
 
       {order.length === 0 ? (
-        <p className="text-sm text-gray-500 dark:text-gray-400">{t('aiOrder.empty')}</p>
+        <p className="text-sm text-stone-500 dark:text-stone-400">{t('aiOrder.empty')}</p>
       ) : (
-        <ol className="divide-y divide-gray-100 rounded-lg border border-gray-200 dark:divide-gray-700/60 dark:border-gray-700">
+        <ol className="divide-y divide-stone-100 rounded-lg border border-stone-200 dark:divide-stone-700/60 dark:border-stone-700">
           {order.map((entry, index) => {
             const name = providerEntryLabel(entry, t);
             const avatar = entry === TRAKWYN_ENTRY ? undefined : LLM_PROVIDER_AVATAR[entry];
@@ -70,21 +70,21 @@ export function AiProviderOrderCard({
                 className="flex items-center gap-3 px-4 py-3"
               >
                 <span
-                  className="w-4 shrink-0 text-sm text-gray-400 tabular-nums"
+                  className="w-4 shrink-0 text-sm text-stone-400 tabular-nums"
                   aria-hidden="true"
                 >
                   {index + 1}
                 </span>
                 {avatar && (
                   <div
-                    className={`flex size-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${avatar.className}`}
+                    className={`flex size-8 shrink-0 items-center justify-center rounded-lg text-xs font-medium ${avatar.className}`}
                   >
                     {avatar.initials}
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-sm font-medium text-stone-900 dark:text-stone-100">{name}</p>
+                  <p className="text-xs text-stone-500 dark:text-stone-400">
                     {entry === TRAKWYN_ENTRY
                       ? t('aiOrder.trakwynNote')
                       : t('aiOrder.keyNote', { provider: name })}
@@ -118,12 +118,12 @@ export function AiProviderOrderCard({
       )}
 
       {order.length === 1 && unlisted.length > 0 && (
-        <p className="text-xs text-gray-500 dark:text-gray-400">{t('aiOrder.onlyOne')}</p>
+        <p className="text-xs text-stone-500 dark:text-stone-400">{t('aiOrder.onlyOne')}</p>
       )}
 
       {unlisted.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
+          <h3 className="text-xs font-medium text-stone-500 dark:text-stone-400">
             {t('aiOrder.addTitle')}
           </h3>
           <ul className="flex flex-wrap gap-2">
@@ -135,7 +135,7 @@ export function AiProviderOrderCard({
                     type="button"
                     disabled={busy}
                     onClick={() => onChange(addEntry(order, entry))}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
                   >
                     <PlusIcon size={14} />
                     {t('aiOrder.add', { name })}

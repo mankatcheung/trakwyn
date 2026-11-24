@@ -262,20 +262,20 @@ export function ApplicationDetailPage() {
         screen so you never lose track of which one you are inside.
       */}
       {openSection && (
-        <div className="-mx-4 mb-4 flex items-center gap-1 border-b border-gray-200 px-2 pb-2 md:hidden dark:border-gray-700">
+        <div className="-mx-4 mb-4 flex items-center gap-1 border-b border-stone-200 px-2 pb-2 md:hidden dark:border-stone-700">
           <button
             type="button"
             onClick={backToIndex}
             aria-label={t('applicationDetail.backToSections')}
-            className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+            className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700"
           >
             <ArrowLeftIcon size={20} />
           </button>
           <div className="flex min-w-0 flex-col">
-            <span className="text-[15px] font-semibold text-gray-900 dark:text-gray-100">
+            <span className="text-[15px] font-medium text-stone-900 dark:text-stone-100">
               {t(sectionById(activeSection).labelKey)}
             </span>
-            <span className="truncate text-xs text-gray-400">
+            <span className="truncate text-xs text-stone-400">
               {app.company} · {app.role}
             </span>
           </div>
@@ -287,7 +287,7 @@ export function ApplicationDetailPage() {
         <div className="mb-4">
           <a
             href="/applications"
-            className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="text-sm text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
           >
             {t('applicationForm.backToApplications')}
           </a>
@@ -296,8 +296,10 @@ export function ApplicationDetailPage() {
         <Card className="mb-6 p-4 sm:p-6">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{app.company}</h1>
-              <p className="mt-0.5 text-gray-500 dark:text-gray-400">{app.role}</p>
+              <h1 className="text-xl font-medium text-stone-900 dark:text-stone-100">
+                {app.company}
+              </h1>
+              <p className="mt-0.5 text-stone-500 dark:text-stone-400">{app.role}</p>
             </div>
             {/*
               One 44px trigger instead of four 32px icon buttons crowding the

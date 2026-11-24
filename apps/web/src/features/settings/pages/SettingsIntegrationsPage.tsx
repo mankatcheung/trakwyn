@@ -19,7 +19,7 @@ export function SettingsIntegrationsPage() {
         </div>
         <Link
           to="/ai-mcp-setup"
-          className="shrink-0 text-sm font-semibold text-blue-700 hover:underline dark:text-blue-400"
+          className="shrink-0 text-sm font-medium text-blue-700 hover:underline dark:text-blue-400"
         >
           {t('guides.aiMcpSetup.bannerLink')}
         </Link>

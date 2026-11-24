@@ -61,7 +61,7 @@ export function DraftTitleField({ title, placeholder, onCommit }: DraftTitleFiel
           cancelledRef.current = false;
         }
       }}
-      className="w-full min-w-0 rounded-sm border border-transparent bg-transparent px-1 text-xl font-bold text-gray-900 hover:border-gray-200 focus:border-blue-500 focus:outline-none dark:text-gray-100 dark:hover:border-gray-700"
+      className="w-full min-w-0 rounded-sm border border-transparent bg-transparent px-1 text-xl font-medium text-stone-900 hover:border-stone-200 focus:border-blue-500 focus:outline-none dark:text-stone-100 dark:hover:border-stone-700"
     />
   );
 }

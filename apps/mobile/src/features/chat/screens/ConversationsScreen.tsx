@@ -182,7 +182,7 @@ function createStyles(colors: ThemeColors) {
       padding: 14,
     },
     textColumn: { flex: 1, gap: 2 },
-    title: { fontSize: 14, fontWeight: '600', color: colors.text },
+    title: { fontSize: 14, fontWeight: '500', color: colors.text },
     meta: { fontSize: 12, color: colors.textSubtle },
   });
 }

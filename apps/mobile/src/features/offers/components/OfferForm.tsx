@@ -169,7 +169,7 @@ function createStyles(colors: ThemeColors) {
     form: { gap: 8 },
     row: { flexDirection: 'row', gap: 12 },
     half: { flex: 1, gap: 4 },
-    label: { fontSize: 12, fontWeight: '600', color: colors.textMuted, marginTop: 8 },
+    label: { fontSize: 12, fontWeight: '500', color: colors.textMuted, marginTop: 8 },
     input: {
       borderWidth: 1,
       borderColor: colors.borderStrong,
@@ -199,7 +199,7 @@ function createStyles(colors: ThemeColors) {
       gap: 16,
       marginTop: 12,
     },
-    cancelText: { color: colors.textSubtle, fontSize: 14, fontWeight: '600' },
+    cancelText: { color: colors.textSubtle, fontSize: 14, fontWeight: '500' },
     saveButton: {
       minWidth: 110,
       minHeight: 40,
@@ -210,6 +210,6 @@ function createStyles(colors: ThemeColors) {
       paddingHorizontal: 14,
     },
     saveButtonDisabled: { opacity: 0.6 },
-    saveText: { color: colors.onPrimary, fontSize: 14, fontWeight: '600' },
+    saveText: { color: colors.onPrimary, fontSize: 14, fontWeight: '500' },
   });
 }

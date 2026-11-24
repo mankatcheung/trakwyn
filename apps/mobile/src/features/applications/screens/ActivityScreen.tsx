@@ -105,7 +105,7 @@ function createStyles(colors: ThemeColors) {
     timelineDotActive: { backgroundColor: colors.primary },
     timelineLine: { width: 1, flex: 1, backgroundColor: colors.border, marginVertical: 2 },
     timelineContent: { flex: 1, paddingBottom: 16 },
-    timelineTitle: { fontSize: 14, fontWeight: '600', color: colors.text },
+    timelineTitle: { fontSize: 14, fontWeight: '500', color: colors.text },
     timelineDetail: { fontWeight: '400', color: colors.textSubtle },
     timelineDate: { fontSize: 12, color: colors.textFaint, marginTop: 2 },
   });

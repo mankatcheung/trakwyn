@@ -73,8 +73,8 @@ export function ApplicationDisplayFieldsPicker({
         aria-label={t('applications.displayFields.pickerAria')}
         title={t('applications.displayFields.title')}
         onClick={() => setOpen((prev) => !prev)}
-        className={`flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm transition-colors hover:text-gray-800 dark:border-gray-700 dark:hover:text-gray-200 ${
-          open ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'
+        className={`flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-sm transition-colors hover:text-stone-800 dark:border-stone-700 dark:hover:text-stone-200 ${
+          open ? 'text-stone-900 dark:text-stone-100' : 'text-stone-500 dark:text-stone-400'
         }`}
       >
         <SlidersHorizontalIcon size={15} />
@@ -86,15 +86,15 @@ export function ApplicationDisplayFieldsPicker({
           id={panelId}
           role="group"
           aria-label={t('applications.displayFields.title')}
-          className="absolute right-0 z-30 mt-2 w-52 rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+          className="absolute right-0 z-30 mt-2 w-52 rounded-xl border border-stone-200 bg-white p-3 shadow-lg dark:border-stone-700 dark:bg-stone-800"
         >
-          <p className="mb-2 px-1 text-xs font-semibold tracking-wide text-gray-400 uppercase dark:text-gray-500">
+          <p className="mb-2 px-1 text-xs font-medium text-stone-400 dark:text-stone-500">
             {t('applications.displayFields.title')}
           </p>
           <ul className="space-y-1">
             {APPLICATION_DISPLAY_FIELDS.map((field) => (
               <li key={field}>
-                <label className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-gray-700 select-none hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700/50">
+                <label className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-stone-700 select-none hover:bg-stone-50 dark:text-stone-300 dark:hover:bg-stone-700/50">
                   <Checkbox
                     checked={fields[field]}
                     onChange={() => onToggle(field)}
@@ -105,7 +105,7 @@ export function ApplicationDisplayFieldsPicker({
               </li>
             ))}
           </ul>
-          <p className="mt-2 flex items-center gap-1.5 px-1 text-[11px] text-gray-400 dark:text-gray-500">
+          <p className="mt-2 flex items-center gap-1.5 px-1 text-xs text-stone-400 dark:text-stone-500">
             <CheckIcon size={11} aria-hidden="true" />
             {t('applications.displayFields.companyAlwaysShown')}
           </p>
@@ -121,12 +121,12 @@ export function ApplicationDisplayFieldsPicker({
         >
           <div className="flex flex-col pb-2">
             <div className="flex justify-center py-2.5">
-              <div className="h-1 w-9 rounded-full bg-gray-200 dark:bg-gray-600" />
+              <div className="h-1 w-9 rounded-full bg-stone-200 dark:bg-stone-600" />
             </div>
             {APPLICATION_DISPLAY_FIELDS.map((field) => (
               <label
                 key={field}
-                className="flex w-full cursor-pointer items-center gap-3.5 px-5 py-3 text-left text-[15px] text-gray-900 transition-colors select-none hover:bg-gray-50 dark:text-gray-100 dark:hover:bg-gray-700/50"
+                className="flex w-full cursor-pointer items-center gap-3.5 px-5 py-3 text-left text-[15px] text-stone-900 transition-colors select-none hover:bg-stone-50 dark:text-stone-100 dark:hover:bg-stone-700/50"
                 style={{ minHeight: '56px' }}
               >
                 <Checkbox
@@ -137,7 +137,7 @@ export function ApplicationDisplayFieldsPicker({
                 <span className="flex-1">{fieldLabel(field)}</span>
               </label>
             ))}
-            <p className="mt-1 flex items-center gap-1.5 px-5 pb-1 text-[11px] text-gray-400 dark:text-gray-500">
+            <p className="mt-1 flex items-center gap-1.5 px-5 pb-1 text-xs text-stone-400 dark:text-stone-500">
               <CheckIcon size={11} aria-hidden="true" />
               {t('applications.displayFields.companyAlwaysShown')}
             </p>

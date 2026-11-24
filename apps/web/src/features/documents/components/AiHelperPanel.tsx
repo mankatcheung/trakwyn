@@ -198,11 +198,11 @@ export function AiHelperPanel({
       className="space-y-4 rounded-lg border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-800 dark:bg-blue-900/20"
     >
       <div>
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
-          <SparklesIcon className="size-4 text-blue-600" aria-hidden />
+        <h2 className="flex items-center gap-2 text-sm font-medium text-stone-900 dark:text-stone-100">
+          <SparklesIcon className="size-4 text-blue-800 dark:text-blue-400" aria-hidden />
           {t('aiHelper.title')}
         </h2>
-        <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-400">
+        <p className="mt-0.5 text-xs text-stone-600 dark:text-stone-400">
           {t(hasText ? 'aiHelper.polishHelp' : 'aiHelper.generateHelp')}
         </p>
       </div>
@@ -266,7 +266,7 @@ export function AiHelperPanel({
         <div className="border-t border-blue-200 pt-3 dark:border-blue-800">
           {confirmRegenerate ? (
             <div role="alertdialog" className="space-y-2">
-              <p className="text-xs text-gray-700 dark:text-gray-300">
+              <p className="text-xs text-stone-700 dark:text-stone-300">
                 {t('aiHelper.regenerateConfirm')}
               </p>
               <div className="flex gap-2">

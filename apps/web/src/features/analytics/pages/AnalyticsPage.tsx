@@ -123,7 +123,7 @@ export function AnalyticsPage() {
   if (analyticsLocked) {
     return (
       <div className="mx-auto max-w-5xl space-y-8 p-4 sm:p-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+        <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
           {t('nav.analytics')}
         </h1>
         <LockedFeatureOverlay feature="analytics">
@@ -153,12 +153,18 @@ export function AnalyticsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 p-4 sm:p-8">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('nav.analytics')}</h1>
+      <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
+        {t('nav.analytics')}
+      </h1>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5" data-screenshot="analytics-stats">
         {[
           { label: t('dashboard.statTotal'), value: totalApps },
-          { label: t('analyticsPage.statActive'), value: activeApps, color: 'text-blue-600' },
+          {
+            label: t('analyticsPage.statActive'),
+            value: activeApps,
+            color: 'text-blue-800 dark:text-blue-400',
+          },
           {
             label: t('analyticsPage.statResponseRate'),
             value: `${responseRate}%`,
@@ -172,12 +178,12 @@ export function AnalyticsPage() {
           {
             label: t('analyticsPage.statGhostingRate'),
             value: `${ghostingRate}%`,
-            color: 'text-gray-500',
+            color: 'text-stone-500',
           },
         ].map(({ label, value, color }) => (
           <Card key={label} className="p-4">
-            <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">{label}</p>
-            <p className={`text-2xl font-bold ${color ?? 'text-gray-900 dark:text-gray-100'}`}>
+            <p className="mb-1 text-xs text-stone-500 dark:text-stone-400">{label}</p>
+            <p className={`text-2xl font-medium ${color ?? 'text-stone-900 dark:text-stone-100'}`}>
               {value}
             </p>
           </Card>
@@ -185,7 +191,7 @@ export function AnalyticsPage() {
       </div>
 
       <Card className="p-6">
-        <h2 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
+        <h2 className="mb-4 text-sm font-medium text-stone-700 dark:text-stone-300">
           {t('analyticsPage.applicationsPerWeek')}
         </h2>
         {weeklyData.length === 0 ? (
@@ -207,8 +213,8 @@ export function AnalyticsPage() {
         )}
       </Card>
 
-      <Card className="p-6">
-        <h2 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">
+      <Card className="p-6" data-screenshot="stage-funnel">
+        <h2 className="mb-4 text-sm font-medium text-stone-700 dark:text-stone-300">
           {t('analyticsPage.stageFunnel')}
         </h2>
         {apps.length === 0 ? (

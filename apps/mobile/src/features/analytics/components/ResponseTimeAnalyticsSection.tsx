@@ -29,7 +29,7 @@ export function ResponseTimeAnalyticsSection() {
       description={t('cards.responseTimesDescription')}
       testID="response-time-analytics-section"
     >
-      <Text style={{ fontSize: 11, color: colors.textFaint }}>
+      <Text style={{ fontSize: 12, color: colors.textFaint }}>
         {t('firstResponseSummary', {
           value: formatDays(data.timeToFirstResponse.medianDays),
           detail:

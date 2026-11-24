@@ -23,12 +23,12 @@ export function PolishPreview({
   return (
     <section
       aria-label={t('aiHelper.previewTitle')}
-      className="space-y-3 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900"
+      className="space-y-3 rounded-lg border border-stone-200 bg-white p-3 dark:border-stone-700 dark:bg-stone-900"
     >
-      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+      <p className="text-xs font-medium text-stone-500 dark:text-stone-400">
         {t('aiHelper.previewTitle')}
       </p>
-      <div className="max-h-96 overflow-y-auto text-sm text-gray-900 dark:text-gray-100">
+      <div className="max-h-96 overflow-y-auto text-sm text-stone-900 dark:text-stone-100">
         <Markdown content={markdown} />
       </div>
       {stale && (

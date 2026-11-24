@@ -8,7 +8,7 @@ interface LogoMarkProps {
  * `currentColor`, so the mark follows the theme.
  *
  * Blue-700 is the brand blue and stays the brand blue in light mode; dark mode
- * lifts to blue-400 because blue-700 on `gray-900` sits too close to its own
+ * lifts to blue-400 because blue-700 on `stone-900` sits too close to its own
  * background to read. Written as a literal so Tailwind's scanner emits both
  * utilities.
  */

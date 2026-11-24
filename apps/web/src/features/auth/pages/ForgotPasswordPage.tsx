@@ -55,13 +55,13 @@ export function ForgotPasswordPage() {
   });
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-900">
-      <div className="w-full max-w-sm space-y-6 rounded-xl bg-white p-8 shadow-sm dark:bg-gray-800">
+    <main className="flex min-h-screen items-center justify-center bg-stone-50 px-4 dark:bg-stone-900">
+      <div className="w-full max-w-sm space-y-6 rounded-xl bg-white p-8 shadow-sm dark:bg-stone-800">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
             {t('forgotPassword.title')}
           </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
             {recoveryMode === 'backup'
               ? t('forgotPassword.backupDescription')
               : t('forgotPassword.primaryDescription')}
@@ -111,8 +111,8 @@ export function ForgotPasswordPage() {
             : t('forgotPassword.usePrimaryEmail')}
         </Button>
 
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          <Link to="/login" className="text-blue-600 hover:underline">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
+          <Link to="/login" className="text-blue-800 dark:text-blue-400 hover:underline">
             {t('auth.backToSignIn')}
           </Link>
         </p>

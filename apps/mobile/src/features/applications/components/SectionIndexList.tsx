@@ -89,10 +89,8 @@ function createStyles(colors: ThemeColors) {
     group: { gap: 8 },
     groupTitle: {
       fontSize: 12,
-      fontWeight: '700',
+      fontWeight: '500',
       color: colors.textFaint,
-      textTransform: 'uppercase',
-      letterSpacing: 0.4,
     },
     card: {
       backgroundColor: colors.surface,
@@ -110,7 +108,7 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 12,
     },
     rowBorder: { borderTopWidth: 1, borderTopColor: colors.border },
-    rowLabel: { fontSize: 15, fontWeight: '600', color: colors.text },
+    rowLabel: { fontSize: 15, fontWeight: '500', color: colors.text },
     trailing: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     badge: {
       minWidth: 22,
@@ -120,8 +118,8 @@ function createStyles(colors: ThemeColors) {
       alignItems: 'center',
       backgroundColor: colors.primarySurface,
     },
-    badgeText: { fontSize: 12, fontWeight: '700', color: colors.primary },
-    check: { fontSize: 15, fontWeight: '700', color: colors.success },
+    badgeText: { fontSize: 12, fontWeight: '500', color: colors.primary },
+    check: { fontSize: 15, fontWeight: '500', color: colors.success },
     dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.borderStrong },
     chevron: { fontSize: 18, color: colors.textFaint },
   });

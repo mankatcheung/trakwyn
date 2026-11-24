@@ -47,7 +47,7 @@ export const KeyActions: Story = {
             type="button"
             {...props}
             aria-label="More actions"
-            className="flex size-8 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+            className="flex size-8 items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-700"
           >
             <EllipsisVerticalIcon size={ICON} />
           </button>
@@ -79,7 +79,7 @@ export const PausedKey: Story = {
           <button
             type="button"
             {...props}
-            className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 dark:border-gray-600 dark:text-gray-200"
+            className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 dark:border-stone-600 dark:text-stone-200"
           >
             Actions
           </button>
@@ -106,7 +106,7 @@ export const WithDisabledItem: Story = {
           <button
             type="button"
             {...props}
-            className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 dark:border-gray-600 dark:text-gray-200"
+            className="rounded-lg border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 dark:border-stone-600 dark:text-stone-200"
           >
             Actions
           </button>
@@ -164,7 +164,7 @@ function TwoPaneDemo() {
             type="button"
             {...props}
             aria-label="More actions"
-            className="flex size-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+            className="flex size-11 items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-700"
           >
             <EllipsisVerticalIcon size={20} />
           </button>

@@ -32,7 +32,7 @@ export function GuidePage({ guide }: { guide: Guide }) {
   const featureKey = feature ? FEATURE_LABEL_KEYS[feature] : undefined;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-900">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildArticleJsonLd(guide)) }}
@@ -48,11 +48,11 @@ export function GuidePage({ guide }: { guide: Guide }) {
         </Link>
         <article className="mt-6">
           <header>
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+            <h1 className="text-4xl font-medium tracking-tight text-stone-900 dark:text-stone-100">
               {title}
             </h1>
-            <p className="mt-3 text-lg text-gray-600 dark:text-gray-400">{description}</p>
-            <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-3 text-lg text-stone-600 dark:text-stone-400">{description}</p>
+            <p className="mt-4 text-sm text-stone-500 dark:text-stone-400">
               <time dateTime={date}>
                 {t('guides.post.published', { date: formatDate(date, DATE_OPTIONS) })}
               </time>
@@ -71,7 +71,7 @@ export function GuidePage({ guide }: { guide: Guide }) {
                   <Link
                     to="/guides"
                     search={{ tag }}
-                    className="rounded-full bg-gray-200 px-2.5 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                    className="rounded-full bg-stone-200 px-2.5 py-0.5 text-xs font-medium text-stone-700 dark:bg-stone-800 dark:text-stone-300"
                   >
                     {tag}
                   </Link>
@@ -85,7 +85,7 @@ export function GuidePage({ guide }: { guide: Guide }) {
         </article>
 
         {feature && featureKey && (
-          <p className="mt-10 text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-10 text-sm text-stone-600 dark:text-stone-400">
             {t('guides.post.relatedFeature')}:{' '}
             <a
               href={feature}
@@ -96,15 +96,15 @@ export function GuidePage({ guide }: { guide: Guide }) {
           </p>
         )}
 
-        <section className="mt-10 rounded-2xl border border-gray-200 bg-white p-8 text-center dark:border-gray-800 dark:bg-gray-950">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+        <section className="mt-10 rounded-2xl border border-stone-200 bg-white p-8 text-center dark:border-stone-800 dark:bg-stone-950">
+          <h2 className="text-xl font-medium text-stone-900 dark:text-stone-100">
             {t('guides.post.ctaTitle')}
           </h2>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">{t('guides.post.ctaBody')}</p>
+          <p className="mt-2 text-stone-600 dark:text-stone-400">{t('guides.post.ctaBody')}</p>
           <Link
             to="/register"
             onClick={() => trackCta('start_free', 'guide')}
-            className="mt-5 inline-block rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+            className="mt-5 inline-block rounded-lg bg-blue-800 dark:bg-blue-700 px-6 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-900 dark:hover:bg-blue-600"
           >
             {t('landing.startFree')}
           </Link>

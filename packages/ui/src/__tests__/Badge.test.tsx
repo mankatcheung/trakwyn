@@ -10,7 +10,7 @@ describe('Badge', () => {
 
   it('defaults to the gray tone', () => {
     render(<Badge>draft</Badge>);
-    expect(screen.getByText('draft').className).toContain('bg-gray-100');
+    expect(screen.getByText('draft').className).toContain('bg-stone-100');
   });
 
   it('applies the requested tone', () => {

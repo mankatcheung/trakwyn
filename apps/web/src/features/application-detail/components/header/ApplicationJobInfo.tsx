@@ -34,17 +34,17 @@ export function ApplicationJobInfo({
       </div>
 
       {app.followUpAt && (
-        <p className="mt-2 text-xs text-gray-400">{t('applicationDetail.emailReminderNote')}</p>
+        <p className="mt-2 text-xs text-stone-400">{t('applicationDetail.emailReminderNote')}</p>
       )}
 
       {app.jobUrl && (
         <div className="mt-3">
-          <dt className="text-xs text-gray-400">{t('applicationForm.jobUrlLabel')}</dt>
+          <dt className="text-xs text-stone-400">{t('applicationForm.jobUrlLabel')}</dt>
           <a
             href={app.jobUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs break-all text-blue-600 hover:underline"
+            className="text-xs break-all text-blue-800 dark:text-blue-400 hover:underline"
           >
             {app.jobUrl}
           </a>
@@ -53,11 +53,11 @@ export function ApplicationJobInfo({
 
       {app.description && (
         <div className="mt-3">
-          <dt className="mb-1 text-xs text-gray-400">{t('applicationDetail.descriptionLabel')}</dt>
+          <dt className="mb-1 text-xs text-stone-400">{t('applicationDetail.descriptionLabel')}</dt>
           {collapseDescription ? (
             <CollapsibleDescription text={app.description} />
           ) : (
-            <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+            <p className="whitespace-pre-wrap text-stone-700 dark:text-stone-300">
               {app.description}
             </p>
           )}

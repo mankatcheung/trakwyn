@@ -5,6 +5,7 @@ import { useDocumentVersionOutcomes } from '../hooks/useAnalyticsQueries';
 import { AnalyticsCard } from './AnalyticsCard';
 import { RatioBar } from './RatioBar';
 import { useTheme } from '../../../theme/ThemeContext';
+import { fixedColors } from '../../../theme/colors';
 
 export function DocumentVersionOutcomesSection() {
   const { t } = useTranslation('analytics');
@@ -40,7 +41,7 @@ export function DocumentVersionOutcomesSection() {
             label={`${documentTypeLabel[o.documentType] ?? o.documentType}: ${versionLabel(o.version)}`}
             meta={`${o.interviewCount}/${o.applicationCount}`}
             percent={o.interviewRate}
-            color="#a855f7"
+            color={fixedColors.interview}
             sampleSize={o.applicationCount}
             testID={`document-outcome-${o.documentType}-${o.version ?? 'none'}`}
           />

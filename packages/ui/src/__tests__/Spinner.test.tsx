@@ -14,7 +14,7 @@ describe('Spinner', () => {
     const { container } = render(<Spinner />);
     const el = container.firstChild as HTMLElement;
     expect(el.className).toContain('w-3.5');
-    expect(el.className).toContain('border-gray-300');
+    expect(el.className).toContain('border-stone-300');
   });
 
   it('applies the md size', () => {

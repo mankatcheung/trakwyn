@@ -1,6 +1,7 @@
 import React from 'react';
 import Svg, { Path } from 'react-native-svg';
 import type { ColorScheme } from '../theme/colors';
+import { fixedColors } from '../theme/colors';
 
 interface LogoMarkProps {
   size?: number;
@@ -14,7 +15,7 @@ interface LogoMarkProps {
  * on a near-black background sits too close to its own background to read.
  */
 export function LogoMark({ size = 24, scheme = 'light' }: LogoMarkProps) {
-  const color = scheme === 'dark' ? '#60a5fa' : '#1d4ed8';
+  const color = scheme === 'dark' ? fixedColors.logoDark : fixedColors.logoLight;
 
   return (
     <Svg width={size} height={size} viewBox="0 0 48 48" fill="none">

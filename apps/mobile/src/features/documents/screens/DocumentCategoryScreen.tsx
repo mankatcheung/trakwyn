@@ -330,7 +330,7 @@ function createStyles(colors: ThemeColors) {
     },
     filterTabActive: { backgroundColor: colors.surface },
     filterText: { fontSize: 13, color: colors.textMuted },
-    filterTextActive: { fontWeight: '700', color: colors.text },
+    filterTextActive: { fontWeight: '500', color: colors.text },
     fabs: { position: 'absolute', right: 16, bottom: 24, alignItems: 'flex-end', gap: 10 },
     uploadFab: {
       minHeight: 44,
@@ -344,7 +344,7 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.surface,
       elevation: 3,
     },
-    uploadFabText: { fontSize: 14, fontWeight: '600', color: colors.text },
+    uploadFabText: { fontSize: 14, fontWeight: '500', color: colors.text },
     newDraftFab: {
       minHeight: 52,
       borderRadius: 9999,
@@ -355,7 +355,7 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.primary,
       elevation: 4,
     },
-    newDraftFabText: { fontSize: 15, fontWeight: '700', color: colors.onPrimary },
+    newDraftFabText: { fontSize: 15, fontWeight: '500', color: colors.onPrimary },
     pendingCard: {
       marginVertical: 16,
       borderRadius: 12,
@@ -397,8 +397,8 @@ function createStyles(colors: ThemeColors) {
       justifyContent: 'center',
     },
     disabled: { opacity: 0.6 },
-    confirmButtonText: { color: colors.onPrimary, fontSize: 14, fontWeight: '600' },
-    name: { fontSize: 14, fontWeight: '600', color: colors.text },
-    linkMuted: { color: colors.textSubtle, fontSize: 13, fontWeight: '600' },
+    confirmButtonText: { color: colors.onPrimary, fontSize: 14, fontWeight: '500' },
+    name: { fontSize: 14, fontWeight: '500', color: colors.text },
+    linkMuted: { color: colors.textSubtle, fontSize: 13, fontWeight: '500' },
   });
 }

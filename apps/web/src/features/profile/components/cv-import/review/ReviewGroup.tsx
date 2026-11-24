@@ -48,10 +48,10 @@ export function ReviewGroup<T>({
       <div className="flex items-center justify-between gap-3">
         <h3
           id={`cv-import-${id}`}
-          className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-gray-100"
+          className="flex items-center gap-2 text-sm font-medium text-stone-900 dark:text-stone-100"
         >
           {icon} {title}
-          <span className="font-normal text-gray-500 dark:text-gray-400">
+          <span className="font-normal text-stone-500 dark:text-stone-400">
             {selected}/{drafts.length}
           </span>
         </h3>
@@ -82,7 +82,7 @@ export function ReviewGroup<T>({
                 'flex items-start gap-3 rounded-lg border p-3',
                 draft.selected && !valid
                   ? 'border-red-300 bg-red-50/50 dark:border-red-800 dark:bg-red-900/10'
-                  : 'border-gray-200 dark:border-gray-700',
+                  : 'border-stone-200 dark:border-stone-700',
                 draft.selected ? '' : 'opacity-70',
               ].join(' ')}
             >

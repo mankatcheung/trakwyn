@@ -55,10 +55,10 @@ export function InlineAiForm({
   if (needsSetup) {
     return (
       <div className="w-64 space-y-2 p-2">
-        <p className="text-xs text-gray-700 dark:text-gray-300">{t('aiHelper.setupHelp')}</p>
+        <p className="text-xs text-stone-700 dark:text-stone-300">{t('aiHelper.setupHelp')}</p>
         <Link
           to="/settings/ai"
-          className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+          className="inline-flex items-center rounded-lg bg-blue-800 dark:bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-900 dark:hover:bg-blue-600"
         >
           {t('aiHelper.setupAction')}
         </Link>
@@ -79,7 +79,7 @@ export function InlineAiForm({
             type="button"
             disabled={disabled}
             onClick={() => onRun({ kind: 'preset', action: action.id })}
-            className="rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+            className="rounded-md border border-stone-200 px-2 py-1 text-xs text-stone-700 hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-700"
           >
             {t(action.labelKey)}
           </button>
@@ -95,7 +95,7 @@ export function InlineAiForm({
           disabled={disabled}
           aria-label={t('documents.editor.ai.askLabel')}
           placeholder={t('documents.editor.ai.askPlaceholder')}
-          className="min-w-0 flex-1 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-900 placeholder:text-gray-500 disabled:opacity-40 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+          className="min-w-0 flex-1 rounded-md border border-stone-200 bg-white px-2 py-1 text-xs text-stone-900 placeholder:text-stone-500 disabled:opacity-40 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-100"
         />
         <SubmitButton
           size="sm"
@@ -114,7 +114,7 @@ export function InlineAiForm({
         </p>
       ) : (
         <>
-          {!canRun && hint && <p className="text-xs text-gray-600 dark:text-gray-400">{hint}</p>}
+          {!canRun && hint && <p className="text-xs text-stone-600 dark:text-stone-400">{hint}</p>}
           <AiCreditCost feature="polishDraft" />
         </>
       )}
