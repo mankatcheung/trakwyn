@@ -256,9 +256,9 @@ function createStyles(colors: ThemeColors) {
     },
     timestamp: { fontSize: 12, color: colors.textFaint },
     rowActions: { flexDirection: 'row', gap: 4 },
-    link: { color: colors.primary, fontSize: 15, fontWeight: '600' },
+    link: { color: colors.primary, fontSize: 15, fontWeight: '500' },
     linkDisabled: { color: colors.textFaint },
-    linkMuted: { color: colors.textSubtle, fontSize: 15, fontWeight: '600' },
+    linkMuted: { color: colors.textSubtle, fontSize: 15, fontWeight: '500' },
     input: {
       borderWidth: 1,
       borderColor: colors.borderStrong,
@@ -280,7 +280,7 @@ function createStyles(colors: ThemeColors) {
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
-    modalTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+    modalTitle: { fontSize: 16, fontWeight: '500', color: colors.text },
     modalInput: { margin: 16, flex: 1 },
   });
 }

@@ -85,7 +85,7 @@ export function ImportFromDocument({ applicationId, onImport, disabled }: Import
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { paddingHorizontal: 16, paddingTop: 10, gap: 8 },
-    toggle: { fontSize: 13, fontWeight: '600', color: colors.primary },
+    toggle: { fontSize: 13, fontWeight: '500', color: colors.primary },
     list: { gap: 8 },
     help: { fontSize: 12, color: colors.textSubtle },
     row: { flexDirection: 'row', alignItems: 'center', gap: 8 },

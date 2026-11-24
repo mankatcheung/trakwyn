@@ -22,6 +22,7 @@ import type { Application, ApplicationStatus } from '../types';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import { fixedColors } from '../../../theme/colors';
 import { useApplicationDisplayFields } from '../lib/applicationDisplayFields';
 
 type StatusFilter = 'all' | ApplicationStatus;
@@ -30,9 +31,9 @@ type ViewMode = 'list' | 'board';
 // The starred/ghosted filter pills keep the same fill in both themes, so the
 // icon sitting on them needs a fixed dark tone — it was `colors.surface`, i.e.
 // white on gold (1.9:1) in light mode and dark-slate on amber (2.6:1) in dark.
-const STAR_COLOR = '#eab308';
-const GHOST_COLOR = '#d97706';
-const ON_FILTER_PILL_COLOR = '#111827';
+const STAR_COLOR = fixedColors.star;
+const GHOST_COLOR = fixedColors.ghost;
+const ON_FILTER_PILL_COLOR = fixedColors.onFilterPill;
 
 function matchesSearch(application: Application, search: string): boolean {
   if (!search) return true;
@@ -212,7 +213,7 @@ function createStyles(colors: ThemeColors) {
     viewToggleOption: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 6 },
     viewToggleOptionActive: { backgroundColor: colors.surface },
     viewToggleText: { fontSize: 13, color: colors.textSubtle, fontWeight: '500' },
-    viewToggleTextActive: { color: colors.text, fontWeight: '700' },
+    viewToggleTextActive: { color: colors.text, fontWeight: '500' },
     headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     trashButton: {
       width: 36,

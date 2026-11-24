@@ -194,7 +194,7 @@ function createStyles(colors: ThemeColors) {
       padding: 16,
       gap: 10,
     },
-    sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+    sectionTitle: { fontSize: 16, fontWeight: '500', color: colors.text },
     divider: { height: 1, backgroundColor: colors.border },
     error: {
       color: colors.danger,
@@ -210,7 +210,7 @@ function createStyles(colors: ThemeColors) {
       gap: 12,
     },
     fieldRowText: { flex: 1, gap: 2 },
-    label: { fontSize: 15, fontWeight: '600', color: colors.text },
+    label: { fontSize: 15, fontWeight: '500', color: colors.text },
     hint: { fontSize: 12, color: colors.textSubtle },
     chipRow: { flexDirection: 'row', gap: 8 },
     chip: {

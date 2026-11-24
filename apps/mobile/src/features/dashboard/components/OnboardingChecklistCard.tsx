@@ -122,7 +122,7 @@ function createStyles(colors: ThemeColors) {
     },
     headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
     headerText: { flex: 1, gap: 2, paddingRight: 12 },
-    title: { fontSize: 16, fontWeight: '700', color: colors.text },
+    title: { fontSize: 16, fontWeight: '500', color: colors.text },
     description: { fontSize: 13, color: colors.textMuted },
     headerActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     chevronExpanded: { transform: [{ rotate: '180deg' }] },

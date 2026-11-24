@@ -219,9 +219,9 @@ function createStyles(colors: ThemeColors) {
     },
     content: { padding: 16, gap: 10 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    title: { fontSize: 18, fontWeight: '700', color: colors.text },
+    title: { fontSize: 18, fontWeight: '500', color: colors.text },
     help: { fontSize: 14, color: colors.textMuted },
-    label: { fontSize: 12, fontWeight: '600', color: colors.textMuted },
+    label: { fontSize: 12, fontWeight: '500', color: colors.textMuted },
     error: {
       color: colors.danger,
       backgroundColor: colors.dangerSurface,
@@ -229,10 +229,10 @@ function createStyles(colors: ThemeColors) {
       padding: 10,
       fontSize: 14,
     },
-    notice: { color: colors.success, fontSize: 14, fontWeight: '600' },
+    notice: { color: colors.success, fontSize: 14, fontWeight: '500' },
     row: { borderRadius: 8, padding: 10, backgroundColor: colors.surfaceAlt, gap: 2 },
     rowSelected: { borderWidth: 1, borderColor: colors.primary },
-    rowTitle: { fontSize: 15, fontWeight: '600', color: colors.text },
+    rowTitle: { fontSize: 15, fontWeight: '500', color: colors.text },
     rowMeta: { fontSize: 12, color: colors.textFaint },
     preview: { gap: 8, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 10 },
     previewBody: { maxHeight: 240 },
@@ -242,7 +242,7 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 11,
       backgroundColor: colors.primary,
     },
-    primaryText: { color: colors.onPrimary, fontWeight: '600', fontSize: 15 },
+    primaryText: { color: colors.onPrimary, fontWeight: '500', fontSize: 15 },
     secondary: {
       alignItems: 'center',
       borderRadius: 8,
@@ -252,7 +252,7 @@ function createStyles(colors: ThemeColors) {
       borderWidth: 1,
       borderColor: colors.border,
     },
-    secondaryText: { color: colors.text, fontWeight: '600', fontSize: 14 },
+    secondaryText: { color: colors.text, fontWeight: '500', fontSize: 14 },
     disabled: { opacity: 0.5 },
   });
 }

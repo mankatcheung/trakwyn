@@ -123,7 +123,7 @@ function createStyles(colors: ThemeColors) {
       alignSelf: 'flex-start',
     },
     buttonActive: { borderColor: colors.primary },
-    buttonText: { fontSize: 14, color: colors.textSubtle, fontWeight: '600' },
+    buttonText: { fontSize: 14, color: colors.textSubtle, fontWeight: '500' },
     buttonTextActive: { color: colors.primary },
     backdrop: {
       flex: 1,
@@ -148,9 +148,7 @@ function createStyles(colors: ThemeColors) {
     },
     title: {
       fontSize: 12,
-      fontWeight: '700',
-      letterSpacing: 0.4,
-      textTransform: 'uppercase',
+      fontWeight: '500',
       color: colors.textFaint,
       marginBottom: 8,
     },
@@ -162,7 +160,7 @@ function createStyles(colors: ThemeColors) {
     },
     rowLabel: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     rowText: { fontSize: 15, color: colors.text },
-    rowTextSelected: { color: colors.primary, fontWeight: '600' },
+    rowTextSelected: { color: colors.primary, fontWeight: '500' },
     dot: { width: 8, height: 8, borderRadius: 9999 },
   });
 }

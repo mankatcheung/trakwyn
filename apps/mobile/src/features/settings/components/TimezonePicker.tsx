@@ -180,8 +180,8 @@ function createStyles(colors: ThemeColors) {
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
-    modalTitle: { fontSize: 17, fontWeight: '700', color: colors.text },
-    doneText: { fontSize: 15, fontWeight: '600', color: colors.primary },
+    modalTitle: { fontSize: 17, fontWeight: '500', color: colors.text },
+    doneText: { fontSize: 15, fontWeight: '500', color: colors.primary },
     searchInput: {
       margin: 16,
       marginBottom: 8,
@@ -200,6 +200,6 @@ function createStyles(colors: ThemeColors) {
       borderBottomColor: colors.border,
     },
     rowText: { fontSize: 15, color: colors.text },
-    rowTextSelected: { color: colors.primary, fontWeight: '700' },
+    rowTextSelected: { color: colors.primary, fontWeight: '500' },
   });
 }

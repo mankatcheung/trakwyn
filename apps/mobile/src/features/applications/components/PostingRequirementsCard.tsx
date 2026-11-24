@@ -147,7 +147,7 @@ export function PostingRequirementsCard({ applicationId }: PostingRequirementsCa
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     group: { gap: 6 },
-    groupTitle: { fontSize: 12, fontWeight: '600', color: colors.textSubtle },
+    groupTitle: { fontSize: 12, fontWeight: '500', color: colors.textSubtle },
     item: { fontSize: 14, color: colors.text, lineHeight: 20 },
     muted: { fontSize: 13, color: colors.textFaint },
     stale: { fontSize: 12, color: colors.warning },
@@ -169,7 +169,7 @@ function createStyles(colors: ThemeColors) {
       justifyContent: 'center',
     },
     buttonDisabled: { opacity: 0.6 },
-    buttonText: { color: colors.onPrimary, fontSize: 14, fontWeight: '600' },
+    buttonText: { color: colors.onPrimary, fontSize: 14, fontWeight: '500' },
     error: {
       color: colors.danger,
       backgroundColor: colors.dangerSurface,

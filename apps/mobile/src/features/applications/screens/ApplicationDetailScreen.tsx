@@ -25,9 +25,10 @@ import { ResumeGapsCard } from '../components/ResumeGapsCard';
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import { fixedColors } from '../../../theme/colors';
 import { IconButton } from '../../../components/IconButton';
 
-const STAR_COLOR = '#eab308';
+const STAR_COLOR = fixedColors.star;
 
 function initialsFor(company: string): string {
   const words = company.trim().split(/\s+/).filter(Boolean);
@@ -219,10 +220,10 @@ function createStyles(colors: ThemeColors) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    avatarText: { color: colors.background, fontSize: 18, fontWeight: '700' },
+    avatarText: { color: colors.background, fontSize: 18, fontWeight: '500' },
     headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     starButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-    role: { fontSize: 22, fontWeight: '700', color: colors.text },
+    role: { fontSize: 22, fontWeight: '500', color: colors.text },
     subline: { fontSize: 14, color: colors.textSubtle },
     statusRow: { flexDirection: 'row' },
     card: {
@@ -241,13 +242,12 @@ function createStyles(colors: ThemeColors) {
       borderBottomColor: colors.border,
     },
     infoLabel: { fontSize: 14, color: colors.textSubtle },
-    infoValue: { fontSize: 14, fontWeight: '700', color: colors.text },
+    infoValue: { fontSize: 14, fontWeight: '500', color: colors.text },
     field: { gap: 4 },
     fieldLabel: {
       fontSize: 12,
       color: colors.textSubtle,
-      fontWeight: '600',
-      textTransform: 'uppercase',
+      fontWeight: '500',
     },
     fieldValue: { fontSize: 15, color: colors.text, lineHeight: 21 },
     link: { fontSize: 14, color: colors.primary },

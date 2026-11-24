@@ -252,13 +252,13 @@ function createStyles(colors: ThemeColors) {
     tileDraft: { backgroundColor: colors.primarySurface },
     tileFile: { backgroundColor: colors.surfaceAlt },
     textColumn: { flex: 1, gap: 3 },
-    name: { fontSize: 15, fontWeight: '600', color: colors.text },
+    name: { fontSize: 15, fontWeight: '500', color: colors.text },
     metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     meta: { flexShrink: 1, fontSize: 12, color: colors.textSubtle },
     menuButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
     badge: {
-      fontSize: 10,
-      fontWeight: '700',
+      fontSize: 12,
+      fontWeight: '500',
       borderRadius: 9999,
       paddingHorizontal: 7,
       paddingVertical: 2,
@@ -267,7 +267,6 @@ function createStyles(colors: ThemeColors) {
     badgeDraft: {
       color: colors.primary,
       backgroundColor: colors.primarySurface,
-      textTransform: 'uppercase',
     },
     badgeFile: {
       color: colors.textMuted,

@@ -179,12 +179,12 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.surfaceAlt,
       flexShrink: 0,
     },
-    avatarText: { fontSize: 13, fontWeight: '700', color: colors.textMuted },
+    avatarText: { fontSize: 13, fontWeight: '500', color: colors.textMuted },
     textColumn: { flex: 1, gap: 2 },
-    company: { fontSize: 16, fontWeight: '700', color: colors.text },
+    company: { fontSize: 16, fontWeight: '500', color: colors.text },
     role: { fontSize: 13, color: colors.textSubtle },
     deletesIn: { fontSize: 12, color: colors.textSubtle, marginTop: 2 },
-    deletesInUrgent: { color: colors.danger, fontWeight: '600' },
+    deletesInUrgent: { color: colors.danger, fontWeight: '500' },
     actions: { flexDirection: 'row', gap: 10 },
     restoreButton: {
       flex: 1,
@@ -198,7 +198,7 @@ function createStyles(colors: ThemeColors) {
       borderColor: colors.border,
       backgroundColor: colors.surface,
     },
-    restoreButtonText: { fontSize: 14, fontWeight: '600', color: colors.textMuted },
+    restoreButtonText: { fontSize: 14, fontWeight: '500', color: colors.textMuted },
     deleteButton: {
       flex: 1,
       flexDirection: 'row',
@@ -211,6 +211,6 @@ function createStyles(colors: ThemeColors) {
       borderWidth: 1,
       borderColor: colors.border,
     },
-    deleteButtonText: { fontSize: 14, fontWeight: '600', color: colors.danger },
+    deleteButtonText: { fontSize: 14, fontWeight: '500', color: colors.danger },
   });
 }

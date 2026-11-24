@@ -225,7 +225,7 @@ function createStyles(colors: ThemeColors) {
     container: { flex: 1, backgroundColor: colors.background },
     content: { padding: 20, gap: 8 },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    label: { fontSize: 13, fontWeight: '700', color: colors.textMuted, marginTop: 14 },
+    label: { fontSize: 13, fontWeight: '500', color: colors.textMuted, marginTop: 14 },
     input: {
       borderWidth: 1,
       borderColor: colors.border,
@@ -248,7 +248,7 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.surface,
     },
     chipActive: { backgroundColor: colors.text, borderColor: colors.text },
-    chipText: { fontSize: 14, color: colors.textMuted, fontWeight: '600' },
+    chipText: { fontSize: 14, color: colors.textMuted, fontWeight: '500' },
     // The active status chip is an inverted pill (`colors.text` fill), not a
     // primary one — its label is the page ground, not `onPrimary`.
     chipTextActive: { color: colors.background },
@@ -261,7 +261,7 @@ function createStyles(colors: ThemeColors) {
       marginTop: 24,
     },
     submitButtonDisabled: { opacity: 0.6 },
-    submitButtonText: { color: colors.onPrimary, fontSize: 16, fontWeight: '700' },
+    submitButtonText: { color: colors.onPrimary, fontSize: 16, fontWeight: '500' },
     error: {
       color: colors.danger,
       backgroundColor: colors.dangerSurface,

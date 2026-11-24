@@ -127,7 +127,7 @@ function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     content: { flexGrow: 1, justifyContent: 'center', padding: 24, gap: 12 },
-    title: { fontSize: 24, fontWeight: '700', color: colors.text, textAlign: 'center' },
+    title: { fontSize: 24, fontWeight: '500', color: colors.text, textAlign: 'center' },
     input: {
       borderWidth: 1,
       borderColor: colors.borderStrong,
@@ -146,7 +146,7 @@ function createStyles(colors: ThemeColors) {
       marginTop: 8,
     },
     buttonDisabled: { opacity: 0.6 },
-    buttonText: { color: colors.onPrimary, fontSize: 16, fontWeight: '600' },
+    buttonText: { color: colors.onPrimary, fontSize: 16, fontWeight: '500' },
     link: { color: colors.primary, textAlign: 'center', marginTop: 12 },
     error: {
       color: colors.danger,

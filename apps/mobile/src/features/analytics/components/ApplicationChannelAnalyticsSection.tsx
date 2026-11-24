@@ -7,6 +7,7 @@ import { RatioBar } from './RatioBar';
 import type { ApplicationGroupStat } from '../types';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import { fixedColors } from '../../../theme/colors';
 
 function GroupRow({ stat }: { stat: ApplicationGroupStat }) {
   const { t } = useTranslation('analytics');
@@ -21,13 +22,13 @@ function GroupRow({ stat }: { stat: ApplicationGroupStat }) {
       <RatioBar
         label={t('responseLabel')}
         percent={stat.responseRate}
-        color="#a855f7"
+        color={fixedColors.interview}
         sampleSize={stat.applicationCount}
       />
       <RatioBar
         label={t('cards.offers')}
         percent={stat.offerRate}
-        color="#22c55e"
+        color={fixedColors.accepted}
         sampleSize={stat.applicationCount}
       />
     </View>
@@ -68,7 +69,7 @@ export function ApplicationChannelAnalyticsSection() {
 
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
-    subheading: { fontSize: 11, fontWeight: '600', color: colors.textSubtle, marginTop: 8 },
+    subheading: { fontSize: 12, fontWeight: '500', color: colors.textSubtle, marginTop: 8 },
     empty: { fontSize: 12, color: colors.textFaint },
     groupRow: {
       gap: 2,
@@ -77,7 +78,7 @@ function createStyles(colors: ThemeColors) {
       paddingTop: 6,
       marginTop: 4,
     },
-    groupLabel: { fontSize: 13, fontWeight: '600', color: colors.text },
-    groupCount: { fontSize: 10, color: colors.textFaint },
+    groupLabel: { fontSize: 13, fontWeight: '500', color: colors.text },
+    groupCount: { fontSize: 12, color: colors.textFaint },
   });
 }

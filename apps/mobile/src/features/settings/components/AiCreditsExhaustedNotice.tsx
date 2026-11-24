@@ -81,7 +81,7 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 8,
       paddingHorizontal: 14,
     },
-    primaryText: { color: colors.onPrimary, fontWeight: '600', fontSize: 14 },
+    primaryText: { color: colors.onPrimary, fontWeight: '500', fontSize: 14 },
     secondary: {
       borderRadius: 8,
       borderWidth: 1,
@@ -89,6 +89,6 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 8,
       paddingHorizontal: 14,
     },
-    secondaryText: { color: colors.text, fontWeight: '600', fontSize: 14 },
+    secondaryText: { color: colors.text, fontWeight: '500', fontSize: 14 },
   });
 }

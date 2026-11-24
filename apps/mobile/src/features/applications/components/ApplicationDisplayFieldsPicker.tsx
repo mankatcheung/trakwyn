@@ -109,9 +109,7 @@ function createStyles(colors: ThemeColors) {
     },
     title: {
       fontSize: 12,
-      fontWeight: '700',
-      letterSpacing: 0.4,
-      textTransform: 'uppercase',
+      fontWeight: '500',
       color: colors.textFaint,
       marginBottom: 8,
     },
@@ -132,6 +130,6 @@ function createStyles(colors: ThemeColors) {
     },
     checkboxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
     rowText: { fontSize: 15, color: colors.text },
-    footnote: { fontSize: 11, color: colors.textFaint, marginTop: 8 },
+    footnote: { fontSize: 12, color: colors.textFaint, marginTop: 8 },
   });
 }

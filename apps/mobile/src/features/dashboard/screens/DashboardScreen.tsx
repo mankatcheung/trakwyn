@@ -13,27 +13,12 @@ import { computeSummaryStats } from '../../analytics/lib/analyticsSummary';
 import { StatCard } from '../components/StatCard';
 import { OnboardingChecklistCard } from '../components/OnboardingChecklistCard';
 import { CvProfileSummaryCard } from '../components/CvProfileSummaryCard';
-import {
-  AlertCircleIcon,
-  BriefcaseIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  DocumentIcon,
-} from '../components/DashboardIcons';
 import { StatusBadge } from '../../applications/components/StatusBadge';
 import { getErrorMessage } from '../../../lib/errors';
 import { initialsOf } from '../../../lib/initials';
 import type { CalendarEvent, CalendarEventKind } from '../types';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
-
-const STAT_COLORS = {
-  blue: { bg: '#eff6ff', fg: '#2563eb' },
-  indigo: { bg: '#eef2ff', fg: '#4338ca' },
-  amber: { bg: '#fef3c7', fg: '#a16207' },
-  green: { bg: '#dcfce7', fg: '#15803d' },
-  orange: { bg: '#ffedd5', fg: '#c2410c' },
-};
 
 function formatEventDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -105,41 +90,11 @@ export function DashboardScreen() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.statsRow}
       >
-        <StatCard
-          label={t('stats.total')}
-          value={counts.total}
-          loading={isLoading}
-          icon={<BriefcaseIcon color={STAT_COLORS.blue.fg} />}
-          iconBg={STAT_COLORS.blue.bg}
-        />
-        <StatCard
-          label={t('stats.applied')}
-          value={counts.applied}
-          loading={isLoading}
-          icon={<DocumentIcon color={STAT_COLORS.indigo.fg} />}
-          iconBg={STAT_COLORS.indigo.bg}
-        />
-        <StatCard
-          label={t('stats.interviewing')}
-          value={counts.interviewing}
-          loading={isLoading}
-          icon={<ClockIcon color={STAT_COLORS.amber.fg} />}
-          iconBg={STAT_COLORS.amber.bg}
-        />
-        <StatCard
-          label={t('stats.offered')}
-          value={counts.offered}
-          loading={isLoading}
-          icon={<CheckCircleIcon color={STAT_COLORS.green.fg} />}
-          iconBg={STAT_COLORS.green.bg}
-        />
-        <StatCard
-          label={t('stats.followUpDue')}
-          value={counts.overdue}
-          loading={isLoading}
-          icon={<AlertCircleIcon color={STAT_COLORS.orange.fg} />}
-          iconBg={STAT_COLORS.orange.bg}
-        />
+        <StatCard label={t('stats.total')} value={counts.total} loading={isLoading} />
+        <StatCard label={t('stats.applied')} value={counts.applied} loading={isLoading} />
+        <StatCard label={t('stats.interviewing')} value={counts.interviewing} loading={isLoading} />
+        <StatCard label={t('stats.offered')} value={counts.offered} loading={isLoading} />
+        <StatCard label={t('stats.followUpDue')} value={counts.overdue} loading={isLoading} />
       </ScrollView>
 
       {goal && (
@@ -274,7 +229,7 @@ function createStyles(colors: ThemeColors) {
     // flex: 1 with minWidth: 0 lets a long email shrink instead of pushing the avatar off-screen (JEF-669).
     headerText: { flex: 1, minWidth: 0, marginRight: 12 },
     greeting: { fontSize: 13, color: colors.textSubtle, marginBottom: 2 },
-    title: { fontSize: 26, fontWeight: '700', color: colors.text },
+    title: { fontSize: 26, fontWeight: '500', color: colors.text },
     avatar: {
       width: 44,
       height: 44,
@@ -284,7 +239,7 @@ function createStyles(colors: ThemeColors) {
       justifyContent: 'center',
       backgroundColor: colors.primary,
     },
-    avatarText: { fontSize: 16, fontWeight: '700', color: colors.onPrimary },
+    avatarText: { fontSize: 16, fontWeight: '500', color: colors.onPrimary },
     statsRow: { gap: 10 },
     goalCard: {
       borderRadius: 14,
@@ -296,9 +251,9 @@ function createStyles(colors: ThemeColors) {
     },
     goalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
     goalHeaderText: { flex: 1, gap: 2 },
-    goalTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+    goalTitle: { fontSize: 16, fontWeight: '500', color: colors.text },
     goalProgress: { fontSize: 13, color: colors.textMuted },
-    goalStreak: { fontSize: 13, fontWeight: '700', color: colors.primary },
+    goalStreak: { fontSize: 13, fontWeight: '500', color: colors.primary },
     progressTrack: {
       height: 8,
       borderRadius: 4,
@@ -314,7 +269,7 @@ function createStyles(colors: ThemeColors) {
       padding: 16,
       alignItems: 'center',
     },
-    offersLinkText: { fontSize: 15, fontWeight: '600', color: colors.primary },
+    offersLinkText: { fontSize: 15, fontWeight: '500', color: colors.primary },
     analyticsLinkCard: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -327,7 +282,7 @@ function createStyles(colors: ThemeColors) {
       gap: 12,
     },
     analyticsLinkTextGroup: { flex: 1, gap: 2 },
-    analyticsLinkTitle: { fontSize: 15, fontWeight: '700', color: colors.text },
+    analyticsLinkTitle: { fontSize: 15, fontWeight: '500', color: colors.text },
     analyticsLinkSubtitle: { fontSize: 13, color: colors.textMuted },
     section: { gap: 10 },
     sectionHeaderRow: {
@@ -335,8 +290,8 @@ function createStyles(colors: ThemeColors) {
       justifyContent: 'space-between',
       alignItems: 'center',
     },
-    sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
-    link: { color: colors.primary, fontSize: 13, fontWeight: '600' },
+    sectionTitle: { fontSize: 18, fontWeight: '500', color: colors.text },
+    link: { color: colors.primary, fontSize: 13, fontWeight: '500' },
     eventCard: {
       borderRadius: 14,
       backgroundColor: colors.primarySurface,
@@ -345,7 +300,7 @@ function createStyles(colors: ThemeColors) {
       padding: 16,
       gap: 4,
     },
-    eventHeadline: { fontSize: 16, fontWeight: '700', color: colors.text },
+    eventHeadline: { fontSize: 16, fontWeight: '500', color: colors.text },
     eventSubtext: { fontSize: 13, color: colors.textMuted },
     loading: { marginTop: 16 },
     error: { color: colors.danger, fontSize: 13 },
@@ -370,9 +325,9 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.surfaceAlt,
       flexShrink: 0,
     },
-    appLogoText: { fontSize: 12, fontWeight: '700', color: colors.textMuted },
+    appLogoText: { fontSize: 12, fontWeight: '500', color: colors.textMuted },
     appRowText: { flex: 1, gap: 2 },
-    appTitle: { fontSize: 15, fontWeight: '600', color: colors.text },
+    appTitle: { fontSize: 15, fontWeight: '500', color: colors.text },
     appSubtitle: { fontSize: 13, color: colors.textSubtle },
   });
 }

@@ -7,10 +7,11 @@ import { StarIcon } from './ApplicationIcons';
 import { initialsOf } from '../../../lib/initials';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import { fixedColors } from '../../../theme/colors';
 import type { ApplicationDisplayFields } from '../lib/applicationDisplayFields';
 import { defaultApplicationDisplayFields } from '../lib/applicationDisplayFields';
 
-const STAR_COLOR = '#eab308';
+const STAR_COLOR = fixedColors.star;
 
 interface Props {
   application: Application;
@@ -100,23 +101,23 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.surfaceAlt,
       flexShrink: 0,
     },
-    avatarText: { fontSize: 13, fontWeight: '700', color: colors.textMuted },
+    avatarText: { fontSize: 13, fontWeight: '500', color: colors.textMuted },
     textColumn: { flex: 1, gap: 2 },
     roleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    role: { fontSize: 16, fontWeight: '700', color: colors.text },
+    role: { fontSize: 16, fontWeight: '500', color: colors.text },
     subtitle: { fontSize: 13, color: colors.textSubtle },
     tagsRow: { flexDirection: 'row', gap: 6, marginTop: 4 },
     tag: {
-      fontSize: 10,
-      fontWeight: '600',
+      fontSize: 12,
+      fontWeight: '500',
       color: colors.primary,
       backgroundColor: colors.primarySurface,
       borderRadius: 4,
       paddingHorizontal: 6,
       paddingVertical: 2,
     },
-    ghostedBadge: { fontSize: 11, fontWeight: '600', color: colors.warning, marginTop: 2 },
+    ghostedBadge: { fontSize: 12, fontWeight: '500', color: colors.warning, marginTop: 2 },
     trailing: { alignItems: 'flex-end', gap: 6, flexShrink: 0 },
-    date: { fontSize: 11, color: colors.textFaint },
+    date: { fontSize: 12, color: colors.textFaint },
   });
 }

@@ -19,6 +19,7 @@ import { registerSchema } from './registerSchema';
 import { OAuthProviderLogo } from './OAuthProviderLogo';
 import { useTheme } from '../../theme/ThemeContext';
 import type { ThemeColors } from '../../theme/colors';
+import { fixedColors } from '../../theme/colors';
 
 export function RegisterScreen() {
   const { t } = useTranslation(['auth', 'common']);
@@ -210,19 +211,19 @@ function createStyles(colors: ThemeColors) {
       gap: 8,
       marginBottom: 24,
     },
-    brandText: { fontSize: 20, fontWeight: '700', color: colors.text },
+    brandText: { fontSize: 20, fontWeight: '500', color: colors.text },
     card: {
       backgroundColor: colors.surface,
       borderRadius: 16,
       padding: 24,
       gap: 16,
-      shadowColor: '#000000',
+      shadowColor: fixedColors.shadow,
       shadowOpacity: 0.06,
       shadowRadius: 12,
       shadowOffset: { width: 0, height: 4 },
       elevation: 2,
     },
-    title: { fontSize: 26, fontWeight: '700', color: colors.text },
+    title: { fontSize: 26, fontWeight: '500', color: colors.text },
     subtitleRow: {
       flexDirection: 'row',
       flexWrap: 'wrap',
@@ -231,7 +232,7 @@ function createStyles(colors: ThemeColors) {
       marginTop: -8,
     },
     subtitle: { fontSize: 14, color: colors.textSubtle },
-    freeNote: { fontSize: 14, fontWeight: '600', color: colors.success, marginTop: -8 },
+    freeNote: { fontSize: 14, fontWeight: '500', color: colors.success, marginTop: -8 },
     passwordRow: { justifyContent: 'center' },
     passwordInput: { paddingRight: 84 },
     showPassword: {
@@ -242,10 +243,10 @@ function createStyles(colors: ThemeColors) {
       paddingHorizontal: 14,
       justifyContent: 'center',
     },
-    showPasswordText: { color: colors.textSubtle, fontSize: 13, fontWeight: '600' },
-    link: { color: colors.primary, fontWeight: '600', textDecorationLine: 'underline' },
+    showPasswordText: { color: colors.textSubtle, fontSize: 13, fontWeight: '500' },
+    link: { color: colors.primary, fontWeight: '500', textDecorationLine: 'underline' },
     field: { gap: 6 },
-    fieldLabel: { fontSize: 14, fontWeight: '600', color: colors.text },
+    fieldLabel: { fontSize: 14, fontWeight: '500', color: colors.text },
     input: {
       borderWidth: 1,
       borderColor: colors.borderStrong,
@@ -264,7 +265,7 @@ function createStyles(colors: ThemeColors) {
       justifyContent: 'center',
     },
     buttonDisabled: { opacity: 0.6 },
-    buttonText: { color: colors.onPrimary, fontSize: 16, fontWeight: '600' },
+    buttonText: { color: colors.onPrimary, fontSize: 16, fontWeight: '500' },
     error: {
       color: colors.danger,
       backgroundColor: colors.dangerSurface,
@@ -288,7 +289,7 @@ function createStyles(colors: ThemeColors) {
       borderColor: colors.borderStrong,
       backgroundColor: colors.surface,
     },
-    oauthButtonText: { color: colors.textMuted, fontSize: 15, fontWeight: '600' },
+    oauthButtonText: { color: colors.textMuted, fontSize: 15, fontWeight: '500' },
     terms: { color: colors.textSubtle, fontSize: 12, textAlign: 'center' },
   });
 }
