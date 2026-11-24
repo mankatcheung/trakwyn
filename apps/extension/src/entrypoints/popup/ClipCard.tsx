@@ -45,7 +45,7 @@ export function ClipCard({ jobData, aiSuggested, busy, onSave }: ClipCardProps) 
         <>
           <h2 className="job-role">{jobData.role}</h2>
           <p className="job-company">{jobData.company}</p>
-          {jobData.location && <p className="job-location">📍 {jobData.location}</p>}
+          {jobData.location && <p className="job-location">{jobData.location}</p>}
         </>
       )}
       {clip.description && <p className="job-description">{clip.description.slice(0, 200)}…</p>}
