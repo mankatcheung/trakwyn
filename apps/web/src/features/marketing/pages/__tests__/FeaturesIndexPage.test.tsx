@@ -42,8 +42,25 @@ describe('FeaturesIndexPage', () => {
     });
     // Every image on the page is a real capture, never a drawn placeholder.
     screen.getAllByRole('img').forEach((img) => {
-      expect(img.getAttribute('src')).toMatch(/^\/screenshots\/crop-.+-(light|dark)\.webp$/);
+      expect(img.getAttribute('src')).toMatch(/^\/screenshots\/[a-z-]+-(light|dark)\.webp$/);
     });
+  });
+
+  it('leads with the product: a hero screenshot between the heading and the first deep dive (JEF-675)', () => {
+    render(<FeaturesIndexPage />);
+
+    const [light, dark] = screen.getAllByAltText(
+      (en as Record<string, string>)['screenshots.applicationDetail.alt'],
+    );
+    expect(light).toHaveAttribute('loading', 'eager');
+    expect(light).toHaveAttribute('fetchpriority', 'high');
+    expect(dark).toHaveAttribute('src', '/screenshots/application-detail-dark.webp');
+    const heading = screen.getByRole('heading', { level: 1 });
+    const firstDeepDive = screen.getAllByAltText(
+      (en as Record<string, string>)['screenshots.cropBoardColumns.alt'],
+    )[0];
+    expect(heading.compareDocumentPosition(light)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(light.compareDocumentPosition(firstDeepDive)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   it('links each deep-dive card to its feature page', () => {

@@ -105,7 +105,7 @@ export function LandingPage() {
 
       <main>
         {/* Hero */}
-        <section className="relative overflow-hidden py-24 sm:py-32">
+        <section className="relative overflow-hidden pt-16 pb-10 sm:pt-20 sm:pb-12">
           <div className="absolute inset-0 -z-10 bg-linear-to-b from-blue-50 to-stone-50 dark:from-stone-900 dark:to-stone-900" />
           <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
             <h1 className="text-4xl font-medium tracking-tight text-stone-900 sm:text-6xl dark:text-stone-100">
@@ -140,9 +140,10 @@ export function LandingPage() {
         </section>
 
         {/* Hero screenshot: the board, on the first fold. Likely the LCP element (JEF-530). */}
-        <section className="px-4 pb-8 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-4xl">
-            <ThemedScreenshot name="board" priority />
+        {/* Wide, and edge to edge on a phone, so the board's own text stays readable (JEF-675). */}
+        <section className="pb-8 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-6xl">
+            <ThemedScreenshot name="board" priority bleed />
           </div>
         </section>
 

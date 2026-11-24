@@ -46,6 +46,21 @@ describe('ThemedScreenshot', () => {
     expect(dark).toHaveAttribute('loading', 'lazy');
   });
 
+  it('goes edge to edge below sm when bleed is set (JEF-675)', () => {
+    render(<ThemedScreenshot name="board" bleed />);
+    for (const img of screen.getAllByAltText('t:screenshots.board.alt')) {
+      expect(img).toHaveClass('rounded-none', 'border-x-0', 'sm:rounded-2xl', 'sm:border-x');
+    }
+  });
+
+  it('keeps the rounded frame without bleed', () => {
+    render(<ThemedScreenshot name="board" />);
+    expect(screen.getAllByAltText('t:screenshots.board.alt')[0]).toHaveClass(
+      'rounded-2xl',
+      'border',
+    );
+  });
+
   it('never stretches a small crop past its own CSS size (JEF-674)', () => {
     render(<ThemedScreenshot name="crop-chat-history" />);
 
