@@ -101,4 +101,29 @@ describe('FeaturePageLayout', () => {
     ctas.forEach((cta) => expect(cta).toHaveAttribute('href', '/register'));
     expect(screen.queryByRole('link', { name: 'Get started for free' })).not.toBeInTheDocument();
   });
+
+  it('separates benefits with hairlines, not alternating background bands (JEF-676)', () => {
+    const { container } = render(
+      <FeaturePageLayout
+        eyebrowIcon={Sparkles}
+        eyebrowLabel="AI assistant"
+        title="Title"
+        description="Description"
+        heroVisual={<div />}
+        benefits={[1, 2, 3].map((n) => ({
+          title: `Benefit ${n}`,
+          description: 'd',
+          visual: <div />,
+        }))}
+        ctaHeadline="Get going"
+      />,
+    );
+
+    expect(container.querySelectorAll('main div.bg-stone-100, main section.border-t')).toHaveLength(
+      3 + 1, // three benefit hairlines plus the closing CTA's own top border
+    );
+    expect(container.querySelector('main div[class*="bg-stone-100"]')).toBeNull();
+    const cta = screen.getByRole('heading', { name: 'Get going' }).closest('section');
+    expect(cta).toHaveClass('bg-stone-100');
+  });
 });
