@@ -137,6 +137,7 @@ export function ProfileDetailsForm({ me }: { me: Me | null | undefined }) {
         <FormLabel>{t('profile.profileLinksLabel')}</FormLabel>
         <Textarea
           rows={3}
+          aria-label={t('profile.profileLinksLabel')}
           {...form.register('profileLinks')}
           invalid={!!errors.profileLinks}
           placeholder={'https://www.linkedin.com/in/jane-doe\nhttps://janedoe.dev'}

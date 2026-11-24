@@ -14,8 +14,7 @@ test.describe('Account settings', () => {
   test('renders all account sections', async ({ page }) => {
     await expect(page.getByText('Password', { exact: true })).toBeVisible();
 
-    // Email address now lives on Profile, split out of Security (JEF-204).
-    await page.goto('/settings/profile');
+    // Email address sits with the other account-security forms (JEF-686).
     await expect(page.getByText('Email address')).toBeVisible();
 
     await page.goto('/settings/data');
@@ -33,7 +32,6 @@ test.describe('Account settings', () => {
     // Now a confirm-by-email flow (requestEmailChange), not an immediate
     // change — the only client-visible signal of success is the form
     // resetting (no success banner is shown).
-    await page.goto('/settings/profile');
     const newEmail = uniqueEmail('new');
     const emailSection = page.locator('div.rounded-xl').filter({ hasText: 'Email address' });
     const newEmailInput = emailSection.getByPlaceholder('you@example.com');
@@ -46,7 +44,6 @@ test.describe('Account settings', () => {
   });
 
   test('shows error when updating email with wrong password', async ({ page }) => {
-    await page.goto('/settings/profile');
     const emailSection = page.locator('div.rounded-xl').filter({ hasText: 'Email address' });
 
     await emailSection.getByPlaceholder('••••••••').fill('wrongpassword');
