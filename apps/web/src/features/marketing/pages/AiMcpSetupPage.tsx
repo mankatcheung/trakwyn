@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { MessageSquareText, Plug, ShieldCheck, Info, AlertTriangle } from 'lucide-react';
 import { MarketingHeader } from '#/features/marketing/components/MarketingHeader';
 import { MarketingFooter } from '#/features/marketing/components/MarketingFooter';
+import { MarketingClosingCta } from '#/features/marketing/components/MarketingClosingCta';
 import { ProviderKeyTabs } from '#/features/marketing/components/ProviderKeyTabs';
 import { useLocale } from '#/lib/i18n';
 
@@ -319,17 +320,7 @@ export function AiMcpSetupPage() {
         </div>
       </main>
 
-      <section className="bg-blue-950 px-4 py-16 text-center sm:px-6 lg:px-8">
-        <h2 className="text-2xl font-medium text-white sm:text-3xl">
-          {t('guides.aiMcpSetup.ctaHeadline')}
-        </h2>
-        <Link
-          to="/register"
-          className="mt-6 inline-block rounded-lg bg-white px-7 py-3 text-sm font-medium text-stone-900 transition-colors hover:bg-stone-100"
-        >
-          {t('landing.startFree')}
-        </Link>
-      </section>
+      <MarketingClosingCta headline={t('guides.aiMcpSetup.ctaHeadline')} />
 
       <MarketingFooter />
     </div>

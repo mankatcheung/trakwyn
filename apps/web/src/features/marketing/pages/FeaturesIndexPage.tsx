@@ -19,6 +19,7 @@ import {
 import { CLIPPER_WEB_STORE_URL } from '#/constants';
 import { MarketingHeader } from '#/features/marketing/components/MarketingHeader';
 import { MarketingFooter } from '#/features/marketing/components/MarketingFooter';
+import { MarketingClosingCta } from '#/features/marketing/components/MarketingClosingCta';
 import { ThemedScreenshot } from '#/features/marketing/components/ThemedScreenshot';
 import type { ScreenshotName } from '#/features/marketing/lib/screenshots';
 import { useLocale } from '#/lib/i18n';
@@ -49,7 +50,7 @@ const DEEP_DIVES: DeepDive[] = [
     ],
     to: '/features/tracking',
     linkLabelKey: 'features.index.tracking.linkLabel',
-    thumbnail: 'crop-board-columns',
+    thumbnail: 'board',
   },
   {
     icon: MessageSquareText,
@@ -147,6 +148,79 @@ const EVERYTHING_ELSE: EverythingElseItem[] = [
   },
 ];
 
+function DeepDiveCopy({ feature, className = '' }: { feature: DeepDive; className?: string }) {
+  const { t } = useLocale();
+  return (
+    <div className={className}>
+      <div className="flex size-11 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/30">
+        <feature.icon className="size-5 text-stone-500 dark:text-stone-400" />
+      </div>
+      <h2 className="mt-5 text-2xl font-medium text-stone-900 sm:text-3xl dark:text-stone-100">
+        {t(feature.titleKey)}
+      </h2>
+      <p className="mt-3.5 text-base/7 text-stone-600 dark:text-stone-400">
+        {t(feature.descriptionKey)}
+      </p>
+      <ul className="mt-4 flex flex-col gap-2.5">
+        {feature.bulletKeys.map((bulletKey) => (
+          <li
+            key={bulletKey}
+            className="flex items-start gap-2.5 text-sm text-stone-700 dark:text-stone-300"
+          >
+            <Check className="mt-0.5 size-4 shrink-0 text-stone-500 dark:text-stone-400" />
+            {t(bulletKey)}
+          </li>
+        ))}
+      </ul>
+      <Link
+        to={feature.to}
+        className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-blue-800 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+      >
+        {t(feature.linkLabelKey)}
+        <ArrowRight className="size-3.5" aria-hidden="true" />
+      </Link>
+    </div>
+  );
+}
+
+function ElseEntry({ item }: { item: EverythingElseItem }) {
+  const { t } = useLocale();
+  const body = (
+    <>
+      <item.icon
+        className={`mt-0.5 size-4 shrink-0 ${item.external ? 'text-blue-700 dark:text-blue-400' : 'text-stone-500 dark:text-stone-400'}`}
+        aria-hidden="true"
+      />
+      <div>
+        <div className="text-sm font-medium text-stone-900 dark:text-stone-100">
+          {t(item.titleKey)}
+        </div>
+        <div className="mt-0.5 text-sm text-stone-600 dark:text-stone-400">
+          {t(item.descriptionKey)}
+        </div>
+        {item.external && (
+          <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-blue-800 dark:text-blue-400">
+            {t(item.external.linkLabelKey)}
+            <ExternalLink className="size-3" aria-hidden="true" />
+          </span>
+        )}
+      </div>
+    </>
+  );
+  return item.external ? (
+    <a
+      href={item.external.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex gap-3 rounded-md hover:bg-stone-100 dark:hover:bg-stone-800/40"
+    >
+      {body}
+    </a>
+  ) : (
+    <div className="flex gap-3">{body}</div>
+  );
+}
+
 export function FeaturesIndexPage() {
   const { t } = useLocale();
   return (
@@ -171,109 +245,53 @@ export function FeaturesIndexPage() {
           </div>
         </section>
 
-        {/* Deep dives */}
-        {DEEP_DIVES.map((feature, i) => {
-          const reversed = i % 2 === 1;
-          return (
-            <div key={feature.to} className={reversed ? 'bg-stone-100 dark:bg-stone-800/30' : ''}>
-              <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-                <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-                  <div className={reversed ? 'lg:order-2' : ''}>
-                    <div className="flex size-11 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/30">
-                      <feature.icon className="size-5 text-stone-500 dark:text-stone-400" />
+        {/* Deep dives: tracking leads wide, the other three are rows (JEF-676). */}
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          {DEEP_DIVES.map((feature, i) => {
+            const reversed = i % 2 === 0;
+            return (
+              <section
+                key={feature.to}
+                className={`py-16 sm:py-20 ${i === 0 ? '' : 'border-t border-stone-200 dark:border-stone-800'}`}
+              >
+                {i === 0 ? (
+                  <div className="flex flex-col gap-10">
+                    <DeepDiveCopy feature={feature} className="max-w-2xl" />
+                    <div className="mx-auto w-full max-w-5xl">
+                      <ThemedScreenshot name={feature.thumbnail} />
                     </div>
-                    <h2 className="mt-5 text-2xl font-medium text-stone-900 sm:text-3xl dark:text-stone-100">
-                      {t(feature.titleKey)}
-                    </h2>
-                    <p className="mt-3.5 text-base/7 text-stone-600 dark:text-stone-400">
-                      {t(feature.descriptionKey)}
-                    </p>
-                    <ul className="mt-4 flex flex-col gap-2.5">
-                      {feature.bulletKeys.map((bulletKey) => (
-                        <li
-                          key={bulletKey}
-                          className="flex items-start gap-2.5 text-sm text-stone-700 dark:text-stone-300"
-                        >
-                          <Check className="mt-0.5 size-4 shrink-0 text-stone-500 dark:text-stone-400" />
-                          {t(bulletKey)}
-                        </li>
-                      ))}
-                    </ul>
-                    <Link
-                      to={feature.to}
-                      className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-blue-800 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                    >
-                      {t(feature.linkLabelKey)}
-                      <ArrowRight className="size-3.5" aria-hidden="true" />
-                    </Link>
                   </div>
-                  <div className={reversed ? 'lg:order-1' : ''}>
-                    <ThemedScreenshot name={feature.thumbnail} />
+                ) : (
+                  <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+                    <DeepDiveCopy feature={feature} className={reversed ? 'lg:order-2' : ''} />
+                    <div className={reversed ? 'lg:order-1' : ''}>
+                      <ThemedScreenshot name={feature.thumbnail} />
+                    </div>
                   </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+                )}
+              </section>
+            );
+          })}
+        </div>
 
-        {/* Everything else */}
-        <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:px-8">
-          <h2 className="text-center text-2xl font-medium text-stone-900 sm:text-3xl dark:text-stone-100">
+        {/* Everything else: a supporting list, not eight more features. */}
+        <section className="mx-auto max-w-6xl border-t border-stone-200 px-4 py-16 sm:px-6 sm:py-20 lg:px-8 dark:border-stone-800">
+          <h2 className="max-w-2xl text-2xl font-medium text-stone-900 sm:text-3xl dark:text-stone-100">
             {t('features.index.everythingElseTitle')}
           </h2>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {EVERYTHING_ELSE.map((item) => {
-              const content = (
-                <>
-                  <item.icon
-                    className={`size-4 ${item.external ? 'text-blue-600' : 'text-stone-500 dark:text-stone-400'}`}
-                  />
-                  <div className="mt-2.5 text-sm font-medium text-stone-900 dark:text-stone-100">
-                    {t(item.titleKey)}
-                  </div>
-                  <div className="mt-1 text-xs text-stone-500 dark:text-stone-400">
-                    {t(item.descriptionKey)}
-                  </div>
-                  {item.external && (
-                    <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-400">
-                      {t(item.external.linkLabelKey)}
-                      <ExternalLink className="size-3" aria-hidden="true" />
-                    </span>
-                  )}
-                </>
-              );
-              return item.external ? (
-                <a
-                  key={item.titleKey}
-                  href={item.external.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block rounded-lg border border-blue-200 p-4 transition-colors hover:border-blue-400 dark:border-blue-900 dark:hover:border-blue-700"
-                >
-                  {content}
-                </a>
-              ) : (
-                <div
-                  key={item.titleKey}
-                  className="rounded-lg border border-stone-200 p-4 dark:border-stone-800"
-                >
-                  {content}
-                </div>
-              );
-            })}
-          </div>
+          <ul className="mt-10 grid gap-x-14 sm:grid-cols-2">
+            {EVERYTHING_ELSE.map((item) => (
+              <li
+                key={item.titleKey}
+                className="border-t border-stone-200 py-5 dark:border-stone-800"
+              >
+                <ElseEntry item={item} />
+              </li>
+            ))}
+          </ul>
         </section>
 
-        {/* CTA */}
-        <section className="bg-blue-950 px-4 py-20 text-center sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-medium text-white">{t('features.index.ctaTitle')}</h2>
-          <Link
-            to="/register"
-            className="mt-7 inline-block rounded-lg bg-white px-7 py-3 text-sm font-medium text-stone-900 transition-colors hover:bg-stone-100"
-          >
-            {t('landing.startFree')}
-          </Link>
-        </section>
+        <MarketingClosingCta headline={t('features.index.ctaTitle')} />
       </main>
 
       <MarketingFooter />
