@@ -1,4 +1,8 @@
-import { getScreenshot, type ScreenshotName } from '#/features/marketing/lib/screenshots';
+import {
+  getScreenshot,
+  SCREENSHOT_SCALE,
+  type ScreenshotName,
+} from '#/features/marketing/lib/screenshots';
 import { useLocale } from '#/lib/i18n';
 
 /**
@@ -27,7 +31,9 @@ export function ThemedScreenshot({
   const dark = getScreenshot(name, 'dark');
   const alt = t(light.altKey);
   const shared =
-    'h-auto w-full rounded-2xl border border-stone-200 shadow-sm dark:border-stone-800';
+    'mx-auto h-auto w-full rounded-2xl border border-stone-200 shadow-sm dark:border-stone-800';
+  // A small crop is shown at its own size at most, never stretched past its pixels.
+  const style = { maxWidth: light.width / SCREENSHOT_SCALE };
   return (
     <>
       <img
@@ -38,6 +44,7 @@ export function ThemedScreenshot({
         loading={priority ? 'eager' : 'lazy'}
         fetchPriority={priority ? 'high' : undefined}
         decoding="async"
+        style={style}
         className={`${shared} dark:hidden`}
       />
       <img
@@ -48,6 +55,7 @@ export function ThemedScreenshot({
         loading="lazy"
         fetchPriority={priority ? 'high' : undefined}
         decoding="async"
+        style={style}
         className={`${shared} hidden dark:block`}
       />
     </>

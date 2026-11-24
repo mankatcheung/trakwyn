@@ -64,7 +64,10 @@ export function JdImportPanel({ onFill }: Props) {
       : 'px-3 py-1.5 text-xs font-medium rounded-md text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors';
 
   return (
-    <div className="overflow-hidden rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30">
+    <div
+      className="overflow-hidden rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30"
+      data-screenshot="jd-import"
+    >
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}

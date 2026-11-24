@@ -157,7 +157,7 @@ export function AnalyticsPage() {
         {t('nav.analytics')}
       </h1>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5" data-screenshot="analytics-stats">
         {[
           { label: t('dashboard.statTotal'), value: totalApps },
           {
@@ -213,7 +213,7 @@ export function AnalyticsPage() {
         )}
       </Card>
 
-      <Card className="p-6">
+      <Card className="p-6" data-screenshot="stage-funnel">
         <h2 className="mb-4 text-sm font-medium text-stone-700 dark:text-stone-300">
           {t('analyticsPage.stageFunnel')}
         </h2>

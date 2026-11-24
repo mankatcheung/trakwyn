@@ -44,4 +44,16 @@ describe('FeatureTrackingPage', () => {
     expect(screen.getByRole('heading', { name: 'Board or list — your call' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Nothing slips through' })).toBeInTheDocument();
   });
+
+  it('shows a real screenshot, in both themes, for each benefit (JEF-674)', () => {
+    render(<FeatureTrackingPage />);
+
+    [
+      'screenshots.cropNewApplicationImport.alt',
+      'screenshots.cropBoardHeader.alt',
+      'screenshots.cropNotifications.alt',
+    ].forEach((key) => {
+      expect(screen.getAllByAltText((en as Record<string, string>)[key])).toHaveLength(2);
+    });
+  });
 });

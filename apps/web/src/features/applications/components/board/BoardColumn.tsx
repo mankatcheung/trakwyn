@@ -29,6 +29,7 @@ export function BoardColumn({
     <div
       ref={setNodeRef}
       data-testid={`board-column-${status}`}
+      data-screenshot={`board-column-${status}`}
       className={`flex w-60 shrink-0 flex-col rounded-xl border border-t-4 border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-800/50 ${colors.columnBorder} transition-colors ${isOver ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
     >
       <div className="flex items-center justify-between px-3 py-2.5">

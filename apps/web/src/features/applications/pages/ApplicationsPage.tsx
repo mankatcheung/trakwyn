@@ -142,7 +142,7 @@ function ApplicationsPage() {
 
       {/* JEF-232: below sm each control collapses to its icon so the four of
           them share one phone row; labels come back at sm. */}
-      <div className="mb-6 flex items-center gap-2 sm:gap-3">
+      <div className="mb-6 flex items-center gap-2 sm:gap-3" data-screenshot="application-filters">
         <StatusSelect
           value={status ?? ''}
           onChange={(next) => {

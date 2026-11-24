@@ -239,7 +239,10 @@ export function SettingsAiPage() {
                   {t('integrations.allProvidersConfigured')}
                 </p>
               ) : addProviderOpen ? (
-                <div className="rounded-lg border border-stone-200 bg-stone-50 p-4 dark:border-stone-700 dark:bg-stone-900/40">
+                <div
+                  className="rounded-lg border border-stone-200 bg-stone-50 p-4 dark:border-stone-700 dark:bg-stone-900/40"
+                  data-screenshot="add-llm-key"
+                >
                   {llmApiKeys.length > 0 && (
                     <div className="mb-4 flex items-center justify-between">
                       <h3 className="text-sm font-medium text-stone-900 dark:text-stone-100">

@@ -1,10 +1,7 @@
-import { MessageSquareText, Check } from 'lucide-react';
+import { MessageSquareText } from 'lucide-react';
 import { FeaturePageLayout } from '#/features/marketing/components/FeaturePageLayout';
 import { useLocale } from '#/lib/i18n';
 import { ThemedScreenshot } from '#/features/marketing/components/ThemedScreenshot';
-
-/** A provider name, not translated. */
-const PROVIDER_OPENAI = 'OpenAI';
 
 export function FeatureAiAssistantPage() {
   const { t } = useLocale();
@@ -20,62 +17,17 @@ export function FeatureAiAssistantPage() {
         {
           title: t('features.aiAssistant.benefit1.title'),
           description: t('features.aiAssistant.benefit1.description'),
-          visual: (
-            <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-800/50">
-              <div className="text-xs font-medium text-stone-500 dark:text-stone-400">
-                {t('features.aiAssistant.canSeeLabel')}
-              </div>
-              <div className="mt-3 flex flex-col gap-2.5">
-                {[
-                  'features.aiAssistant.canSeeItem1',
-                  'features.aiAssistant.canSeeItem2',
-                  'features.aiAssistant.canSeeItem3',
-                ].map((lineKey) => (
-                  <div
-                    key={lineKey}
-                    className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300"
-                  >
-                    <Check className="size-3.5 shrink-0 text-stone-500 dark:text-stone-400" />
-                    {t(lineKey)}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ),
+          visual: <ThemedScreenshot name="crop-assistant-suggestions" />,
         },
         {
           title: t('features.aiAssistant.benefit2.title'),
           description: t('features.aiAssistant.benefit2.description'),
-          visual: (
-            <div className="flex flex-col gap-2 rounded-xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-800/50">
-              <div className="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2.5 text-sm font-medium text-blue-700 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                {t('features.aiAssistant.keyConnected')}
-              </div>
-              <div className="rounded-lg border border-stone-200 px-3 py-2.5 text-sm text-stone-400 dark:border-stone-700">
-                {PROVIDER_OPENAI}
-              </div>
-              <div className="rounded-lg border border-stone-200 px-3 py-2.5 text-sm text-stone-400 dark:border-stone-700">
-                {t('features.aiAssistant.providerCustom')}
-              </div>
-            </div>
-          ),
+          visual: <ThemedScreenshot name="crop-ai-providers" />,
         },
         {
           title: t('features.aiAssistant.benefit3.title'),
           description: t('features.aiAssistant.benefit3.description'),
-          visual: (
-            <div className="rounded-xl border border-stone-200 bg-white p-2 shadow-sm dark:border-stone-800 dark:bg-stone-800/50">
-              <div className="rounded-lg bg-blue-50 px-3 py-2.5 text-sm font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                {t('features.aiAssistant.historyItem1')}
-              </div>
-              <div className="px-3 py-2.5 text-sm text-stone-700 dark:text-stone-300">
-                {t('features.aiAssistant.historyItem2')}
-              </div>
-              <div className="px-3 py-2.5 text-sm text-stone-700 dark:text-stone-300">
-                {t('features.aiAssistant.historyItem3')}
-              </div>
-            </div>
-          ),
+          visual: <ThemedScreenshot name="crop-chat-history" />,
         },
       ]}
       ctaHeadline={t('features.aiAssistant.ctaHeadline')}
