@@ -64,7 +64,7 @@ https://www.trakwyn.com/privacy
 | Screenshot 2     | `store/assets/screenshot-2-saved.png` | 1280×800 |
 | Small promo tile | `store/assets/promo-tile-small.png`   | 440×280  |
 
-The screenshots are the real built popup and content script running against a demo posting for a made-up company ("Northwind Labs"), with a stand-in signed-in account and API answers. They are 24-bit PNG with no alpha. To redo them after a popup change, rebuild, load the build in Chromium, and capture the popup beside the demo page.
+The screenshots are the real built popup and content script running against a demo posting for a made-up company ("Northwind Labs"), with a stand-in signed-in account ("Maya Chen", as in the marketing screenshots) and stubbed API answers. They are 24-bit PNG with no alpha. The popup is captured at 2x from the loaded build, composed onto the demo page at 1280×800 with a caption card, and downscaled. The small promo tile is a solid ink-blue (`#1e40af`) tile with the icon, no gradient. Both were retaken on 2026-11-24 (JEF-687) after the popup restyle (JEF-673). To redo them after a popup change, rebuild (`VITE_API_URL` and `VITE_WEB_URL` set to any placeholder), load `.output/chrome-mv3` in Chromium, and capture the popup beside the demo page.
 
 ## Privacy practices tab
 
