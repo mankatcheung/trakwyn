@@ -32,7 +32,7 @@ function createStyles(colors: ThemeColors) {
       padding: 16,
       gap: 8,
     },
-    title: { fontSize: 14, fontWeight: '700', color: colors.text },
-    description: { fontSize: 11, color: colors.textFaint, marginTop: -4 },
+    title: { fontSize: 14, fontWeight: '500', color: colors.text },
+    description: { fontSize: 12, color: colors.textFaint, marginTop: -4 },
   });
 }

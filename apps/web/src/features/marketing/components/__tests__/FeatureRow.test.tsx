@@ -15,19 +15,19 @@ const base = {
   titleKey: 'landing.tracking',
   descriptionKey: 'landing.trackingDescription',
   to: '/features/tracking',
+  linkLabelKey: 'features.index.tracking.linkLabel',
   screenshot: 'board',
 } as const;
 
 describe('FeatureRow', () => {
-  it('shows the title, copy, Learn more link and screenshot', () => {
+  it('shows the title, copy, a link named for the feature and the screenshot', () => {
     render(<FeatureRow {...base} />);
 
     expect(screen.getByRole('heading', { name: 't:landing.tracking' })).toBeInTheDocument();
     expect(screen.getByText('t:landing.trackingDescription')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /t:landing\.learnMore/ })).toHaveAttribute(
-      'href',
-      '/features/tracking',
-    );
+    expect(
+      screen.getByRole('link', { name: /t:features\.index\.tracking\.linkLabel/ }),
+    ).toHaveAttribute('href', '/features/tracking');
     expect(screen.getAllByAltText('t:screenshots.board.alt')).toHaveLength(2);
     expect(screen.queryByText('t:plan.badgePro')).toBeNull();
   });

@@ -142,7 +142,7 @@ export function ProfileDetailsForm({ me }: { me: Me | null | undefined }) {
           placeholder={'https://www.linkedin.com/in/jane-doe\nhttps://janedoe.dev'}
           aria-describedby="profile-links-hint"
         />
-        <p id="profile-links-hint" className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        <p id="profile-links-hint" className="mt-1 text-xs text-stone-500 dark:text-stone-400">
           {t('profile.profileLinksHint')}
         </p>
         {errors.profileLinks && (

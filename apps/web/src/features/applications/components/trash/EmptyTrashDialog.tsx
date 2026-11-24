@@ -36,10 +36,10 @@ export function EmptyTrashDialog({
         <div className="flex items-start gap-3">
           <AlertTriangleIcon size={20} className="mt-0.5 shrink-0 text-red-600 dark:text-red-400" />
           <div className="min-w-0">
-            <h2 className="font-semibold text-gray-900 dark:text-gray-100">
+            <h2 className="font-medium text-stone-900 dark:text-stone-100">
               {t('trash.emptyTrashConfirmTitle', { count })}
             </h2>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">
               {t('trash.emptyTrashConfirmBody')}
             </p>
           </div>
@@ -51,7 +51,7 @@ export function EmptyTrashDialog({
             type="button"
             onClick={onCancel}
             disabled={isPending}
-            className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
+            className="rounded-lg border border-stone-200 px-3 py-1.5 text-sm text-stone-700 transition-colors hover:bg-stone-50 disabled:opacity-50 dark:border-stone-700 dark:text-stone-200 dark:hover:bg-stone-700"
           >
             {t('common.cancel')}
           </button>

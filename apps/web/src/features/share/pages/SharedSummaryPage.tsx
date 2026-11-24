@@ -33,13 +33,13 @@ export function SharedSummaryPage() {
   const summary = data?.sharedSummary;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 dark:bg-gray-900">
-      <div className="w-full max-w-lg space-y-6 rounded-xl bg-white p-8 shadow-sm dark:bg-gray-800">
+    <div className="flex min-h-screen items-center justify-center bg-stone-50 px-4 py-12 dark:bg-stone-900">
+      <div className="w-full max-w-lg space-y-6 rounded-xl bg-white p-8 shadow-sm dark:bg-stone-800">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
             {t('sharedSummary.title')}
           </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
             {t('sharedSummary.description')}
           </p>
         </div>
@@ -47,7 +47,7 @@ export function SharedSummaryPage() {
         {!token ? (
           <Alert>{t('sharedSummary.missingToken')}</Alert>
         ) : isLoading ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
+          <p className="text-sm text-stone-500 dark:text-stone-400">{t('common.loading')}</p>
         ) : !summary ? (
           <Alert>{t('sharedSummary.invalidOrRevoked')}</Alert>
         ) : (
@@ -69,25 +69,27 @@ export function SharedSummaryPage() {
             </div>
 
             <div>
-              <h2 className="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
+              <h2 className="mb-2 text-sm font-medium text-stone-900 dark:text-stone-100">
                 {t('sharedSummary.byStatus')}
               </h2>
-              <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
+              <ul className="divide-y divide-stone-200 rounded-lg border border-stone-200 dark:divide-stone-700 dark:border-stone-700">
                 {summary.statusCounts.map((sc) => (
                   <li
                     key={sc.status}
                     className="flex items-center justify-between px-3 py-2 text-sm"
                   >
-                    <span className="text-gray-700 dark:text-gray-300">
+                    <span className="text-stone-700 dark:text-stone-300">
                       {t(`status.${sc.status}`, { defaultValue: sc.status })}
                     </span>
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{sc.count}</span>
+                    <span className="font-medium text-stone-900 dark:text-stone-100">
+                      {sc.count}
+                    </span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-stone-400">
               {t('sharedSummary.generatedAt', {
                 date: new Date(summary.generatedAt).toLocaleString(),
               })}
@@ -101,9 +103,9 @@ export function SharedSummaryPage() {
 
 function SummaryStat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-900">
-      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
-      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{label}</p>
+    <div className="rounded-lg bg-stone-50 p-4 dark:bg-stone-900">
+      <p className="text-2xl font-medium text-stone-900 dark:text-stone-100">{value}</p>
+      <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">{label}</p>
     </div>
   );
 }

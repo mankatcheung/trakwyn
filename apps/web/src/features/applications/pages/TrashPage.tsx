@@ -122,7 +122,7 @@ export function TrashPage() {
       <div className="mb-4">
         <Link
           to="/applications"
-          className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          className="text-sm text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
         >
           {t('applicationForm.backToApplications')}
         </Link>
@@ -130,10 +130,12 @@ export function TrashPage() {
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
             {t('trash.title')}
           </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t('trash.description')}</p>
+          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+            {t('trash.description')}
+          </p>
         </div>
         {applications.length > 0 && (
           <button
@@ -163,13 +165,13 @@ export function TrashPage() {
 
       {!isLoading && !isError && applications.length === 0 && (
         <div className="py-12 text-center">
-          <TrashIcon size={40} className="mx-auto mb-3 text-gray-300 dark:text-gray-600" />
-          <p className="text-gray-500 dark:text-gray-400">{t('trash.empty')}</p>
+          <TrashIcon size={40} className="mx-auto mb-3 text-stone-300 dark:text-stone-600" />
+          <p className="text-stone-500 dark:text-stone-400">{t('trash.empty')}</p>
         </div>
       )}
 
       {applications.length > 0 && (
-        <div className="mt-6 mb-3 flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+        <div className="mt-6 mb-3 flex items-center gap-3 text-sm text-stone-600 dark:text-stone-400">
           <Checkbox
             checked={allSelected}
             onChange={toggleAll}
@@ -187,7 +189,7 @@ export function TrashPage() {
                 type="button"
                 onClick={() => restoreSelected.mutate(visibleSelectedIds)}
                 disabled={busy}
-                className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1 text-sm transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:hover:bg-gray-700"
+                className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-2.5 py-1 text-sm transition-colors hover:bg-stone-50 disabled:opacity-50 dark:border-stone-700 dark:hover:bg-stone-700"
               >
                 <RotateCcwIcon size={14} />
                 {t('trash.restoreSelected')}
@@ -196,7 +198,7 @@ export function TrashPage() {
                 type="button"
                 onClick={clearSelection}
                 aria-label={t('applications.clearSelection')}
-                className="rounded-lg p-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="rounded-lg p-1 transition-colors hover:bg-stone-100 dark:hover:bg-stone-700"
               >
                 <XIcon size={15} />
               </button>
@@ -223,12 +225,12 @@ export function TrashPage() {
                     <Link
                       to="/applications/$applicationId"
                       params={{ applicationId: app.id }}
-                      className="font-semibold text-gray-900 hover:underline dark:text-gray-100"
+                      className="font-medium text-stone-900 hover:underline dark:text-stone-100"
                     >
                       {app.company}
                     </Link>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{app.role}</p>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-stone-500 dark:text-stone-400">{app.role}</p>
+                    <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
                       <CountdownLabel application={app} />
                     </p>
                   </div>
@@ -240,7 +242,7 @@ export function TrashPage() {
                     onClick={() => restore.mutate(app.id)}
                     disabled={busy}
                     aria-label={t('trash.restoreAria', { company: app.company })}
-                    className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
+                    className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-sm text-stone-600 transition-colors hover:bg-stone-50 disabled:opacity-50 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-stone-700"
                   >
                     <RotateCcwIcon size={14} />
                     <span className="hidden sm:inline">{t('trash.restore')}</span>

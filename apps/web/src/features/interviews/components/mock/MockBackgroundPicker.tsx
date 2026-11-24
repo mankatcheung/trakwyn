@@ -31,8 +31,8 @@ export function MockBackgroundPicker({
   );
 
   return (
-    <fieldset className="space-y-2 rounded-lg border border-gray-200 p-3 dark:border-gray-700">
-      <legend className="px-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
+    <fieldset className="space-y-2 rounded-lg border border-stone-200 p-3 dark:border-stone-700">
+      <legend className="px-1 text-xs font-medium text-stone-700 dark:text-stone-300">
         {t('interviews.backgroundLegend')}
       </legend>
       <label
@@ -49,7 +49,7 @@ export function MockBackgroundPicker({
             onChange({ ...value, useProfile: e.target.checked });
           }}
         />
-        <span className="text-gray-900 dark:text-gray-100">{t('interviews.useMyProfile')}</span>
+        <span className="text-stone-900 dark:text-stone-100">{t('interviews.useMyProfile')}</span>
       </label>
       {resumes.length > 0 && (
         <div>
@@ -70,7 +70,7 @@ export function MockBackgroundPicker({
           </Select>
         </div>
       )}
-      <p className="text-xs text-gray-500 dark:text-gray-400">
+      <p className="text-xs text-stone-500 dark:text-stone-400">
         {t('interviews.backgroundPrivacy')}
       </p>
     </fieldset>

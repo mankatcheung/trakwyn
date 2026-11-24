@@ -232,7 +232,7 @@ export function Modal({
             ? { transform: sheetTransform, touchAction: isDragging ? 'none' : undefined }
             : undefined
         }
-        className={`relative bg-white dark:bg-gray-800 shadow-2xl w-full max-h-[85vh] flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700 ${
+        className={`relative bg-white dark:bg-stone-800 shadow-lg w-full max-h-[85vh] flex flex-col overflow-hidden border border-stone-200 dark:border-stone-700 ${
           position === 'bottom'
             ? `rounded-t-2xl border-b-0 pb-[env(safe-area-inset-bottom)] ${
                 sheetTransition ? 'transition-transform duration-200 ease-out' : ''
@@ -241,8 +241,8 @@ export function Modal({
         }`}
       >
         {title !== undefined && (
-          <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700 shrink-0">
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+          <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-stone-200 dark:border-stone-700 shrink-0">
+            <h2 className="text-sm font-medium text-stone-900 dark:text-stone-100 truncate">
               {title}
             </h2>
             <IconButton label="Close" icon={<XIcon size={16} />} size="sm" onClick={onClose} />

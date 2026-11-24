@@ -38,6 +38,6 @@ function createStyles(colors: ThemeColors) {
       borderRadius: 999,
       backgroundColor: colors.primarySurface,
     },
-    text: { fontSize: 12, fontWeight: '700', color: colors.primary },
+    text: { fontSize: 12, fontWeight: '500', color: colors.primary },
   });
 }

@@ -115,11 +115,11 @@ export function NewApplicationPage() {
       <div className="mb-6">
         <a
           href="/applications"
-          className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          className="text-sm text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
         >
           {t('applicationForm.backToApplications')}
         </a>
-        <h1 className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">
+        <h1 className="mt-2 text-2xl font-medium text-stone-900 dark:text-stone-100">
           {t('applicationForm.newTitle')}
         </h1>
       </div>
@@ -137,7 +137,7 @@ export function NewApplicationPage() {
 
       <form
         {...formProps}
-        className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800"
+        className="space-y-4 rounded-xl border border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-800"
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label={t('applicationForm.companyLabel')} error={errors.company?.message}>
@@ -231,7 +231,7 @@ export function NewApplicationPage() {
           <Checkbox {...register('starred')} id="starred-new" tone="yellow" />
           <label
             htmlFor="starred-new"
-            className="flex cursor-pointer items-center gap-1.5 text-sm text-gray-700 select-none dark:text-gray-300"
+            className="flex cursor-pointer items-center gap-1.5 text-sm text-stone-700 select-none dark:text-stone-300"
           >
             <StarIcon size={14} className="text-yellow-400" />{' '}
             {t('applicationForm.starThisApplication')}
@@ -245,7 +245,7 @@ export function NewApplicationPage() {
               {/* Trashed applications are not freed until they are purged, which is the
                   dead end users hit with a full list and an apparently empty board (JEF-494). */}
               {state.code === ERROR_CODES.QUOTA_EXCEEDED && (
-                <p className="text-xs text-gray-500 dark:text-gray-400">{t('quota.trashNote')}</p>
+                <p className="text-xs text-stone-500 dark:text-stone-400">{t('quota.trashNote')}</p>
               )}
             </div>
           ) : (
@@ -258,7 +258,7 @@ export function NewApplicationPage() {
           </SubmitButton>
           <a
             href="/applications"
-            className="px-5 py-2 text-sm text-gray-600 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+            className="px-5 py-2 text-sm text-stone-600 transition-colors hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
           >
             {t('common.cancel')}
           </a>

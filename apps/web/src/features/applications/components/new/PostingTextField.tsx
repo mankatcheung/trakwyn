@@ -29,7 +29,7 @@ export function PostingTextField({ registration, error }: Props) {
         aria-describedby="posting-text-hint"
         invalid={!!error}
       />
-      <p id="posting-text-hint" className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+      <p id="posting-text-hint" className="mt-1 text-xs text-stone-500 dark:text-stone-400">
         {t('applicationForm.postingTextHint')}
       </p>
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}

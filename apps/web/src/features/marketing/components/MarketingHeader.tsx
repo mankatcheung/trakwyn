@@ -10,9 +10,7 @@ import { MarketingLocalePicker } from './MarketingLocalePicker';
 interface MarketingHeaderProps {
   /** Bolds the Features nav item — set on `/features` and every `/features/*` page. */
   activeFeatures?: boolean;
-  /** Bolds the setup guide nav item — set on `/ai-mcp-setup`. */
-  activeGuide?: boolean;
-  /** Bolds the Guides nav item — set on `/guides` and every `/guides/*` page. */
+  /** Bolds the Guides nav item — set on `/guides`, every `/guides/*` page and `/ai-mcp-setup`. */
   activeGuides?: boolean;
   /** Bolds the Pricing nav item — set on `/pricing`. */
   activePricing?: boolean;
@@ -27,7 +25,6 @@ interface MarketingHeaderProps {
  */
 export function MarketingHeader({
   activeFeatures = false,
-  activeGuide = false,
   activeGuides = false,
   activePricing = false,
 }: MarketingHeaderProps) {
@@ -52,15 +49,15 @@ export function MarketingHeader({
     <header
       className={`sticky top-0 z-40 border-b transition-colors ${
         scrolled
-          ? 'border-gray-200 bg-white/90 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/90'
+          ? 'border-stone-200 bg-white/90 backdrop-blur-md dark:border-stone-800 dark:bg-stone-950/90'
           : 'border-transparent'
       }`}
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" className="flex min-h-11 items-center gap-2">
             <LogoMark size={24} />
-            <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
+            <span className="text-lg font-medium text-stone-900 dark:text-stone-100">
               {t('marketing.brandName')}
             </span>
           </Link>
@@ -69,8 +66,8 @@ export function MarketingHeader({
               to="/features"
               className={
                 activeFeatures
-                  ? 'text-sm font-semibold text-blue-700 dark:text-blue-400'
-                  : 'text-sm font-medium text-gray-700 transition-colors hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100'
+                  ? 'text-sm font-medium text-stone-900 underline decoration-stone-400 decoration-1 underline-offset-8 dark:text-stone-100 dark:decoration-stone-500'
+                  : 'text-sm font-medium text-stone-700 transition-colors hover:text-stone-900 dark:text-stone-300 dark:hover:text-stone-100'
               }
             >
               {t('landing.features')}
@@ -79,8 +76,8 @@ export function MarketingHeader({
               to="/pricing"
               className={
                 activePricing
-                  ? 'text-sm font-semibold text-blue-700 dark:text-blue-400'
-                  : 'text-sm font-medium text-gray-700 transition-colors hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100'
+                  ? 'text-sm font-medium text-stone-900 underline decoration-stone-400 decoration-1 underline-offset-8 dark:text-stone-100 dark:decoration-stone-500'
+                  : 'text-sm font-medium text-stone-700 transition-colors hover:text-stone-900 dark:text-stone-300 dark:hover:text-stone-100'
               }
             >
               {t('marketing.nav.pricing')}
@@ -89,32 +86,22 @@ export function MarketingHeader({
               to="/guides"
               className={
                 activeGuides
-                  ? 'text-sm font-semibold text-blue-700 dark:text-blue-400'
-                  : 'text-sm font-medium text-gray-700 transition-colors hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100'
+                  ? 'text-sm font-medium text-stone-900 underline decoration-stone-400 decoration-1 underline-offset-8 dark:text-stone-100 dark:decoration-stone-500'
+                  : 'text-sm font-medium text-stone-700 transition-colors hover:text-stone-900 dark:text-stone-300 dark:hover:text-stone-100'
               }
             >
               {t('marketing.nav.guides')}
             </Link>
             <Link
-              to="/ai-mcp-setup"
-              className={
-                activeGuide
-                  ? 'text-sm font-semibold text-blue-700 dark:text-blue-400'
-                  : 'text-sm font-medium text-gray-700 transition-colors hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100'
-              }
-            >
-              {t('guides.aiMcpSetup.eyebrow')}
-            </Link>
-            <Link
               to={authLink}
-              className="text-sm font-medium text-gray-700 transition-colors hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
+              className="text-sm font-medium text-stone-700 transition-colors hover:text-stone-900 dark:text-stone-300 dark:hover:text-stone-100"
             >
               {authLabel}
             </Link>
             <Link
               to="/register"
               onClick={() => trackCta('get_started', 'header')}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+              className="rounded-lg bg-blue-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-900"
             >
               {t('landing.startFree')}
             </Link>
@@ -125,14 +112,16 @@ export function MarketingHeader({
             <Link
               to="/register"
               onClick={() => trackCta('get_started', 'header_mobile')}
-              className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+              className="inline-flex min-h-11 items-center rounded-lg bg-blue-800 px-3 text-sm font-medium text-white transition-colors hover:bg-blue-900"
             >
               {t('landing.startFree')}
             </Link>
             <button
               type="button"
-              className="p-2 text-gray-600 dark:text-gray-400"
-              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              className="inline-flex size-11 items-center justify-center rounded-lg text-stone-600 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none dark:text-stone-400"
+              aria-label={t(
+                mobileMenuOpen ? 'authenticatedLayout.closeMenu' : 'authenticatedLayout.openMenu',
+              )}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
@@ -145,8 +134,8 @@ export function MarketingHeader({
               to="/features"
               className={
                 activeFeatures
-                  ? 'block rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
-                  : 'block rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                  ? 'block rounded-lg bg-stone-100 px-3 py-3 text-sm font-medium text-stone-900 dark:bg-stone-800 dark:text-stone-100'
+                  : 'block rounded-lg px-3 py-3 text-sm font-medium text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800'
               }
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -156,8 +145,8 @@ export function MarketingHeader({
               to="/pricing"
               className={
                 activePricing
-                  ? 'block rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
-                  : 'block rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                  ? 'block rounded-lg bg-stone-100 px-3 py-3 text-sm font-medium text-stone-900 dark:bg-stone-800 dark:text-stone-100'
+                  : 'block rounded-lg px-3 py-3 text-sm font-medium text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800'
               }
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -167,27 +156,16 @@ export function MarketingHeader({
               to="/guides"
               className={
                 activeGuides
-                  ? 'block rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
-                  : 'block rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                  ? 'block rounded-lg bg-stone-100 px-3 py-3 text-sm font-medium text-stone-900 dark:bg-stone-800 dark:text-stone-100'
+                  : 'block rounded-lg px-3 py-3 text-sm font-medium text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800'
               }
               onClick={() => setMobileMenuOpen(false)}
             >
               {t('marketing.nav.guides')}
             </Link>
             <Link
-              to="/ai-mcp-setup"
-              className={
-                activeGuide
-                  ? 'block rounded-lg bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
-                  : 'block rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
-              }
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {t('guides.aiMcpSetup.eyebrow')}
-            </Link>
-            <Link
               to={authLink}
-              className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="block rounded-lg px-3 py-3 text-sm font-medium text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800"
               onClick={() => setMobileMenuOpen(false)}
             >
               {authLabel}

@@ -3,8 +3,8 @@ import type { HTMLAttributes, ReactNode } from 'react';
 export type EmptyStateSize = 'default' | 'compact';
 
 const SIZE_CLASSES: Record<EmptyStateSize, string> = {
-  default: 'text-gray-500 dark:text-gray-400',
-  compact: 'text-sm text-gray-400',
+  default: 'text-stone-500 dark:text-stone-400',
+  compact: 'text-sm text-stone-400',
 };
 
 export interface EmptyStateProps extends HTMLAttributes<HTMLDivElement> {
@@ -37,7 +37,7 @@ export function EmptyState({
   return (
     <div className={classes} {...rest}>
       {icon && (
-        <div className="flex justify-center mx-auto mb-3 text-gray-300 dark:text-gray-600">
+        <div className="flex justify-center mx-auto mb-3 text-stone-300 dark:text-stone-600">
           {icon}
         </div>
       )}

@@ -111,11 +111,12 @@ export function NotificationPopover({
       ref={panelRef}
       role="dialog"
       aria-label={t('notificationInbox.title')}
+      data-screenshot="notification-popover"
       style={{ top: position.top, left: position.left }}
-      className="fixed z-50 flex max-h-[70vh] w-80 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl sm:w-96 dark:border-gray-700 dark:bg-gray-800"
+      className="fixed z-50 flex max-h-[70vh] w-80 flex-col overflow-hidden rounded-xl border border-stone-200 bg-white shadow-lg sm:w-96 dark:border-stone-700 dark:bg-stone-800"
     >
-      <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+      <div className="flex shrink-0 items-center justify-between border-b border-stone-200 px-4 py-3 dark:border-stone-700">
+        <h2 className="text-sm font-medium text-stone-900 dark:text-stone-100">
           {t('notificationInbox.title')}
         </h2>
       </div>
@@ -128,7 +129,7 @@ export function NotificationPopover({
           </p>
         )}
         {!isLoading && !isError && items.length === 0 && (
-          <p className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+          <p className="px-4 py-8 text-center text-sm text-stone-500 dark:text-stone-400">
             {t('notificationInbox.allCaughtUp')}
           </p>
         )}
@@ -137,7 +138,7 @@ export function NotificationPopover({
             key={notification.id}
             type="button"
             onClick={() => onRowClick(notification)}
-            className={`flex w-full items-start gap-2 border-b border-gray-100 px-4 py-3 text-left last:border-0 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/50 ${
+            className={`flex w-full items-start gap-2 border-b border-stone-100 px-4 py-3 text-left last:border-0 hover:bg-stone-50 dark:border-stone-700 dark:hover:bg-stone-700/50 ${
               notification.read ? '' : 'bg-blue-50/50 dark:bg-blue-900/10'
             }`}
           >
@@ -146,16 +147,16 @@ export function NotificationPopover({
               <span
                 className={`block text-sm ${
                   notification.read
-                    ? 'text-gray-700 dark:text-gray-300'
-                    : 'font-semibold text-gray-900 dark:text-gray-100'
+                    ? 'text-stone-700 dark:text-stone-300'
+                    : 'font-medium text-stone-900 dark:text-stone-100'
                 }`}
               >
                 {notification.title}
               </span>
-              <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
+              <span className="mt-0.5 block text-xs text-stone-500 dark:text-stone-400">
                 {notification.body}
               </span>
-              <span className="mt-1 block text-[11px] text-gray-400">
+              <span className="mt-1 block text-xs text-stone-400">
                 {timeAgo(notification.createdAt, t)}
               </span>
             </span>
@@ -169,7 +170,7 @@ export function NotificationPopover({
       <Link
         to="/notifications"
         onClick={onClose}
-        className="shrink-0 border-t border-gray-200 px-4 py-2.5 text-center text-sm font-medium text-blue-600 hover:bg-gray-50 dark:border-gray-700 dark:text-blue-400 dark:hover:bg-gray-700/50"
+        className="shrink-0 border-t border-stone-200 px-4 py-2.5 text-center text-sm font-medium text-blue-800 hover:bg-stone-50 dark:border-stone-700 dark:text-blue-400 dark:hover:bg-stone-700/50"
       >
         {t('notificationInbox.viewAll')}
       </Link>

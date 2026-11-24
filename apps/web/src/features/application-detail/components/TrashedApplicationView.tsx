@@ -57,7 +57,7 @@ export function TrashedApplicationView({ app }: { app: Application }) {
       <div className="mb-4">
         <Link
           to="/applications/trash"
-          className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          className="text-sm text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
         >
           {t('trash.backToTrash')}
         </Link>
@@ -82,7 +82,7 @@ export function TrashedApplicationView({ app }: { app: Application }) {
               type="button"
               onClick={() => restore.mutate()}
               disabled={restore.isPending || purge.isPending}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-lg bg-blue-800 dark:bg-blue-700 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-600 disabled:opacity-50"
             >
               <RotateCcwIcon size={14} />
               {t('trash.restore')}
@@ -106,8 +106,10 @@ export function TrashedApplicationView({ app }: { app: Application }) {
       <Card className="p-4 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
           <div className="min-w-0">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{app.company}</h1>
-            <p className="mt-0.5 text-gray-500 dark:text-gray-400">{app.role}</p>
+            <h1 className="text-xl font-medium text-stone-900 dark:text-stone-100">
+              {app.company}
+            </h1>
+            <p className="mt-0.5 text-stone-500 dark:text-stone-400">{app.role}</p>
           </div>
           <StatusBadge status={app.status} />
         </div>
@@ -130,10 +132,10 @@ export function TrashedApplicationView({ app }: { app: Application }) {
 
         {app.description && (
           <div className="mt-4">
-            <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            <h2 className="text-sm font-medium text-stone-500 dark:text-stone-400">
               {t('applicationDetail.descriptionLabel')}
             </h2>
-            <p className="mt-1 text-sm whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+            <p className="mt-1 text-sm whitespace-pre-wrap text-stone-700 dark:text-stone-300">
               {app.description}
             </p>
           </div>

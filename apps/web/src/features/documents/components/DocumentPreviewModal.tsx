@@ -30,8 +30,8 @@ export function DocumentPreviewModal({ document: doc, onClose }: DocumentPreview
   return (
     <Modal open onClose={onClose} size="lg">
       <div className="flex h-[80vh] flex-col">
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-700">
-          <h2 className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-stone-200 px-4 py-3 dark:border-stone-700">
+          <h2 className="truncate text-sm font-medium text-stone-900 dark:text-stone-100">
             {doc.name}
           </h2>
           <div className="flex shrink-0 items-center gap-1">
@@ -39,7 +39,7 @@ export function DocumentPreviewModal({ document: doc, onClose }: DocumentPreview
               href={doc.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-sm p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="rounded-sm p-1.5 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300"
               title={t('documents.openInNewTab')}
             >
               <ExternalLinkIcon size={16} />
@@ -47,7 +47,7 @@ export function DocumentPreviewModal({ document: doc, onClose }: DocumentPreview
             <IconButton label={t('common.close')} icon={<XIcon size={16} />} onClick={onClose} />
           </div>
         </div>
-        <div className="min-h-0 flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
+        <div className="min-h-0 flex-1 overflow-auto bg-stone-50 dark:bg-stone-900">
           {isPdf ? (
             <iframe src={doc.url} title={doc.name} className="size-full border-0" />
           ) : isImage ? (
@@ -56,14 +56,14 @@ export function DocumentPreviewModal({ document: doc, onClose }: DocumentPreview
             </div>
           ) : (
             <div className="flex size-full flex-col items-center justify-center gap-3 p-6 text-center">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-stone-500 dark:text-stone-400">
                 {t('documentPreview.noPreviewAvailable')}
               </p>
               <a
                 href={doc.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                className="rounded-lg bg-blue-800 dark:bg-blue-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-600"
               >
                 {t('documentPreview.openDocument', { name: doc.name })}
               </a>

@@ -81,7 +81,7 @@ function createStyles(colors: ThemeColors) {
       padding: 24,
     },
     card: { backgroundColor: colors.surface, borderRadius: 14, padding: 20, gap: 14 },
-    title: { fontSize: 20, fontWeight: '700', color: colors.text },
+    title: { fontSize: 20, fontWeight: '500', color: colors.text },
     body: { fontSize: 15, color: colors.textSubtle, lineHeight: 21 },
     error: {
       color: colors.danger,
@@ -97,7 +97,7 @@ function createStyles(colors: ThemeColors) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    primaryText: { color: colors.onPrimary, fontSize: 15, fontWeight: '600' },
+    primaryText: { color: colors.onPrimary, fontSize: 15, fontWeight: '500' },
     secondaryButton: {
       minHeight: 44,
       borderRadius: 8,
@@ -106,7 +106,7 @@ function createStyles(colors: ThemeColors) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    secondaryText: { color: colors.text, fontSize: 15, fontWeight: '600' },
+    secondaryText: { color: colors.text, fontSize: 15, fontWeight: '500' },
     disabled: { opacity: 0.6 },
   });
 }

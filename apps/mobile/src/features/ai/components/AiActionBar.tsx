@@ -137,7 +137,7 @@ function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     group: { gap: 8 },
     help: { fontSize: 13, color: colors.textSubtle },
-    toggle: { fontSize: 13, fontWeight: '600', color: colors.primary },
+    toggle: { fontSize: 13, fontWeight: '500', color: colors.primary },
     primary: {
       minHeight: 48,
       alignItems: 'center',
@@ -145,7 +145,7 @@ function createStyles(colors: ThemeColors) {
       borderRadius: 10,
       backgroundColor: colors.primary,
     },
-    primaryText: { color: colors.onPrimary, fontSize: 15, fontWeight: '700' },
+    primaryText: { color: colors.onPrimary, fontSize: 15, fontWeight: '500' },
     outline: {
       minHeight: 44,
       alignItems: 'center',
@@ -155,7 +155,7 @@ function createStyles(colors: ThemeColors) {
       borderColor: colors.primary,
       backgroundColor: colors.primarySurface,
     },
-    outlineText: { color: colors.primary, fontSize: 14, fontWeight: '700' },
+    outlineText: { color: colors.primary, fontSize: 14, fontWeight: '500' },
     disabled: { opacity: 0.5 },
   });
 }

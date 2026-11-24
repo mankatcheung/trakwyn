@@ -34,13 +34,13 @@ export function ChatDockFooter() {
   };
 
   return (
-    <footer className="fixed right-0 bottom-0 left-60 z-40 hidden h-12 items-center gap-2 border-t border-gray-200 bg-white px-4 lg:flex dark:border-gray-700 dark:bg-gray-800">
+    <footer className="fixed right-0 bottom-0 left-60 z-40 hidden h-12 items-center gap-2 border-t border-stone-200 bg-white px-4 lg:flex dark:border-stone-700 dark:bg-stone-800">
       <div className="relative shrink-0">
         <button
           type="button"
           onClick={() => setPickerOpen((v) => !v)}
           aria-label={t('chatDock.chatWithAssistant')}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-stone-600 transition-colors hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700"
         >
           <MessageCircleIcon size={16} />
           {t('chatDock.chatWithAssistant')}
@@ -68,7 +68,7 @@ export function ChatDockFooter() {
               className={`flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg py-1.5 pr-1.5 pl-3 text-sm transition-colors ${
                 dock.expanded === id
                   ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
-                  : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                  : 'text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700'
               }`}
             >
               <span className="max-w-40 truncate">
@@ -81,7 +81,7 @@ export function ChatDockFooter() {
                   dock.closeSection(id);
                 }}
                 aria-label={t('chatDock.closeConversationAria')}
-                className="rounded-sm p-0.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                className="rounded-sm p-0.5 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200"
               >
                 <XIcon size={12} />
               </button>

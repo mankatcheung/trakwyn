@@ -78,7 +78,7 @@ export function ResumeSourcePicker({
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { gap: 8 },
-    label: { fontSize: 13, fontWeight: '600', color: colors.text },
+    label: { fontSize: 13, fontWeight: '500', color: colors.text },
     option: {
       borderRadius: 10,
       borderWidth: 1,
@@ -89,6 +89,6 @@ function createStyles(colors: ThemeColors) {
     },
     optionSelected: { backgroundColor: colors.primarySurface, borderColor: colors.primary },
     optionText: { fontSize: 14, color: colors.textMuted, fontWeight: '500' },
-    optionTextSelected: { color: colors.primary, fontWeight: '700' },
+    optionTextSelected: { color: colors.primary, fontWeight: '500' },
   });
 }

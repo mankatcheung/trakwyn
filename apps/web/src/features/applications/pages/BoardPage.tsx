@@ -222,8 +222,8 @@ export function KanbanBoard() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col p-4 sm:p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+      <div className="mb-6 flex items-center justify-between" data-screenshot="board-header">
+        <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
           {t('applications.board')}
         </h1>
         <div className="flex items-center gap-2">
@@ -231,7 +231,7 @@ export function KanbanBoard() {
           <Link
             to="/applications"
             aria-label={t('applications.switchToListView')}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-800 dark:border-gray-700 dark:hover:text-gray-200"
+            className="flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-sm text-stone-500 hover:text-stone-800 dark:border-stone-700 dark:hover:text-stone-200"
           >
             <ListIcon size={13} />
             <span className="hidden sm:inline">{t('applications.list')}</span>
@@ -239,7 +239,7 @@ export function KanbanBoard() {
           <Link
             to="/applications/new"
             aria-label={t('applications.newApplicationAria')}
-            className="flex items-center gap-1.5 rounded-lg border border-transparent bg-blue-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            className="flex items-center gap-1.5 rounded-lg border border-transparent bg-blue-800 dark:bg-blue-700 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-600"
           >
             <PlusIcon size={15} />
             <span className="hidden sm:inline">{t('applications.newShort')}</span>

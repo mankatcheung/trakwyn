@@ -39,7 +39,7 @@ export function MarketingThemeToggle() {
     <div
       role="group"
       aria-label={t('profile.appearanceTitle')}
-      className="inline-flex gap-1 rounded-lg border border-gray-300 p-1 dark:border-gray-700"
+      className="inline-flex gap-1 rounded-lg border border-stone-300 p-1 dark:border-stone-700"
     >
       {THEME_OPTIONS.map((option) => {
         const selected = theme === option.value;
@@ -51,8 +51,8 @@ export function MarketingThemeToggle() {
             aria-pressed={selected}
             className={`flex min-h-9 items-center gap-2 rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors ${
               selected
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                ? 'bg-blue-800 text-white'
+                : 'text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800'
             }`}
           >
             {option.icon}

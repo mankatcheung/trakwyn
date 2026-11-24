@@ -232,7 +232,7 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 7,
       backgroundColor: colors.primarySurface,
     },
-    chipText: { fontSize: 13, fontWeight: '600', color: colors.primary },
+    chipText: { fontSize: 13, fontWeight: '500', color: colors.primary },
     bar: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -248,7 +248,7 @@ function createStyles(colors: ThemeColors) {
       borderRadius: 10,
       backgroundColor: colors.surfaceAlt,
     },
-    label: { fontSize: 12, fontWeight: '600', color: colors.textMuted },
+    label: { fontSize: 12, fontWeight: '500', color: colors.textMuted },
     before: { fontSize: 14, color: colors.textMuted },
     after: { maxHeight: 160 },
     input: {
@@ -267,7 +267,7 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 9,
       backgroundColor: colors.primary,
     },
-    primaryText: { color: colors.onPrimary, fontWeight: '600', fontSize: 14 },
+    primaryText: { color: colors.onPrimary, fontWeight: '500', fontSize: 14 },
     secondary: {
       borderRadius: 8,
       paddingHorizontal: 14,
@@ -276,11 +276,11 @@ function createStyles(colors: ThemeColors) {
       borderWidth: 1,
       borderColor: colors.border,
     },
-    secondaryText: { color: colors.text, fontWeight: '600', fontSize: 14 },
+    secondaryText: { color: colors.text, fontWeight: '500', fontSize: 14 },
     disabled: { opacity: 0.5 },
     meta: { fontSize: 12, color: colors.textFaint },
     warn: { fontSize: 13, color: colors.danger },
     error: { fontSize: 14, color: colors.danger },
-    link: { fontSize: 13, fontWeight: '600', color: colors.primary },
+    link: { fontSize: 13, fontWeight: '500', color: colors.primary },
   });
 }

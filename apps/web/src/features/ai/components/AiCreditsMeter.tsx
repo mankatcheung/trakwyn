@@ -16,7 +16,11 @@ function formatResetDate(iso: string, locale: string): string {
   });
 }
 
-const BAR_COLOUR = { ok: 'bg-blue-600', warning: 'bg-amber-500', empty: 'bg-red-500' } as const;
+const BAR_COLOUR = {
+  ok: 'bg-blue-800 dark:bg-blue-700',
+  warning: 'bg-amber-500',
+  empty: 'bg-red-500',
+} as const;
 
 /**
  * How many hosted AI credits are left this month (JEF-451). A number, not a
@@ -40,7 +44,7 @@ export function AiCreditsMeter({ variant = 'full', className }: AiCreditsMeterPr
         ? 'text-red-600 dark:text-red-400'
         : view.level === 'warning'
           ? 'text-amber-700 dark:text-amber-400'
-          : 'text-gray-500 dark:text-gray-400';
+          : 'text-stone-500 dark:text-stone-400';
     return (
       <p className={`text-xs ${tone} ${className ?? ''}`.trim()} role="status" title={resets}>
         {text}
@@ -50,7 +54,7 @@ export function AiCreditsMeter({ variant = 'full', className }: AiCreditsMeterPr
 
   if (variant === 'hint') {
     return (
-      <p className={className ?? 'text-xs text-gray-500 dark:text-gray-400'} role="status">
+      <p className={className ?? 'text-xs text-stone-500 dark:text-stone-400'} role="status">
         {text} · {resets}
       </p>
     );
@@ -61,10 +65,13 @@ export function AiCreditsMeter({ variant = 'full', className }: AiCreditsMeterPr
   return (
     <div className={className}>
       <div className="flex items-baseline justify-between gap-3 text-sm">
-        <span className="font-medium text-gray-900 dark:text-gray-100" title={t('aiCredits.hover')}>
+        <span
+          className="font-medium text-stone-900 dark:text-stone-100"
+          title={t('aiCredits.hover')}
+        >
           {text}
         </span>
-        <span className="text-xs text-gray-500 dark:text-gray-400">{resets}</span>
+        <span className="text-xs text-stone-500 dark:text-stone-400">{resets}</span>
       </div>
       <div
         role="progressbar"
@@ -72,7 +79,7 @@ export function AiCreditsMeter({ variant = 'full', className }: AiCreditsMeterPr
         aria-valuemin={0}
         aria-valuemax={view.total}
         aria-valuenow={view.total - view.left}
-        className="mt-2 h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"
+        className="mt-2 h-2 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700"
       >
         <div className={`h-full ${BAR_COLOUR[view.level]}`} style={{ width: `${percent}%` }} />
       </div>

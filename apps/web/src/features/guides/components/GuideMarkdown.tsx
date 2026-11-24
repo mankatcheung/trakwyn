@@ -37,7 +37,7 @@ export function GuideMarkdown({ slug, children }: GuideMarkdownProps) {
           height={GUIDE_IMAGE_HEIGHT}
           loading="lazy"
           decoding="async"
-          className="h-auto w-full rounded-xl border border-gray-200 shadow-lg shadow-gray-900/5 dark:border-gray-800"
+          className="h-auto w-full rounded-xl border border-stone-200 shadow-sm dark:border-stone-800"
         />
       );
     },

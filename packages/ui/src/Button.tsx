@@ -5,14 +5,14 @@ export type ButtonSize = 'sm' | 'md';
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
-    'bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium transition-colors',
+    'bg-blue-800 dark:bg-blue-700 hover:bg-blue-900 dark:hover:bg-blue-600 disabled:opacity-60 text-white font-medium transition-colors',
   destructive:
     'bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-medium transition-colors',
   secondary:
-    'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-60 font-medium transition-colors',
+    'border border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-700 disabled:opacity-60 font-medium transition-colors',
   ghost:
-    'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 disabled:opacity-60 font-medium transition-colors',
-  link: 'text-blue-600 hover:underline disabled:opacity-60 font-medium',
+    'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 disabled:opacity-60 font-medium transition-colors',
+  link: 'text-blue-800 dark:text-blue-400 hover:underline disabled:opacity-60 font-medium',
 };
 
 const SIZE_CLASSES: Record<ButtonVariant, Record<ButtonSize, string>> = {

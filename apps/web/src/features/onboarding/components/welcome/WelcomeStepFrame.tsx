@@ -47,7 +47,7 @@ export function WelcomeStepFrame({
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 sm:px-8 sm:py-10">
       <div className="mb-4 flex items-center justify-between gap-4">
-        <p className="text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
+        <p className="text-xs font-medium text-stone-500 dark:text-stone-400">
           {t('welcome.stepProgress', { current: stepNumber, total: totalSteps })}
         </p>
         {onSkipSetup && (
@@ -62,12 +62,12 @@ export function WelcomeStepFrame({
         <h1
           ref={headingRef}
           tabIndex={-1}
-          className="text-2xl font-bold text-gray-900 outline-none dark:text-gray-100"
+          className="text-2xl font-medium text-stone-900 outline-none dark:text-stone-100"
         >
           {title}
         </h1>
         {description && (
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{description}</p>
+          <p className="mt-2 text-sm text-stone-600 dark:text-stone-300">{description}</p>
         )}
         {children && <div className="mt-6">{children}</div>}
 

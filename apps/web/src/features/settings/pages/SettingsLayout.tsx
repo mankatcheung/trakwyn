@@ -32,7 +32,7 @@ export function SettingsLayout() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-10">
-      <h1 className="mb-6 text-2xl font-bold text-gray-900 dark:text-gray-100">
+      <h1 className="mb-6 text-2xl font-medium text-stone-900 dark:text-stone-100">
         {t('nav.settings')}
       </h1>
       <div className="flex flex-col gap-8 lg:flex-row">
@@ -46,7 +46,7 @@ export function SettingsLayout() {
                 className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
                   active
                     ? 'bg-blue-50 font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-100'
+                    : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-100'
                 }`}
               >
                 <item.icon size={16} />

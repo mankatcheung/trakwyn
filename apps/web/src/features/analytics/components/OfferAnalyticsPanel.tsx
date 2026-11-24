@@ -48,10 +48,10 @@ export function OfferAnalyticsPanel() {
 
   return (
     <Card className="p-6">
-      <h2 className="mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+      <h2 className="mb-1 text-sm font-medium text-stone-700 dark:text-stone-300">
         {t('offerAnalytics.title')}
       </h2>
-      <p className="mb-4 text-xs text-gray-400 dark:text-gray-500">
+      <p className="mb-4 text-xs text-stone-400 dark:text-stone-500">
         {t('offerAnalytics.description')}
       </p>
 
@@ -62,13 +62,13 @@ export function OfferAnalyticsPanel() {
           <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
             {analytics.byCurrency.map((stat) => (
               <div key={stat.currency}>
-                <p className="mb-1 text-xs text-gray-400 dark:text-gray-500">
+                <p className="mb-1 text-xs text-stone-400 dark:text-stone-500">
                   {t('offerAnalytics.medianLabel', { currency: stat.currency, count: stat.count })}
                 </p>
-                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <p className="text-lg font-medium text-stone-900 dark:text-stone-100">
                   {formatCurrency(stat.medianYearlySalary, stat.currency)}
                 </p>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                <p className="text-xs text-stone-400 dark:text-stone-500">
                   {formatCurrency(stat.minYearlySalary, stat.currency)} –{' '}
                   {formatCurrency(stat.maxYearlySalary, stat.currency)}
                 </p>
@@ -80,16 +80,16 @@ export function OfferAnalyticsPanel() {
             {analytics.trend.map((point) => (
               <div
                 key={point.offerId}
-                className="flex items-center gap-3 border-b border-gray-100 py-2 last:border-0 dark:border-gray-700"
+                className="flex items-center gap-3 border-b border-stone-100 py-2 last:border-0 dark:border-stone-700"
               >
-                <span className="w-24 shrink-0 text-xs text-gray-400 dark:text-gray-500">
+                <span className="w-24 shrink-0 text-xs text-stone-400 dark:text-stone-500">
                   {formatDate(point.createdAt)}
                 </span>
-                <span className="min-w-0 flex-1 truncate text-sm text-gray-900 dark:text-gray-100">
+                <span className="min-w-0 flex-1 truncate text-sm text-stone-900 dark:text-stone-100">
                   {point.company}
-                  <span className="text-gray-400 dark:text-gray-500"> · {point.role}</span>
+                  <span className="text-stone-400 dark:text-stone-500"> · {point.role}</span>
                 </span>
-                <span className="shrink-0 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <span className="shrink-0 text-sm font-medium text-stone-700 dark:text-stone-300">
                   {formatCurrency(point.normalizedYearlySalary, point.currency)}
                 </span>
               </div>

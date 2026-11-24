@@ -82,7 +82,7 @@ for (const viewport of VIEWPORTS) {
 
       // Reorder: the second question moves above the first.
       await page.getByRole('button', { name: 'Move question up' }).nth(1).click();
-      await expect(page.locator('article p.font-semibold').first()).toHaveText(
+      await expect(page.locator('article p.font-medium').first()).toHaveText(
         'Why do you want to join?',
       );
 

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import en from '#/i18n/en.json';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 vi.mock('@tanstack/react-router', () => ({
@@ -41,6 +41,13 @@ describe('AiMcpSetupPage', () => {
     expect(
       screen.getByRole('heading', { name: 'Part 2 — Connect an MCP client' }),
     ).toBeInTheDocument();
+  });
+
+  it('marks Guides as the current header section (JEF-678)', () => {
+    render(<AiMcpSetupPage />);
+
+    const guides = within(screen.getByRole('banner')).getByRole('link', { name: 'Guides' });
+    expect(guides.className).toContain('underline');
   });
 
   it('leads with OAuth as the recommended way to connect a client', () => {

@@ -5,9 +5,9 @@ import { useLocale } from '#/lib/i18n';
 import { allGuideTags, GUIDES } from '#/lib/guides';
 
 const CHIP = 'rounded-full border px-3 py-1 text-sm font-medium transition-colors';
-const CHIP_ON = 'border-blue-600 bg-blue-600 text-white';
+const CHIP_ON = 'border-blue-600 bg-blue-800 dark:bg-blue-700 text-white';
 const CHIP_OFF =
-  'border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800';
+  'border-stone-300 text-stone-700 hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800';
 
 /**
  * `/guides`: every published guide, newest first, with a tag filter. The
@@ -22,13 +22,13 @@ export function GuidesIndexPage({ tag }: { tag?: string }) {
   const shown = tag ? GUIDES.filter((g) => g.frontmatter.tags.includes(tag)) : GUIDES;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-900">
       <MarketingHeader activeGuides />
       <main className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
-        <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+        <h1 className="text-4xl font-medium tracking-tight text-stone-900 dark:text-stone-100">
           {t('guides.index.title')}
         </h1>
-        <p className="mt-3 text-lg text-gray-600 dark:text-gray-400">
+        <p className="mt-3 text-lg text-stone-600 dark:text-stone-400">
           {t('guides.index.subtitle')}
         </p>
 
@@ -55,24 +55,39 @@ export function GuidesIndexPage({ tag }: { tag?: string }) {
           </nav>
         )}
 
+        <Link
+          to="/ai-mcp-setup"
+          className="mt-10 block rounded-2xl border border-stone-300 bg-stone-100 p-6 transition-shadow hover:shadow-md dark:border-stone-700 dark:bg-stone-800"
+        >
+          <p className="text-sm font-medium text-stone-600 dark:text-stone-400">
+            {t('guides.aiMcpSetup.eyebrow')}
+          </p>
+          <h2 className="mt-1 text-xl font-medium text-stone-900 dark:text-stone-100">
+            {t('guides.aiMcpSetup.title')}
+          </h2>
+          <p className="mt-2 text-stone-600 dark:text-stone-400">
+            {t('guides.aiMcpSetup.description')}
+          </p>
+        </Link>
+
         {shown.length === 0 ? (
-          <p className="mt-12 text-gray-600 dark:text-gray-400">{t('guides.index.empty')}</p>
+          <p className="mt-12 text-stone-600 dark:text-stone-400">{t('guides.index.empty')}</p>
         ) : (
-          <ul className="mt-10 space-y-5">
+          <ul className="mt-5 space-y-5">
             {shown.map((guide) => (
               <li key={guide.slug}>
                 <Link
                   to="/guides/$slug"
                   params={{ slug: guide.slug }}
-                  className="block rounded-2xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-md dark:border-gray-800 dark:bg-gray-950"
+                  className="block rounded-2xl border border-stone-200 bg-white p-6 transition-shadow hover:shadow-md dark:border-stone-800 dark:bg-stone-950"
                 >
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                  <h2 className="text-xl font-medium text-stone-900 dark:text-stone-100">
                     {guide.frontmatter.title}
                   </h2>
-                  <p className="mt-2 text-gray-600 dark:text-gray-400">
+                  <p className="mt-2 text-stone-600 dark:text-stone-400">
                     {guide.frontmatter.description}
                   </p>
-                  <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                  <p className="mt-3 text-sm text-stone-600 dark:text-stone-400">
                     {formatDate(guide.frontmatter.date, { dateStyle: 'long', timeZone: 'UTC' })}
                   </p>
                 </Link>

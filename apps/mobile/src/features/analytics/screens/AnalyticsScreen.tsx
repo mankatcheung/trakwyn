@@ -92,7 +92,7 @@ function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     content: { padding: 16, gap: 16, paddingBottom: 40 },
-    title: { fontSize: 22, fontWeight: '700', color: colors.text },
+    title: { fontSize: 22, fontWeight: '500', color: colors.text },
     loading: { marginTop: 40 },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
     error: {
@@ -112,8 +112,8 @@ function createStyles(colors: ThemeColors) {
       padding: 12,
       gap: 2,
     },
-    statValue: { fontSize: 18, fontWeight: '700', color: colors.text },
-    statLabel: { fontSize: 11, color: colors.textSubtle },
+    statValue: { fontSize: 18, fontWeight: '500', color: colors.text },
+    statLabel: { fontSize: 12, color: colors.textSubtle },
     empty: { fontSize: 12, color: colors.textFaint },
   });
 }

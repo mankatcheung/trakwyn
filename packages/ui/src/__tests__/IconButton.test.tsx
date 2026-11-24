@@ -26,7 +26,7 @@ describe('IconButton', () => {
   it('applies the subtle variant classes', () => {
     render(<IconButton label="Options" icon={<svg />} variant="subtle" />);
     expect(screen.getByRole('button', { name: 'Options' }).className).toContain(
-      'hover:bg-gray-100',
+      'hover:bg-stone-100',
     );
   });
 

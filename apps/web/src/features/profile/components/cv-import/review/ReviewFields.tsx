@@ -76,7 +76,7 @@ export function DateFields({ start, end, hint, onChange }: DateFieldsProps) {
               invalid={end !== '' && (!MONTH.test(end) || end < start)}
               onChange={(e) => onChange({ endDate: e.target.value })}
             />
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{hint}</p>
+            <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">{hint}</p>
           </>
         )}
       </Field>

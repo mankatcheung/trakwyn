@@ -11,6 +11,14 @@ Loaded when working under `apps/web/e2e`. The rest of the web notes are in `apps
 - **Stop `pnpm dev` first.** `reuseExistingServer` keeps a running server, and it keeps the env it started with.
 - **Change a value in the template, not in `ci.yml`.** `ciWorkflow.test.ts` fails on an inline env block.
 
+## Marketing page checks (JEF-681)
+
+Two specs hold the public marketing pages (`/`, `/features`, the four `/features/*` pages, `/pricing`, `/ai-mcp-setup`, `/guides`) to a standard. A new marketing page goes in the `MARKETING_PAGES` list of `a11y.spec.ts` and the `PAGES` list of `marketing-responsive.spec.ts`.
+
+- **`a11y.spec.ts`** runs axe on each page in light and dark. Failures print one line per node (rule, selector, reason) instead of axe's full result.
+- **`marketing-responsive.spec.ts`** checks no horizontal scroll at 390, 768 and 1440 in both schemes, alt text on every visible image, 44px header controls on a phone, and the keyboard path through the header, the mobile menu and the FAQ.
+- **Lighthouse is not in CI.** To measure: `E2E_PLAIN_BUILD=1 pnpm --filter @trakwyn/web build`, `pnpm --filter @trakwyn/web preview`, then run `lighthouse` (installed outside the repo) against each page. Headless Chrome takes the machine's colour scheme, so state which one you measured.
+
 ## Marketing screenshots (JEF-528)
 
 `pnpm --filter @trakwyn/web screenshots` regenerates `public/screenshots/<screen>-<light|dark>.webp` from the seeded demo account. The images are committed, like `public/og-image.png`; CI does not regenerate them.
@@ -19,6 +27,7 @@ Loaded when working under `apps/web/e2e`. The rest of the web notes are in `apps
 - **Plans must not be enforced.** The config starts the API with `PLANS_ENFORCED=false`; otherwise analytics shows the locked preview. The spec refuses to capture that preview.
 - **Only the demo account is photographed.** After signing in the spec asks the API who `me` is and stops unless it is `demo@trakwyn.app`. It also stops with a message when the API is unreachable.
 - **`src/features/marketing/lib/screenshots.ts` is the manifest** (name, per-screen viewport, size, alt-text i18n key). Images are 2x the viewport and must stay under 150 KB; `screenshots.test.ts` checks that each file exists, matches its size and fits the budget. Add a screen there, then rerun the script.
+- **Crops (JEF-674):** a screen with `target` and `crop` is an element crop for the features index and the benefit rows. `target` is the value of a `data-screenshot` attribute in the app (never a class), `scene` (default: the screen's name) is the app state `capture.spec.ts` opens first, and the image starts at the element's top-left corner and is `crop` CSS pixels, so it can take in what follows the element. The spec stops when the crop would leave the viewport. Only regions the seeded demo account really shows are cropped: do not seed data for a picture. Three resume and cover letter benefits (drawn from your profile, company briefing, version outcomes) have no real region yet and keep a code mock. Run one with `pnpm screenshots -g crop-board-header`.
 - The spec is outside `e2e/`, so `pnpm test:e2e` and CI never run it. `sharp` (dev dependency) converts Chromium's PNG to WebP and is used only here.
 
 ## Guide scripts (JEF-532)

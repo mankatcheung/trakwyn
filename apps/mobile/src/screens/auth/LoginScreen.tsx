@@ -19,6 +19,7 @@ import { loginSchema, totpSchema } from './loginSchema';
 import { OAuthProviderLogo } from './OAuthProviderLogo';
 import { useTheme } from '../../theme/ThemeContext';
 import type { ThemeColors } from '../../theme/colors';
+import { fixedColors } from '../../theme/colors';
 
 export function LoginScreen() {
   const { t } = useTranslation(['auth', 'common']);
@@ -282,19 +283,19 @@ function createStyles(colors: ThemeColors) {
       gap: 8,
       marginBottom: 24,
     },
-    brandText: { fontSize: 20, fontWeight: '700', color: colors.text },
+    brandText: { fontSize: 20, fontWeight: '500', color: colors.text },
     card: {
       backgroundColor: colors.surface,
       borderRadius: 16,
       padding: 24,
       gap: 16,
-      shadowColor: '#000000',
+      shadowColor: fixedColors.shadow,
       shadowOpacity: 0.06,
       shadowRadius: 12,
       shadowOffset: { width: 0, height: 4 },
       elevation: 2,
     },
-    title: { fontSize: 26, fontWeight: '700', color: colors.text },
+    title: { fontSize: 26, fontWeight: '500', color: colors.text },
     subtitle: { fontSize: 14, color: colors.textSubtle, marginTop: -8 },
     subtitleRow: {
       flexDirection: 'row',
@@ -304,11 +305,11 @@ function createStyles(colors: ThemeColors) {
       marginTop: -8,
     },
     subtitleText: { fontSize: 14, color: colors.textSubtle },
-    link: { color: colors.primary, fontWeight: '600', textDecorationLine: 'underline' },
+    link: { color: colors.primary, fontWeight: '500', textDecorationLine: 'underline' },
     field: { gap: 6 },
-    fieldLabel: { fontSize: 14, fontWeight: '600', color: colors.text },
+    fieldLabel: { fontSize: 14, fontWeight: '500', color: colors.text },
     labelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    forgotLink: { color: colors.primary, fontSize: 13, fontWeight: '600' },
+    forgotLink: { color: colors.primary, fontSize: 13, fontWeight: '500' },
     input: {
       borderWidth: 1,
       borderColor: colors.borderStrong,
@@ -327,7 +328,7 @@ function createStyles(colors: ThemeColors) {
       justifyContent: 'center',
     },
     buttonDisabled: { opacity: 0.6 },
-    buttonText: { color: colors.onPrimary, fontSize: 16, fontWeight: '600' },
+    buttonText: { color: colors.onPrimary, fontSize: 16, fontWeight: '500' },
     backLink: { color: colors.primary, textAlign: 'center', marginTop: 4 },
     error: {
       color: colors.danger,
@@ -352,7 +353,7 @@ function createStyles(colors: ThemeColors) {
       borderColor: colors.borderStrong,
       backgroundColor: colors.surface,
     },
-    oauthButtonText: { color: colors.textMuted, fontSize: 15, fontWeight: '600' },
+    oauthButtonText: { color: colors.textMuted, fontSize: 15, fontWeight: '500' },
     footer: { color: colors.textSubtle, fontSize: 12, textAlign: 'center', marginTop: 24 },
   });
 }

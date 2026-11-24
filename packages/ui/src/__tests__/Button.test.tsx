@@ -8,7 +8,7 @@ describe('Button', () => {
     render(<Button>Save</Button>);
     const button = screen.getByRole('button', { name: 'Save' });
     expect(button).toHaveAttribute('type', 'button');
-    expect(button.className).toContain('bg-blue-600');
+    expect(button.className).toContain('bg-blue-800');
   });
 
   it('applies the destructive variant classes', () => {

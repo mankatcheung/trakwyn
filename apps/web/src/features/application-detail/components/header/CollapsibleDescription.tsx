@@ -28,7 +28,7 @@ export function CollapsibleDescription({ text }: { text: string }) {
     <div>
       <p
         ref={ref}
-        className={`whitespace-pre-wrap text-gray-700 dark:text-gray-300 ${expanded ? '' : 'line-clamp-3'}`}
+        className={`whitespace-pre-wrap text-stone-700 dark:text-stone-300 ${expanded ? '' : 'line-clamp-3'}`}
       >
         {text}
       </p>
@@ -37,7 +37,7 @@ export function CollapsibleDescription({ text }: { text: string }) {
           type="button"
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
-          className="mt-1 -ml-2 flex min-h-11 cursor-pointer items-center rounded-lg px-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
+          className="mt-1 -ml-2 flex min-h-11 cursor-pointer items-center rounded-lg px-2 text-sm font-medium text-blue-800 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
         >
           {t(expanded ? 'applicationDetail.showLess' : 'applicationDetail.showMore')}
         </button>

@@ -34,8 +34,8 @@ function createStyles(colors: ThemeColors) {
       height: CHART_HEIGHT + 36,
     },
     barColumn: { alignItems: 'center', width: 24, justifyContent: 'flex-end', flex: 1 },
-    barCount: { fontSize: 9, color: colors.textSubtle, marginBottom: 2 },
+    barCount: { fontSize: 12, color: colors.textSubtle, marginBottom: 2 },
     bar: { width: 14, borderRadius: 3, backgroundColor: colors.primary },
-    barLabel: { fontSize: 9, color: colors.textFaint, marginTop: 4 },
+    barLabel: { fontSize: 12, color: colors.textFaint, marginTop: 4 },
   });
 }

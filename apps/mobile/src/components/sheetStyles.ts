@@ -30,10 +30,9 @@ export function createSheetStyles(colors: ThemeColors) {
     },
     sheetTitle: {
       fontSize: 13,
-      fontWeight: '600',
+      fontWeight: '500',
       color: colors.textFaint,
       marginBottom: 8,
-      textTransform: 'uppercase',
     },
     sheetRow: {
       paddingVertical: 14,
@@ -41,7 +40,7 @@ export function createSheetStyles(colors: ThemeColors) {
       borderTopColor: colors.border,
     },
     sheetRowText: { fontSize: 16, color: colors.text },
-    sheetRowTextSelected: { color: colors.primary, fontWeight: '700' },
+    sheetRowTextSelected: { color: colors.primary, fontWeight: '500' },
     sheetRowMeta: { fontSize: 13, color: colors.textSubtle, marginTop: 2 },
     sheetCancel: {
       marginTop: 12,
@@ -50,6 +49,6 @@ export function createSheetStyles(colors: ThemeColors) {
       backgroundColor: colors.surfaceAlt,
       alignItems: 'center',
     },
-    sheetCancelText: { fontSize: 16, fontWeight: '600', color: colors.text },
+    sheetCancelText: { fontSize: 16, fontWeight: '500', color: colors.text },
   });
 }

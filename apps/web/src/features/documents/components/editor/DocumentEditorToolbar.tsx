@@ -54,7 +54,7 @@ const ALIGNMENTS = [
 ] as const;
 
 function Divider() {
-  return <div role="separator" className="mx-1 h-5 w-px bg-gray-200 dark:bg-gray-700" />;
+  return <div role="separator" className="mx-1 h-5 w-px bg-stone-200 dark:bg-stone-700" />;
 }
 
 function readState(editor: Editor) {
@@ -118,7 +118,7 @@ export function DocumentEditorToolbar({
     run((c) => (value === 'left' ? c.unsetTextAlign() : c.setTextAlign(value)));
 
   return (
-    <div className="sticky top-0 z-30 rounded-t-lg border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+    <div className="sticky top-0 z-30 rounded-t-lg border-b border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-800">
       <div
         role="toolbar"
         aria-label={t('documents.editor.toolbar')}
@@ -148,7 +148,7 @@ export function DocumentEditorToolbar({
           value={state.blockType}
           disabled={off}
           onChange={(event) => setBlockType(event.target.value as BlockType)}
-          className="rounded-sm border border-gray-200 bg-white px-1.5 py-1 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200"
+          className="rounded-sm border border-stone-200 bg-white px-1.5 py-1 text-sm text-stone-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-stone-600 dark:bg-stone-900 dark:text-stone-200"
         >
           {BLOCK_TYPES.map(({ value, labelKey }) => (
             <option key={value} value={value}>

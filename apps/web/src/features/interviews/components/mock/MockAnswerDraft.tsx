@@ -65,7 +65,7 @@ export function MockAnswerDraft({
   return (
     <div className="space-y-2 rounded-lg border border-violet-200 bg-violet-50/60 p-3 dark:border-violet-800 dark:bg-violet-900/10">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <label htmlFor={draftId} className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+        <label htmlFor={draftId} className="text-xs font-medium text-stone-700 dark:text-stone-300">
           {t('interviews.practiceAnswerLabel')}
         </label>
         <AiGeneratedBadge label={t('interviews.aiDraft')} />
@@ -77,9 +77,9 @@ export function MockAnswerDraft({
         onChange={(e) => setDraft(e.target.value)}
         className="h-40"
       />
-      <p className="text-xs text-gray-500 dark:text-gray-400">{t('interviews.aiDraftReview')}</p>
+      <p className="text-xs text-stone-500 dark:text-stone-400">{t('interviews.aiDraftReview')}</p>
       {usedProfile && (
-        <p className="text-xs text-gray-500 dark:text-gray-400">
+        <p className="text-xs text-stone-500 dark:text-stone-400">
           {t('interviews.draftUsedProfile')}
         </p>
       )}

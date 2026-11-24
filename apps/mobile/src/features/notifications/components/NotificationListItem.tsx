@@ -54,9 +54,9 @@ function createStyles(colors: ThemeColors) {
     icon: { fontSize: 16, marginTop: 1 },
     body: { flex: 1, gap: 2 },
     title: { fontSize: 14, color: colors.textMuted },
-    unreadTitle: { fontWeight: '700', color: colors.text },
+    unreadTitle: { fontWeight: '500', color: colors.text },
     text: { fontSize: 12, color: colors.textSubtle },
-    time: { fontSize: 11, color: colors.textFaint, marginTop: 2 },
+    time: { fontSize: 12, color: colors.textFaint, marginTop: 2 },
     dot: {
       width: 8,
       height: 8,

@@ -83,5 +83,5 @@ const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 },
   message: { fontSize: 16, textAlign: 'center' },
   retry: { borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10 },
-  retryLabel: { fontSize: 15, fontWeight: '600' },
+  retryLabel: { fontSize: 15, fontWeight: '500' },
 });

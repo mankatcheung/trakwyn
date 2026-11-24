@@ -76,7 +76,7 @@ function createStyles(colors: ThemeColors) {
       borderBottomColor: colors.border,
     },
     underlineTab: { paddingVertical: 10, marginRight: 20, alignItems: 'center' },
-    underlineText: { fontSize: 14, fontWeight: '600', color: colors.textSubtle },
+    underlineText: { fontSize: 14, fontWeight: '500', color: colors.textSubtle },
     underlineTextActive: { color: colors.primary },
     underlineIndicator: {
       marginTop: 8,
@@ -94,7 +94,7 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.surfaceAlt,
     },
     pillActive: { backgroundColor: colors.primary },
-    pillText: { fontSize: 14, fontWeight: '600', color: colors.textMuted },
+    pillText: { fontSize: 14, fontWeight: '500', color: colors.textMuted },
     pillTextActive: { color: colors.onPrimary },
   });
 }

@@ -186,8 +186,8 @@ function createStyles(colors: ThemeColors) {
       borderColor: colors.borderStrong,
       backgroundColor: colors.surface,
     },
-    generateBarText: { color: colors.primary, fontSize: 14, fontWeight: '600' },
-    barScore: { fontSize: 14, fontWeight: '700' },
+    generateBarText: { color: colors.primary, fontSize: 14, fontWeight: '500' },
+    barScore: { fontSize: 14, fontWeight: '500' },
     details: { gap: 10 },
     button: {
       alignSelf: 'flex-start',
@@ -199,7 +199,7 @@ function createStyles(colors: ThemeColors) {
       alignItems: 'center',
     },
     buttonDisabled: { opacity: 0.6 },
-    buttonText: { color: colors.onPrimary, fontSize: 13, fontWeight: '700' },
+    buttonText: { color: colors.onPrimary, fontSize: 13, fontWeight: '500' },
     generatedAt: { fontSize: 12, color: colors.textFaint },
     stale: {
       borderRadius: 8,
@@ -210,7 +210,7 @@ function createStyles(colors: ThemeColors) {
     },
     staleText: { fontSize: 13, color: colors.warning },
     summary: { fontSize: 14, color: colors.textMuted, lineHeight: 20 },
-    keywordsHeading: { fontSize: 12, fontWeight: '600', color: colors.textFaint, marginBottom: 6 },
+    keywordsHeading: { fontSize: 12, fontWeight: '500', color: colors.textFaint, marginBottom: 6 },
     keywordsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
     matchedChip: {
       borderRadius: 999,
@@ -218,13 +218,13 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 4,
       backgroundColor: colors.successSurface,
     },
-    matchedChipText: { fontSize: 12, color: colors.success, fontWeight: '600' },
+    matchedChipText: { fontSize: 12, color: colors.success, fontWeight: '500' },
     missingChip: {
       borderRadius: 999,
       paddingHorizontal: 8,
       paddingVertical: 4,
       backgroundColor: colors.dangerSurface,
     },
-    missingChipText: { fontSize: 12, color: colors.danger, fontWeight: '600' },
+    missingChipText: { fontSize: 12, color: colors.danger, fontWeight: '500' },
   });
 }

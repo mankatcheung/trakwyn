@@ -108,7 +108,7 @@ function AtsChip({
       <ComputeButton
         compute={compute}
         label={t('resumeAts.check')}
-        className={`${CHIP_CLASS} border-gray-300 bg-white text-blue-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-gray-700`}
+        className={`${CHIP_CLASS} border-stone-300 bg-white text-blue-700 hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-blue-400 dark:hover:bg-stone-700`}
       />
     );
   }
@@ -145,13 +145,13 @@ function CheckRow({ check }: { check: AtsCheck }) {
         className={`mt-0.5 shrink-0 ${check.passed ? 'text-green-600' : 'text-red-600'}`}
       />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{check.label}</p>
+        <p className="text-sm font-medium text-stone-900 dark:text-stone-100">{check.label}</p>
         {!check.passed && (
-          <p className="mt-0.5 text-sm text-gray-700 dark:text-gray-300">{check.hint}</p>
+          <p className="mt-0.5 text-sm text-stone-700 dark:text-stone-300">{check.hint}</p>
         )}
       </div>
       {check.maxPoints > 0 && (
-        <span className="shrink-0 text-xs text-gray-600 dark:text-gray-400">
+        <span className="shrink-0 text-xs text-stone-600 dark:text-stone-400">
           {t('resumeAts.points', { points: check.points, max: check.maxPoints })}
         </span>
       )}
@@ -163,7 +163,7 @@ function CheckGroup({ title, checks }: { title: string; checks: AtsCheck[] }) {
   if (checks.length === 0) return null;
   return (
     <section>
-      <h4 className="mb-1 text-xs font-medium text-gray-600 dark:text-gray-400">{title}</h4>
+      <h4 className="mb-1 text-xs font-medium text-stone-600 dark:text-stone-400">{title}</h4>
       <ul className="space-y-1">
         {checks.map((check) => (
           <CheckRow key={check.id} check={check} />
@@ -184,16 +184,16 @@ function AtsDetails({ ats, compute }: { ats: AtsScore | undefined; compute: Comp
       {ats && color && (
         <>
           <div
-            className={`flex flex-wrap items-center gap-3 rounded-xl border border-gray-100 p-3 dark:border-gray-700 ${color.bg}`}
+            className={`flex flex-wrap items-center gap-3 rounded-xl border border-stone-100 p-3 dark:border-stone-700 ${color.bg}`}
           >
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+              <p className="text-sm font-medium text-stone-800 dark:text-stone-100">
                 {ats.readable ? `${ats.score} · ${ats.label}` : ats.label}
               </p>
-              <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+              <p className="mt-1 text-xs text-stone-600 dark:text-stone-400">
                 {ats.readable ? t('resumeAts.description') : t('resumeAts.notReadable')}
               </p>
-              <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+              <p className="mt-1 text-xs text-stone-600 dark:text-stone-400">
                 {t('resumeAts.checkedOn', {
                   date: formatDate(new Date(ats.generatedAt), {
                     dateStyle: 'medium',
@@ -205,7 +205,7 @@ function AtsDetails({ ats, compute }: { ats: AtsScore | undefined; compute: Comp
             <ComputeButton
               compute={compute}
               label={t('resumeAts.recheck')}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700"
+              className="flex items-center gap-1.5 rounded-lg bg-blue-800 dark:bg-blue-700 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-600"
             />
           </div>
           {ats.isStale && (

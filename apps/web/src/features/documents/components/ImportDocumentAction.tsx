@@ -67,13 +67,13 @@ export function ImportDocumentAction({
   return (
     <section
       aria-label={t('documentDraftEdit.importTitle')}
-      className="space-y-2 rounded-lg border border-gray-200 p-4 dark:border-gray-700"
+      className="space-y-2 rounded-lg border border-stone-200 p-4 dark:border-stone-700"
     >
       <div>
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+        <h2 className="text-sm font-medium text-stone-900 dark:text-stone-100">
           {t('documentDraftEdit.importTitle')}
         </h2>
-        <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-400">
+        <p className="mt-0.5 text-xs text-stone-600 dark:text-stone-400">
           {t('documentDraftEdit.importHelp')}
         </p>
       </div>

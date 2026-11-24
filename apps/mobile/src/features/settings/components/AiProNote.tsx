@@ -42,7 +42,7 @@ function createStyles(colors: ThemeColors) {
       padding: 14,
       gap: 8,
     },
-    title: { fontSize: 16, fontWeight: '600', color: colors.text },
+    title: { fontSize: 16, fontWeight: '500', color: colors.text },
     help: { fontSize: 13, color: colors.textSubtle },
     button: {
       alignSelf: 'flex-start',
@@ -51,6 +51,6 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 8,
       paddingHorizontal: 14,
     },
-    buttonText: { color: colors.onPrimary, fontWeight: '600', fontSize: 14 },
+    buttonText: { color: colors.onPrimary, fontWeight: '500', fontSize: 14 },
   });
 }

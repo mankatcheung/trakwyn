@@ -304,7 +304,7 @@ export function ContactsTab({ applicationId }: { applicationId: string }) {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <span className="text-sm font-medium text-stone-900 dark:text-stone-100">
                     {contact.name}
                   </span>
                   {contact.role && (
@@ -313,7 +313,7 @@ export function ContactsTab({ applicationId }: { applicationId: string }) {
                     </span>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-500">
+                <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-stone-500">
                   {contact.email && (
                     <a
                       href={`mailto:${contact.email}`}
@@ -335,7 +335,7 @@ export function ContactsTab({ applicationId }: { applicationId: string }) {
                   )}
                 </div>
                 {contact.notes && (
-                  <p className="mt-1 text-sm whitespace-pre-wrap text-gray-600 dark:text-gray-400">
+                  <p className="mt-1 text-sm whitespace-pre-wrap text-stone-600 dark:text-stone-400">
                     {contact.notes}
                   </p>
                 )}
@@ -343,7 +343,7 @@ export function ContactsTab({ applicationId }: { applicationId: string }) {
               <div className="flex shrink-0 gap-1">
                 <button
                   onClick={() => setEditingContact(contact)}
-                  className="rounded-sm p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                  className="rounded-sm p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700 dark:hover:bg-stone-700 dark:hover:text-stone-200"
                 >
                   <EditIcon size={14} />
                 </button>
@@ -366,7 +366,7 @@ export function ContactsTab({ applicationId }: { applicationId: string }) {
                       onSettled: invalidate,
                     });
                   }}
-                  className="rounded-sm p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                  className="rounded-sm p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
                 >
                   <Trash2Icon size={14} />
                 </button>

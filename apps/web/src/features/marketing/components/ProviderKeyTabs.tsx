@@ -30,7 +30,7 @@ export function ProviderKeyTabs() {
       <div
         role="tablist"
         aria-label={t('guides.aiMcpSetup.addTitle')}
-        className="flex flex-wrap gap-1 border-b border-gray-200 dark:border-gray-700"
+        className="flex flex-wrap gap-1 border-b border-stone-200 dark:border-stone-700"
       >
         {PROVIDERS.map((provider) => {
           const isActive = provider.id === selected;
@@ -45,8 +45,8 @@ export function ProviderKeyTabs() {
               onClick={() => setSelected(provider.id)}
               className={
                 isActive
-                  ? 'border-b-2 border-blue-600 px-3.5 py-2.5 text-sm font-semibold text-blue-700 dark:text-blue-400'
-                  : 'px-3.5 py-2.5 text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100'
+                  ? 'border-b-2 border-blue-800 px-3.5 py-2.5 text-sm font-medium text-stone-900 underline decoration-stone-400 decoration-1 underline-offset-8 dark:text-stone-100 dark:decoration-stone-500'
+                  : 'px-3.5 py-2.5 text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100'
               }
             >
               {label}
@@ -54,16 +54,17 @@ export function ProviderKeyTabs() {
           );
         })}
       </div>
-      <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+      <p className="mt-3 text-sm text-stone-600 dark:text-stone-400">
         {t(PROVIDER_NOTE_KEY[active.id])}
         {active.href && (
           <a
             href={active.href}
             target="_blank"
             rel="noreferrer"
+            aria-label={t('guides.aiMcpSetup.providerKeyLink', { provider: active.label })}
             className="ml-1 inline-flex items-center gap-1 font-medium text-blue-600 hover:underline dark:text-blue-400"
           >
-            <ExternalLink className="size-3.5" />
+            <ExternalLink className="size-3.5" aria-hidden="true" />
           </a>
         )}
       </p>

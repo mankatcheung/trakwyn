@@ -18,7 +18,7 @@ function SlowForm() {
   return (
     <form action={action} className="flex items-center gap-3">
       <SubmitButton pendingLabel="Saving…">Save</SubmitButton>
-      <span className="text-sm text-gray-500">Saved {count} times</span>
+      <span className="text-sm text-stone-500">Saved {count} times</span>
     </form>
   );
 }

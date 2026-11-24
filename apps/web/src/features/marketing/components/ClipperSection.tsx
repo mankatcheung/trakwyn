@@ -27,11 +27,9 @@ const SKELETON_LINES = ['w-[90%]', 'w-[96%]', 'w-3/4', 'w-[88%]', 'w-3/5'] as co
 
 function PreviewField({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-2 dark:border-gray-700 dark:bg-gray-800">
-      <div className="text-[10px] font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
-        {label}
-      </div>
-      <div className="mt-0.5 text-sm text-gray-900 dark:text-gray-100">{value}</div>
+    <div className="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-2 dark:border-stone-700 dark:bg-stone-800">
+      <div className="text-xs font-medium text-stone-500 dark:text-stone-400">{label}</div>
+      <div className="mt-0.5 text-sm text-stone-900 dark:text-stone-100">{value}</div>
     </div>
   );
 }
@@ -45,56 +43,58 @@ function ClipperPreview() {
   const { t } = useLocale();
   return (
     <div className="relative mx-auto w-full max-w-xl pb-28 sm:pb-6" aria-hidden="true">
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg shadow-gray-900/5 dark:border-gray-800 dark:bg-gray-800/50">
-        <div className="flex items-center gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2.5 dark:border-gray-800 dark:bg-gray-900/60">
+      <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm dark:border-stone-800 dark:bg-stone-800/50">
+        <div className="flex items-center gap-3 border-b border-stone-200 bg-stone-50 px-4 py-2.5 dark:border-stone-800 dark:bg-stone-900/60">
           <div className="flex gap-1.5">
-            <span className="size-2.5 rounded-full bg-gray-300 dark:bg-gray-600" />
-            <span className="size-2.5 rounded-full bg-gray-300 dark:bg-gray-600" />
-            <span className="size-2.5 rounded-full bg-gray-300 dark:bg-gray-600" />
+            <span className="size-2.5 rounded-full bg-stone-300 dark:bg-stone-600" />
+            <span className="size-2.5 rounded-full bg-stone-300 dark:bg-stone-600" />
+            <span className="size-2.5 rounded-full bg-stone-300 dark:bg-stone-600" />
           </div>
-          <div className="min-w-0 flex-1 truncate rounded-md border border-gray-200 bg-white px-3 py-1 text-xs text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+          <div className="min-w-0 flex-1 truncate rounded-md border border-stone-200 bg-white px-3 py-1 text-xs text-stone-500 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400">
             {SAMPLE_POSTING.url}
           </div>
         </div>
         <div className="flex flex-col gap-3.5 px-6 py-7 sm:min-h-96 sm:pr-72 sm:pl-8">
-          <div className="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+          <div className="text-xs font-medium text-stone-500 dark:text-stone-400">
             {SAMPLE_POSTING.company}
           </div>
-          <div className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+          <div className="text-2xl font-medium tracking-tight text-stone-900 dark:text-stone-100">
             {SAMPLE_POSTING.title}
           </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">{SAMPLE_POSTING.location}</div>
+          <div className="text-sm text-stone-600 dark:text-stone-400">
+            {SAMPLE_POSTING.location}
+          </div>
           <div className="mt-2 flex flex-col gap-3.5">
             {SKELETON_LINES.map((width, i) => (
-              <div key={i} className={`h-2 rounded-sm bg-gray-200 dark:bg-gray-700 ${width}`} />
+              <div key={i} className={`h-2 rounded-sm bg-stone-200 dark:bg-stone-700 ${width}`} />
             ))}
           </div>
         </div>
       </div>
 
-      <div className="absolute inset-x-4 bottom-0 flex flex-col gap-3 rounded-2xl border border-gray-300 bg-white p-4 shadow-xl shadow-gray-900/15 sm:inset-x-auto sm:-right-6 sm:w-68 dark:border-gray-600 dark:bg-gray-900">
+      <div className="absolute inset-x-4 bottom-0 flex flex-col gap-3 rounded-2xl border border-stone-300 bg-white p-4 shadow-md sm:inset-x-auto sm:-right-6 sm:w-68 dark:border-stone-600 dark:bg-stone-900">
         <div className="flex items-center gap-2">
-          <span className="flex size-5.5 items-center justify-center rounded-md bg-blue-600">
+          <span className="flex size-5.5 items-center justify-center rounded-md bg-blue-800">
             <Plus className="size-3.5 text-white" strokeWidth={3} />
           </span>
-          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          <span className="text-sm font-medium text-stone-900 dark:text-stone-100">
             {t('landing.clipper.previewHeading')}
           </span>
         </div>
         <PreviewField label={t('landing.clipper.previewJobTitle')} value={SAMPLE_POSTING.title} />
         <PreviewField label={t('landing.clipper.previewCompany')} value={SAMPLE_POSTING.company} />
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-600 dark:text-gray-400">
+          <span className="text-xs text-stone-600 dark:text-stone-400">
             {t('landing.clipper.previewStatus')}
           </span>
-          <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+          <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
             {t('status.applied')}
           </span>
         </div>
-        <div className="rounded-lg bg-blue-600 py-2.5 text-center text-sm font-semibold text-white">
+        <div className="rounded-lg bg-blue-800 py-2.5 text-center text-sm font-medium text-white">
           {t('landing.clipper.previewSave')}
         </div>
-        <div className="text-center text-xs font-semibold text-blue-700 dark:text-blue-400">
+        <div className="text-center text-xs font-medium text-blue-700 dark:text-blue-400">
           {t('landing.clipper.previewReadWithAi')}
         </div>
       </div>
@@ -118,26 +118,26 @@ export function ClipperSection() {
         <div>
           <div className="flex items-center gap-2.5">
             <span className="flex size-10 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/30">
-              <Puzzle className="size-5 text-blue-600" />
+              <Puzzle className="size-5 text-stone-500 dark:text-stone-400" />
             </span>
-            <span className="text-sm font-semibold tracking-wide text-blue-700 dark:text-blue-400">
+            <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
               {t('landing.clipper.eyebrow')}
             </span>
           </div>
           <h2
             id="clipper-heading"
-            className="mt-5 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl dark:text-gray-100"
+            className="mt-5 text-3xl font-medium tracking-tight text-stone-900 sm:text-4xl dark:text-stone-100"
           >
             {t('landing.clipper.title')}
           </h2>
-          <p className="mt-4 text-lg/8 text-gray-600 dark:text-gray-400">
+          <p className="mt-4 text-lg/8 text-stone-600 dark:text-stone-400">
             {t('landing.clipper.description')}
           </p>
           <ul aria-label={t('landing.clipper.boardsLabel')} className="mt-6 flex flex-wrap gap-2">
             {SUPPORTED_BOARDS.map((board) => (
               <li
                 key={board}
-                className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300"
               >
                 {board}
               </li>
@@ -148,12 +148,14 @@ export function ClipperSection() {
               href={CLIPPER_WEB_STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-800 px-6 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-900"
             >
               <Plus className="size-4" strokeWidth={2.5} />
               {t('landing.clipper.cta')}
             </a>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{t('landing.clipper.note')}</p>
+            <p className="text-sm text-stone-600 dark:text-stone-400">
+              {t('landing.clipper.note')}
+            </p>
           </div>
         </div>
         <ClipperPreview />

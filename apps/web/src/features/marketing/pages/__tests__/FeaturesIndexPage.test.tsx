@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import en from '#/i18n/en.json';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { CLIPPER_WEB_STORE_URL } from '#/constants';
 
@@ -22,13 +22,74 @@ vi.mock('#/lib/i18n', () => ({
     setLocale: vi.fn(),
     // Resolve against the real English bundle so assertions on rendered copy
     // keep working as keys are added (falls back to the key itself).
-    t: (key: string) => (en as Record<string, string>)[key] ?? key,
+    t: (key: string, values?: Record<string, string | number>) =>
+      ((en as Record<string, string>)[key] ?? key).replace(/\{\{(\w+)\}\}/g, (match, name) =>
+        values && name in values ? String(values[name]) : match,
+      ),
   }),
 }));
 
 import { FeaturesIndexPage } from '#/features/marketing/pages/FeaturesIndexPage';
 
 describe('FeaturesIndexPage', () => {
+  it('shows a real screenshot, in both themes, beside each deep dive (JEF-674)', () => {
+    render(<FeaturesIndexPage />);
+
+    [
+      'screenshots.board.alt',
+      'screenshots.cropAssistantReply.alt',
+      'screenshots.cropResumeEditor.alt',
+      'screenshots.cropStageFunnel.alt',
+    ].forEach((key) => {
+      expect(screen.getAllByAltText((en as Record<string, string>)[key])).toHaveLength(2);
+    });
+    // Every image on the page is a real capture, never a drawn placeholder.
+    screen.getAllByRole('img').forEach((img) => {
+      expect(img.getAttribute('src')).toMatch(/^\/screenshots\/[a-z-]+-(light|dark)\.webp$/);
+    });
+  });
+
+  it('leads with the product: a hero screenshot between the heading and the first deep dive (JEF-675)', () => {
+    render(<FeaturesIndexPage />);
+
+    const [light, dark] = screen.getAllByAltText(
+      (en as Record<string, string>)['screenshots.applicationDetail.alt'],
+    );
+    // Lazy, so the hidden variant is never fetched; the route head preloads the visible one (JEF-682).
+    expect(light).toHaveAttribute('loading', 'lazy');
+    expect(light).toHaveAttribute('fetchpriority', 'high');
+    expect(dark).toHaveAttribute('src', '/screenshots/application-detail-dark.webp');
+    const heading = screen.getByRole('heading', { level: 1 });
+    const firstDeepDive = screen.getAllByAltText(
+      (en as Record<string, string>)['screenshots.board.alt'],
+    )[0];
+    expect(heading.compareDocumentPosition(light)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(light.compareDocumentPosition(firstDeepDive)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('has no alternating background bands and lists the rest instead of a card grid (JEF-676)', () => {
+    const { container } = render(<FeaturesIndexPage />);
+
+    // The closing CTA is the only filled band left in the page body.
+    expect(
+      container.querySelectorAll('main section.bg-stone-100, main section.bg-blue-950'),
+    ).toHaveLength(1);
+    expect(container.querySelectorAll('main div.bg-stone-100')).toHaveLength(0);
+    const list = screen.getByRole('heading', { name: /everything else/i }).nextElementSibling;
+    expect(list?.tagName).toBe('UL');
+    expect(list?.querySelectorAll(':scope > li')).toHaveLength(8);
+  });
+
+  it('closes with the shared stone CTA, not a blue block (JEF-676)', () => {
+    render(<FeaturesIndexPage />);
+
+    const cta = screen
+      .getByRole('heading', { name: en['features.index.ctaTitle'] })
+      .closest('section');
+    expect(cta).toHaveClass('bg-stone-100');
+    expect(cta).not.toHaveClass('bg-blue-950');
+  });
+
   it('links each deep-dive card to its feature page', () => {
     render(<FeaturesIndexPage />);
 
@@ -81,6 +142,30 @@ describe('FeaturesIndexPage', () => {
     expect(tile).toHaveAttribute('target', '_blank');
     expect(tile).toHaveAttribute('rel', 'noopener noreferrer');
     expect(tile).toHaveTextContent('LinkedIn, Indeed, Glassdoor, Greenhouse, Lever or Workday');
+  });
+
+  it('answers three questions with FAQPage JSON-LD built from the visible copy (JEF-680)', () => {
+    const { container } = render(<FeaturesIndexPage />);
+
+    const t = en as Record<string, string>;
+    const faq = screen.getByRole('region', { name: t['faq.title'] });
+    expect(faq.querySelectorAll('details')).toHaveLength(3);
+    ['features.faq.free.q', 'features.faq.aiKey.q', 'features.faq.boards.q'].forEach((key) => {
+      expect(within(faq).getByText(t[key])).toBeInTheDocument();
+    });
+    // The FAQ sits after the supporting list and before the closing CTA.
+    const cta = screen.getByRole('heading', { name: t['features.index.ctaTitle'] });
+    expect(faq.compareDocumentPosition(cta)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+
+    const script = container.querySelector('script[type="application/ld+json"]');
+    const data = JSON.parse(script?.textContent ?? '{}');
+    expect(data['@type']).toBe('FAQPage');
+    expect(data.mainEntity).toHaveLength(3);
+    data.mainEntity.forEach((q: { name: string; acceptedAnswer: { text: string } }) => {
+      expect(q.name).not.toMatch(/\{\{/);
+      expect(q.acceptedAnswer.text).not.toMatch(/\{\{/);
+    });
+    expect(data.mainEntity[2].acceptedAnswer.text).toContain('LinkedIn, Indeed');
   });
 
   it('links every "Start for free" CTA to /register', () => {

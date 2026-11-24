@@ -4,10 +4,10 @@ export type IconButtonVariant = 'default' | 'danger' | 'subtle';
 export type IconButtonSize = 'sm' | 'md';
 
 const VARIANT_CLASSES: Record<IconButtonVariant, string> = {
-  default: 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
-  danger: 'text-gray-400 hover:text-red-600 dark:hover:text-red-400',
+  default: 'text-stone-400 hover:text-stone-700 dark:hover:text-stone-200',
+  danger: 'text-stone-400 hover:text-red-600 dark:hover:text-red-400',
   subtle:
-    'text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200',
+    'text-stone-400 hover:bg-stone-100 hover:text-stone-700 dark:hover:bg-stone-700 dark:hover:text-stone-200',
 };
 
 const SIZE_CLASSES: Record<IconButtonSize, string> = {

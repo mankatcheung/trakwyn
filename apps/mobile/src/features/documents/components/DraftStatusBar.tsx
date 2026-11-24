@@ -84,10 +84,10 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.surfaceAlt,
     },
     count: { flexShrink: 1, fontSize: 12, color: colors.textMuted },
-    saving: { fontSize: 12, fontWeight: '600', color: colors.primary },
-    saved: { fontSize: 12, fontWeight: '600', color: colors.success },
+    saving: { fontSize: 12, fontWeight: '500', color: colors.primary },
+    saved: { fontSize: 12, fontWeight: '500', color: colors.success },
     failedRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    failed: { fontSize: 12, fontWeight: '600', color: colors.danger },
-    retry: { fontSize: 12, fontWeight: '700', color: colors.primary },
+    failed: { fontSize: 12, fontWeight: '500', color: colors.danger },
+    retry: { fontSize: 12, fontWeight: '500', color: colors.primary },
   });
 }

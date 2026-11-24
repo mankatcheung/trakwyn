@@ -36,11 +36,11 @@ import type { TiptapNode } from '#/features/documents/lib/editor/markdownToTipta
 
 // The placeholder sits on the white page, which stays light in dark mode.
 const PLACEHOLDER =
-  '[&_.ProseMirror_.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_.is-editor-empty:first-child::before]:h-0 [&_.ProseMirror_.is-editor-empty:first-child::before]:text-gray-500 [&_.ProseMirror_.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]';
+  '[&_.ProseMirror_.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_.is-editor-empty:first-child::before]:h-0 [&_.ProseMirror_.is-editor-empty:first-child::before]:text-stone-500 [&_.ProseMirror_.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]';
 
 // The page is the PDF's page (JEF-581): see `lib/documentPage.ts`. The surround is
 // the theme's; the page itself is always white.
-const PAGE_SURROUND = 'min-h-[400px] bg-gray-100 p-2 sm:p-6 dark:bg-gray-900';
+const PAGE_SURROUND = 'min-h-[400px] bg-stone-100 p-2 sm:p-6 dark:bg-stone-900';
 const PAGE_CLASS = `document-page focus:outline-none ${PLACEHOLDER}`;
 
 function editorAttributes(lang: string | undefined): Record<string, string> {
@@ -256,7 +256,7 @@ export function DocumentDraftEditor({
   if (!editor) return null;
 
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-gray-700">
+    <div className="rounded-lg border border-stone-200 dark:border-stone-700">
       <DocumentEditorToolbar editor={editor} editable={editable} />
       {find && (
         <DocumentEditorFindBar
