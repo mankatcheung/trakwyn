@@ -80,7 +80,7 @@ function createStyles(colors: ThemeColors) {
       borderColor: colors.border,
       backgroundColor: colors.surface,
     },
-    legend: { fontSize: 13, fontWeight: '700', color: colors.text },
+    legend: { fontSize: 13, fontWeight: '500', color: colors.text },
     row: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -90,7 +90,7 @@ function createStyles(colors: ThemeColors) {
     },
     rowText: { flex: 1, fontSize: 14, color: colors.text },
     resumes: { gap: 6 },
-    label: { fontSize: 12, fontWeight: '600', color: colors.textSubtle },
+    label: { fontSize: 12, fontWeight: '500', color: colors.textSubtle },
     option: {
       minHeight: 44,
       justifyContent: 'center',

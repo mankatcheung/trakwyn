@@ -63,21 +63,21 @@ export function FaqSection({ items, structuredData = false }: FaqSectionProps) {
       )}
       <h2
         id="faq-heading"
-        className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100"
+        className="text-2xl font-medium tracking-tight text-stone-900 dark:text-stone-100"
       >
         {t('faq.title')}
       </h2>
-      <div className="mt-6 divide-y divide-gray-200 border-y border-gray-200 dark:divide-gray-800 dark:border-gray-800">
+      <div className="mt-6 divide-y divide-stone-200 border-y border-stone-200 dark:divide-stone-800 dark:border-stone-800">
         {entries.map(({ id, question, answer }) => (
           <details key={id} data-testid={`faq-${id}`} className="group py-4">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-md text-left text-base font-medium text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600 dark:text-gray-100 [&::-webkit-details-marker]:hidden">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-md text-left text-base font-medium text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600 dark:text-stone-100 [&::-webkit-details-marker]:hidden">
               {question}
               <ChevronDown
                 aria-hidden="true"
-                className="size-5 shrink-0 text-gray-500 transition-transform group-open:rotate-180"
+                className="size-5 shrink-0 text-stone-500 transition-transform group-open:rotate-180"
               />
             </summary>
-            <p className="mt-3 text-sm/6 text-gray-600 dark:text-gray-400">{answer}</p>
+            <p className="mt-3 text-sm/6 text-stone-600 dark:text-stone-400">{answer}</p>
           </details>
         ))}
       </div>

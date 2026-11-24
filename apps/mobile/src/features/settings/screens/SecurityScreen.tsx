@@ -293,9 +293,9 @@ function createStyles(colors: ThemeColors) {
       alignItems: 'center',
       justifyContent: 'space-between',
     },
-    sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
-    fieldLabel: { fontSize: 13, fontWeight: '600', color: colors.textMuted, marginTop: 4 },
-    link: { color: colors.primary, fontSize: 13, fontWeight: '600' },
+    sectionTitle: { fontSize: 16, fontWeight: '500', color: colors.text },
+    fieldLabel: { fontSize: 13, fontWeight: '500', color: colors.textMuted, marginTop: 4 },
+    link: { color: colors.primary, fontSize: 13, fontWeight: '500' },
     error: {
       color: colors.danger,
       backgroundColor: colors.dangerSurface,
@@ -334,9 +334,9 @@ function createStyles(colors: ThemeColors) {
       gap: 8,
     },
     oauthRowMain: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-    sessionTitle: { fontSize: 14, fontWeight: '600', color: colors.text },
+    sessionTitle: { fontSize: 14, fontWeight: '500', color: colors.text },
     sessionMeta: { fontSize: 12, color: colors.textSubtle },
-    linkDanger: { color: colors.danger, fontSize: 13, fontWeight: '600' },
+    linkDanger: { color: colors.danger, fontSize: 13, fontWeight: '500' },
     input: {
       borderWidth: 1,
       borderColor: colors.borderStrong,
@@ -356,6 +356,6 @@ function createStyles(colors: ThemeColors) {
       marginTop: 8,
     },
     saveButtonDisabled: { opacity: 0.6 },
-    saveButtonText: { color: colors.onPrimary, fontSize: 16, fontWeight: '600' },
+    saveButtonText: { color: colors.onPrimary, fontSize: 16, fontWeight: '500' },
   });
 }

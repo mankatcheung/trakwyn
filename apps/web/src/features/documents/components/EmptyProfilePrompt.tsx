@@ -20,18 +20,18 @@ export function EmptyProfilePrompt({ onGenerateAnyway }: EmptyProfilePromptProps
       role="alert"
       className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20"
     >
-      <p className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+      <p className="flex items-center gap-2 text-sm font-medium text-stone-900 dark:text-stone-100">
         <UserRoundIcon size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
         {t('emptyProfilePrompt.title')}
       </p>
-      <p className="mt-1 text-xs text-gray-700 dark:text-gray-300">
+      <p className="mt-1 text-xs text-stone-700 dark:text-stone-300">
         {t('emptyProfilePrompt.body')}
       </p>
       <div className="mt-3 flex flex-wrap gap-3">
         <Link
           to="/profile"
           search={{ returnTo: here }}
-          className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700"
+          className="inline-flex items-center rounded-lg bg-blue-800 dark:bg-blue-700 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-600"
         >
           {t('emptyProfilePrompt.fillIn')}
         </Link>

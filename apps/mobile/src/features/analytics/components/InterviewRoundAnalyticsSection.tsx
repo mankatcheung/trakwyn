@@ -6,6 +6,7 @@ import { AnalyticsCard } from './AnalyticsCard';
 import { RatioBar } from './RatioBar';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import { fixedColors } from '../../../theme/colors';
 
 function formatRounds(n: number | null): string {
   if (n === null) return '—';
@@ -39,7 +40,7 @@ export function InterviewRoundAnalyticsSection() {
               label={stat.type}
               meta={`${stat.passed}/${decided}`}
               percent={passRate}
-              color="#22c55e"
+              color={fixedColors.accepted}
               sampleSize={decided}
               testID={`interview-round-${stat.type}`}
             />
@@ -87,8 +88,8 @@ function createStyles(colors: ThemeColors) {
       marginTop: 4,
     },
     summaryCol: { flex: 1, gap: 2 },
-    summaryLabel: { fontSize: 10, color: colors.textFaint },
-    summaryValue: { fontSize: 14, fontWeight: '700', color: colors.text },
-    summaryMeta: { fontSize: 10, color: colors.textFaint },
+    summaryLabel: { fontSize: 12, color: colors.textFaint },
+    summaryValue: { fontSize: 14, fontWeight: '500', color: colors.text },
+    summaryMeta: { fontSize: 12, color: colors.textFaint },
   });
 }

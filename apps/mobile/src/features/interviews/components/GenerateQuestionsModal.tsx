@@ -204,8 +204,8 @@ function createStyles(colors: ThemeColors) {
       borderBottomColor: colors.border,
     },
     headerSpacer: { width: 48 },
-    title: { fontSize: 16, fontWeight: '700', color: colors.text },
-    linkMuted: { color: colors.textSubtle, fontSize: 15, fontWeight: '600' },
+    title: { fontSize: 16, fontWeight: '500', color: colors.text },
+    linkMuted: { color: colors.textSubtle, fontSize: 15, fontWeight: '500' },
     body: { flex: 1 },
     bodyContent: { padding: 16, gap: 10 },
     buttonDisabled: { opacity: 0.5 },
@@ -217,7 +217,7 @@ function createStyles(colors: ThemeColors) {
       fontSize: 13,
     },
     suggestions: { gap: 8, marginTop: 6 },
-    sectionLabel: { fontSize: 13, fontWeight: '700', color: colors.text },
+    sectionLabel: { fontSize: 13, fontWeight: '500', color: colors.text },
     note: { fontSize: 12, color: colors.warning },
     suggestion: {
       flexDirection: 'row',
@@ -242,7 +242,7 @@ function createStyles(colors: ThemeColors) {
       justifyContent: 'center',
     },
     checkboxOn: { borderColor: colors.primary, backgroundColor: colors.primary },
-    checkmark: { color: colors.onPrimary, fontSize: 14, fontWeight: '800', lineHeight: 16 },
+    checkmark: { color: colors.onPrimary, fontSize: 14, fontWeight: '500', lineHeight: 16 },
     footer: {
       padding: 16,
       gap: 8,
@@ -258,6 +258,6 @@ function createStyles(colors: ThemeColors) {
       borderRadius: 12,
       backgroundColor: colors.primary,
     },
-    addButtonText: { color: colors.onPrimary, fontSize: 15, fontWeight: '700' },
+    addButtonText: { color: colors.onPrimary, fontSize: 15, fontWeight: '500' },
   });
 }

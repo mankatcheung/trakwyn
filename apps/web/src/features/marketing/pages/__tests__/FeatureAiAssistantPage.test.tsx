@@ -46,4 +46,16 @@ describe('FeatureAiAssistantPage', () => {
       screen.getByRole('heading', { name: 'A history you can return to' }),
     ).toBeInTheDocument();
   });
+
+  it('shows a real screenshot, in both themes, for each benefit (JEF-674)', () => {
+    render(<FeatureAiAssistantPage />);
+
+    [
+      'screenshots.cropAssistantSuggestions.alt',
+      'screenshots.cropAiProviders.alt',
+      'screenshots.cropChatHistory.alt',
+    ].forEach((key) => {
+      expect(screen.getAllByAltText((en as Record<string, string>)[key])).toHaveLength(2);
+    });
+  });
 });

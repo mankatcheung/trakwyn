@@ -21,18 +21,18 @@ export function ShortcutCheatSheet({ isOpen, onClose }: { isOpen: boolean; onClo
         {shortcuts.map((shortcut) => (
           <li
             key={shortcut.label}
-            className="flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300"
+            className="flex items-center justify-between px-4 py-2.5 text-sm text-stone-700 dark:text-stone-300"
           >
             <span>{shortcut.label}</span>
-            <kbd className="rounded-sm bg-gray-100 px-2 py-1 font-mono text-xs text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+            <kbd className="rounded-sm bg-stone-100 px-2 py-1 font-mono text-xs text-stone-500 dark:bg-stone-700 dark:text-stone-400">
               {formatKeyCombo(shortcut.keys)}
             </kbd>
           </li>
         ))}
       </ul>
-      <div className="border-t border-gray-200 px-4 py-2 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">
+      <div className="border-t border-stone-200 px-4 py-2 text-xs text-stone-500 dark:border-stone-700 dark:text-stone-400">
         {t('shortcuts.pressPrefix')}{' '}
-        <kbd className="rounded-sm bg-gray-100 px-1 py-0.5 dark:bg-gray-700">
+        <kbd className="rounded-sm bg-stone-100 px-1 py-0.5 dark:bg-stone-700">
           {getKeyModifier()} + /
         </kbd>{' '}
         {t('shortcuts.togglePanel')}

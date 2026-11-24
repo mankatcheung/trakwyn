@@ -52,9 +52,9 @@ function ExpandedChatWindow() {
   };
 
   return createPortal(
-    <div className="fixed right-4 bottom-16 z-50 hidden h-128 w-96 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl lg:flex dark:border-gray-700 dark:bg-gray-800">
-      <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-3 py-2.5 dark:border-gray-700">
-        <h2 className="min-w-0 truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+    <div className="fixed right-4 bottom-16 z-50 hidden h-128 w-96 flex-col overflow-hidden rounded-xl border border-stone-200 bg-white shadow-lg lg:flex dark:border-stone-700 dark:bg-stone-800">
+      <div className="flex shrink-0 items-center justify-between border-b border-stone-200 px-3 py-2.5 dark:border-stone-700">
+        <h2 className="min-w-0 truncate text-sm font-medium text-stone-900 dark:text-stone-100">
           {title}
         </h2>
         <div className="flex shrink-0 items-center gap-0.5">
@@ -64,7 +64,7 @@ function ExpandedChatWindow() {
             disabled={isNew}
             aria-label={t('chatDock.maximizeAria')}
             title={isNew ? t('chatDock.sendMessageFirst') : t('chatDock.openFullPage')}
-            className="rounded-sm p-1.5 text-gray-400 transition-colors hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:text-gray-200"
+            className="rounded-sm p-1.5 text-stone-400 transition-colors hover:text-stone-700 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:text-stone-200"
           >
             <Maximize2Icon size={14} />
           </button>
@@ -87,7 +87,7 @@ function ExpandedChatWindow() {
         className="px-4 pt-2 text-xs text-amber-700 dark:text-amber-400"
       />
       {llmApiKeys.length === 0 && hostedAi === false ? (
-        <p className="flex flex-1 items-center justify-center px-4 text-center text-xs text-gray-400 dark:text-gray-500">
+        <p className="flex flex-1 items-center justify-center px-4 text-center text-xs text-stone-400 dark:text-stone-500">
           {t('assistant.addApiKeyPrefix')}{' '}
           <Link to="/settings/ai" className="mx-1 underline">
             {t('assistant.settingsLinkText')}

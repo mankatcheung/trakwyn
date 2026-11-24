@@ -22,22 +22,11 @@ import {
   type SettingsIconProps,
 } from '../components/SettingsIcons';
 
-const ROW_COLORS = {
-  green: { bg: '#dcfce7', fg: '#15803d' },
-  purple: { bg: '#f3e8ff', fg: '#7e22ce' },
-  slate: { bg: '#f1f5f9', fg: '#475569' },
-  amber: { bg: '#fef3c7', fg: '#a16207' },
-  gray: { bg: '#f3f4f6', fg: '#4b5563' },
-  indigo: { bg: '#eef2ff', fg: '#4338ca' },
-  teal: { bg: '#ecfeff', fg: '#0e7490' },
-};
-
 interface MenuItem {
   label: string;
   href: Href;
   testID: string;
   icon: (props: SettingsIconProps) => React.JSX.Element;
-  iconColor: { bg: string; fg: string };
 }
 
 interface LegalLinkItem {
@@ -60,49 +49,42 @@ export function SettingsScreen() {
       href: '/settings/security',
       testID: 'settings-security-row',
       icon: ShieldIcon,
-      iconColor: ROW_COLORS.green,
     },
     {
       label: t('ai'),
       href: '/settings/ai',
       testID: 'settings-ai-row',
       icon: StarIcon,
-      iconColor: ROW_COLORS.purple,
     },
     {
       label: t('integrations'),
       href: '/settings/integrations',
       testID: 'settings-integrations-row',
       icon: RefreshIcon,
-      iconColor: ROW_COLORS.slate,
     },
     {
       label: t('notifications'),
       href: '/settings/notifications',
       testID: 'settings-notifications-row',
       icon: BellIcon,
-      iconColor: ROW_COLORS.amber,
     },
     {
       label: t('data'),
       href: '/settings/data',
       testID: 'settings-data-row',
       icon: DatabaseIcon,
-      iconColor: ROW_COLORS.gray,
     },
     {
       label: t('appearance'),
       href: '/settings/appearance',
       testID: 'settings-appearance-row',
       icon: PaletteIcon,
-      iconColor: ROW_COLORS.indigo,
     },
     {
       label: t('language'),
       href: '/settings/language',
       testID: 'settings-language-row',
       icon: GlobeIcon,
-      iconColor: ROW_COLORS.teal,
     },
   ];
 
@@ -168,8 +150,8 @@ export function SettingsScreen() {
               onPress={() => router.push(item.href)}
               testID={item.testID}
             >
-              <View style={[styles.iconBadge, { backgroundColor: item.iconColor.bg }]}>
-                <Icon color={item.iconColor.fg} />
+              <View style={[styles.iconBadge, { backgroundColor: colors.surfaceAlt }]}>
+                <Icon color={colors.textSubtle} />
               </View>
               <Text style={styles.label}>{item.label}</Text>
               <ChevronRightIcon color={colors.textFaint} />
@@ -198,8 +180,8 @@ export function SettingsScreen() {
             onPress={() => void Linking.openURL(item.url)}
             testID={item.testID}
           >
-            <View style={[styles.iconBadge, { backgroundColor: ROW_COLORS.slate.bg }]}>
-              <DocumentIcon color={ROW_COLORS.slate.fg} />
+            <View style={[styles.iconBadge, { backgroundColor: colors.surfaceAlt }]}>
+              <DocumentIcon color={colors.textSubtle} />
             </View>
             <Text style={styles.label}>{item.label}</Text>
             <ChevronRightIcon color={colors.textFaint} />
@@ -241,9 +223,9 @@ function createStyles(colors: ThemeColors) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    avatarText: { color: colors.onPrimary, fontSize: 17, fontWeight: '700' },
+    avatarText: { color: colors.onPrimary, fontSize: 17, fontWeight: '500' },
     profileText: { flex: 1, gap: 2 },
-    profileName: { fontSize: 16, fontWeight: '700', color: colors.text },
+    profileName: { fontSize: 16, fontWeight: '500', color: colors.text },
     profileEmail: { fontSize: 13, color: colors.textSubtle },
     menuCard: {
       backgroundColor: colors.surface,
@@ -279,7 +261,7 @@ function createStyles(colors: ThemeColors) {
       paddingHorizontal: 16,
       paddingVertical: 14,
     },
-    dangerLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: colors.danger },
+    dangerLabel: { flex: 1, fontSize: 15, fontWeight: '500', color: colors.danger },
     signOutRow: {
       alignItems: 'center',
       justifyContent: 'center',
@@ -289,6 +271,6 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.dangerSurface,
       paddingVertical: 14,
     },
-    signOutLabel: { fontSize: 15, fontWeight: '600', color: colors.danger },
+    signOutLabel: { fontSize: 15, fontWeight: '500', color: colors.danger },
   });
 }

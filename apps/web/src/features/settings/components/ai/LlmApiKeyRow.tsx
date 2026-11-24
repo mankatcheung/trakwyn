@@ -84,7 +84,7 @@ export function LlmApiKeyRow({
   return (
     <div
       data-testid={`llm-provider-row-${llmApiKey.provider}`}
-      className={`border-b border-gray-100 px-5 py-4 last:border-b-0 dark:border-gray-700/60 ${
+      className={`border-b border-stone-100 px-5 py-4 last:border-b-0 dark:border-stone-700/60 ${
         reached ? 'bg-red-50 dark:bg-red-900/10' : ''
       }`}
     >
@@ -92,7 +92,7 @@ export function LlmApiKeyRow({
         <div className="flex min-w-0 items-start gap-3">
           {avatar && (
             <div
-              className={`flex size-9 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${avatar.className} ${
+              className={`flex size-9 shrink-0 items-center justify-center rounded-lg text-xs font-medium ${avatar.className} ${
                 reached ? 'opacity-60' : ''
               }`}
             >
@@ -100,7 +100,7 @@ export function LlmApiKeyRow({
             </div>
           )}
           <div className="min-w-0">
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
               {LLM_PROVIDER_LABEL[llmApiKey.provider] ?? llmApiKey.provider}
               {reached && (
                 <span className="ml-2 inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-900/30 dark:text-red-400">
@@ -114,7 +114,7 @@ export function LlmApiKeyRow({
               )}
             </p>
             {(llmApiKey.model || llmApiKey.baseUrl) && (
-              <p className="text-xs break-all text-gray-500 dark:text-gray-400">
+              <p className="text-xs break-all text-stone-500 dark:text-stone-400">
                 {[llmApiKey.model, llmApiKey.baseUrl].filter(Boolean).join(' · ')}
               </p>
             )}
@@ -127,11 +127,15 @@ export function LlmApiKeyRow({
                   aria-valuemin={0}
                   aria-valuemax={limit}
                   aria-label={t('integrations.monthlyLimitLabel')}
-                  className="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"
+                  className="h-2 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700"
                 >
                   <div
-                    className={`h-full rounded-full transition-all ${
-                      reached ? 'bg-red-600' : nearing ? 'bg-amber-500' : 'bg-blue-600'
+                    className={`h-full rounded-full transition-[width] ${
+                      reached
+                        ? 'bg-red-600'
+                        : nearing
+                          ? 'bg-amber-500'
+                          : 'bg-blue-800 dark:bg-blue-700'
                     }`}
                     style={{ width: `${ratio * 100}%` }}
                   />
@@ -146,7 +150,7 @@ export function LlmApiKeyRow({
               stay either way, rather than being traded for the meter.
             */}
             {usage && (
-              <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+              <p className="mt-1 text-xs text-stone-400 dark:text-stone-500">
                 {[
                   limit === null
                     ? t('integrations.usageThisMonth')
@@ -209,7 +213,7 @@ export function LlmApiKeyRow({
                 {...triggerProps}
                 disabled={busy}
                 aria-label={t('integrations.keyActions')}
-                className="flex size-8 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-60 dark:text-gray-400 dark:hover:bg-gray-700"
+                className="flex size-8 items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 disabled:opacity-60 dark:text-stone-400 dark:hover:bg-stone-700"
               >
                 <EllipsisVerticalIcon size={ICON} />
               </button>
@@ -314,7 +318,7 @@ function LimitEditor({
       className={`mt-3 ml-0 rounded-lg border p-4 sm:ml-12 ${
         atCeiling
           ? 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-900/20'
-          : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40'
+          : 'border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-900/40'
       }`}
     >
       {atCeiling && (
@@ -325,7 +329,7 @@ function LimitEditor({
 
       <label
         htmlFor="monthly-token-limit"
-        className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200"
+        className="mb-1.5 block text-sm font-medium text-stone-700 dark:text-stone-200"
       >
         {t('integrations.monthlyLimitLabel')}
       </label>
@@ -342,7 +346,7 @@ function LimitEditor({
             key={preset}
             type="button"
             onClick={() => form.setValue('limit', String(preset))}
-            className="rounded-full border border-gray-300 px-2.5 py-1 text-xs text-gray-700 hover:bg-white dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+            className="rounded-full border border-stone-300 px-2.5 py-1 text-xs text-stone-700 hover:bg-white dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
           >
             {formatNumber(preset)}
           </button>
@@ -350,13 +354,13 @@ function LimitEditor({
         <button
           type="button"
           onClick={() => form.setValue('limit', '')}
-          className="rounded-full border border-gray-300 px-2.5 py-1 text-xs text-gray-700 hover:bg-white dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+          className="rounded-full border border-stone-300 px-2.5 py-1 text-xs text-stone-700 hover:bg-white dark:border-stone-600 dark:text-stone-200 dark:hover:bg-stone-800"
         >
           {t('integrations.removeLimit')}
         </button>
       </div>
 
-      <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+      <p className="mt-3 text-xs text-stone-500 dark:text-stone-400">
         {t('integrations.limitHelp')}{' '}
         {t('integrations.limitUsedSoFar', { used: formatNumber(used) })}
       </p>

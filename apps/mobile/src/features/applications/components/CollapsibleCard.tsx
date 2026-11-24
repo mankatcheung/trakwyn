@@ -63,14 +63,14 @@ function createStyles(colors: ThemeColors) {
     },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
     titleRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-    title: { fontSize: 15, fontWeight: '700', color: colors.text },
+    title: { fontSize: 15, fontWeight: '500', color: colors.text },
     badge: {
       backgroundColor: colors.surfaceAlt,
       borderRadius: 9999,
       paddingHorizontal: 8,
       paddingVertical: 2,
     },
-    badgeText: { fontSize: 11, fontWeight: '600', color: colors.textSubtle },
+    badgeText: { fontSize: 12, fontWeight: '500', color: colors.textSubtle },
     body: { gap: 12 },
   });
 }

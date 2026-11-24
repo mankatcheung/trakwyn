@@ -28,7 +28,7 @@ export function SectionGeneratedMarker({ generated, size = 14 }: SectionGenerate
     <span
       role="img"
       aria-label={label}
-      className="inline-block size-1.5 rounded-full bg-gray-300 dark:bg-gray-600"
+      className="inline-block size-1.5 rounded-full bg-stone-300 dark:bg-stone-600"
     />
   );
 }

@@ -146,7 +146,7 @@ function createStyles(colors: ThemeColors) {
       padding: 24,
     },
     sheet: { backgroundColor: colors.surface, borderRadius: 14, padding: 20, gap: 12 },
-    title: { fontSize: 18, fontWeight: '700', color: colors.text },
+    title: { fontSize: 18, fontWeight: '500', color: colors.text },
     subtitle: { fontSize: 14, color: colors.textSubtle },
     error: {
       color: colors.danger,
@@ -173,9 +173,9 @@ function createStyles(colors: ThemeColors) {
       justifyContent: 'center',
       paddingHorizontal: 16,
     },
-    secondaryText: { color: colors.text, fontSize: 15, fontWeight: '600' },
+    secondaryText: { color: colors.text, fontSize: 15, fontWeight: '500' },
     actions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 20 },
-    cancelText: { color: colors.textSubtle, fontSize: 14, fontWeight: '600' },
+    cancelText: { color: colors.textSubtle, fontSize: 14, fontWeight: '500' },
     confirmButton: {
       minHeight: 44,
       paddingHorizontal: 18,
@@ -185,6 +185,6 @@ function createStyles(colors: ThemeColors) {
       justifyContent: 'center',
     },
     disabled: { opacity: 0.6 },
-    confirmText: { color: colors.onPrimary, fontSize: 15, fontWeight: '600' },
+    confirmText: { color: colors.onPrimary, fontSize: 15, fontWeight: '500' },
   });
 }

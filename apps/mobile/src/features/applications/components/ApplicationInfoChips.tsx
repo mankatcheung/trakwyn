@@ -48,7 +48,7 @@ function createStyles(colors: ThemeColors) {
     chip: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
     chipNeutral: { backgroundColor: colors.surfaceAlt },
     chipWarning: { backgroundColor: colors.warningSurface },
-    chipText: { fontSize: 12, color: colors.textMuted, fontWeight: '600' },
+    chipText: { fontSize: 12, color: colors.textMuted, fontWeight: '500' },
     chipTextWarning: { color: colors.warning },
     tagChip: {
       borderRadius: 6,
@@ -56,6 +56,6 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 4,
       backgroundColor: colors.primarySurface,
     },
-    tagChipText: { fontSize: 12, fontWeight: '600', color: colors.primary },
+    tagChipText: { fontSize: 12, fontWeight: '500', color: colors.primary },
   });
 }

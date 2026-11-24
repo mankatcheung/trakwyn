@@ -12,7 +12,7 @@ export function DashboardPending() {
   const { t } = useLocale();
   return (
     <div className="mx-auto max-w-5xl p-4 sm:p-8" data-testid="dashboard-pending" aria-busy="true">
-      <h1 className="mb-6 text-2xl font-bold text-gray-900 sm:mb-8 dark:text-gray-100">
+      <h1 className="mb-6 text-2xl font-medium text-stone-900 sm:mb-8 dark:text-stone-100">
         {t('dashboard.title')}
       </h1>
       <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">

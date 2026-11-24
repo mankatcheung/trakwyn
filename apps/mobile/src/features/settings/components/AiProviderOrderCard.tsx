@@ -154,8 +154,8 @@ function createStyles(colors: ThemeColors) {
       padding: 14,
       gap: 10,
     },
-    title: { fontSize: 16, fontWeight: '600', color: colors.text },
-    subtitle: { fontSize: 12, fontWeight: '600', color: colors.textSubtle },
+    title: { fontSize: 16, fontWeight: '500', color: colors.text },
+    subtitle: { fontSize: 12, fontWeight: '500', color: colors.textSubtle },
     help: { fontSize: 13, color: colors.textSubtle },
     list: { borderWidth: 1, borderColor: colors.border, borderRadius: 10, overflow: 'hidden' },
     row: {
@@ -169,7 +169,7 @@ function createStyles(colors: ThemeColors) {
     },
     position: { width: 14, fontSize: 14, color: colors.textSubtle },
     rowText: { flex: 1, gap: 2 },
-    name: { fontSize: 14, fontWeight: '600', color: colors.text },
+    name: { fontSize: 14, fontWeight: '500', color: colors.text },
     note: { fontSize: 12, color: colors.textSubtle },
     actions: { flexDirection: 'row', gap: 4 },
     action: {

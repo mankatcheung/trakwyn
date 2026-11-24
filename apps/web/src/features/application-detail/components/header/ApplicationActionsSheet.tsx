@@ -20,7 +20,7 @@ interface ApplicationActionsSheetProps {
 const ROW_HEIGHT = { minHeight: '56px' } as const;
 
 const ROW_CLASS =
-  'flex w-full cursor-pointer items-center gap-3.5 px-5 text-left text-[15px] text-gray-900 transition-colors hover:bg-gray-50 dark:text-gray-100 dark:hover:bg-gray-700/50';
+  'flex w-full cursor-pointer items-center gap-3.5 px-5 text-left text-[15px] text-stone-900 transition-colors hover:bg-stone-50 dark:text-stone-100 dark:hover:bg-stone-700/50';
 
 /**
  * The application's own actions, as labelled rows: each is a 56px tap
@@ -60,7 +60,7 @@ export function ApplicationActionsSheet({
     >
       <div className="flex flex-col pb-2">
         <div className="flex justify-center py-2.5">
-          <div className="h-1 w-9 rounded-full bg-gray-200 dark:bg-gray-600" />
+          <div className="h-1 w-9 rounded-full bg-stone-200 dark:bg-stone-600" />
         </div>
 
         {pane === 'actions' ? (
@@ -76,7 +76,7 @@ export function ApplicationActionsSheet({
             >
               <StarIcon
                 size={20}
-                className={starred ? 'fill-yellow-400 text-yellow-400' : 'text-gray-500'}
+                className={starred ? 'fill-yellow-400 text-yellow-400' : 'text-stone-500'}
               />
               <span className="flex-1">
                 {t(starred ? 'applications.unstar' : 'applications.star')}
@@ -90,7 +90,7 @@ export function ApplicationActionsSheet({
               className={ROW_CLASS}
               style={ROW_HEIGHT}
             >
-              <EditIcon size={20} className="text-gray-500" />
+              <EditIcon size={20} className="text-stone-500" />
               <span className="flex-1">{t('common.edit')}</span>
             </Link>
 
@@ -105,8 +105,8 @@ export function ApplicationActionsSheet({
                 aria-hidden="true"
               />
               <span className="flex-1">{t('applicationDetail.changeStatus')}</span>
-              <span className="text-sm text-gray-400">{statusLabel(status)}</span>
-              <ChevronRightIcon size={16} className="text-gray-300" />
+              <span className="text-sm text-stone-400">{statusLabel(status)}</span>
+              <ChevronRightIcon size={16} className="text-stone-300" />
             </button>
 
             <button
@@ -115,7 +115,7 @@ export function ApplicationActionsSheet({
                 onClose();
                 onDelete();
               }}
-              className="flex w-full cursor-pointer items-center gap-3.5 border-t border-gray-100 px-5 text-left text-[15px] text-red-600 transition-colors hover:bg-red-50 dark:border-gray-700 dark:text-red-400 dark:hover:bg-red-900/20"
+              className="flex w-full cursor-pointer items-center gap-3.5 border-t border-stone-100 px-5 text-left text-[15px] text-red-600 transition-colors hover:bg-red-50 dark:border-stone-700 dark:text-red-400 dark:hover:bg-red-900/20"
               style={ROW_HEIGHT}
             >
               <Trash2Icon size={20} />
@@ -140,7 +140,9 @@ export function ApplicationActionsSheet({
                 aria-hidden="true"
               />
               <span className="flex-1">{statusLabel(value)}</span>
-              {value === status && <CheckIcon size={18} className="text-blue-600" />}
+              {value === status && (
+                <CheckIcon size={18} className="text-blue-800 dark:text-blue-400" />
+              )}
             </button>
           ))
         )}

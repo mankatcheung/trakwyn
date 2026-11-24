@@ -62,7 +62,7 @@ export function ChatProposalCard({ proposal, conversationId }: ChatProposalCardP
       <p className="text-xs font-medium text-blue-700 dark:text-blue-300">
         {t('chat.proposal.heading')}
       </p>
-      <p className="mt-1 text-gray-800 dark:text-gray-200">{proposal.summary}</p>
+      <p className="mt-1 text-stone-800 dark:text-stone-200">{proposal.summary}</p>
 
       {proposal.status === 'pending' ? (
         <div className="mt-3 flex gap-2">
@@ -84,7 +84,7 @@ export function ChatProposalCard({ proposal, conversationId }: ChatProposalCardP
           className={`mt-2 text-xs ${
             proposal.status === 'failed' || proposal.status === 'expired'
               ? 'text-red-600 dark:text-red-400'
-              : 'text-gray-500 dark:text-gray-400'
+              : 'text-stone-500 dark:text-stone-400'
           }`}
         >
           {t(`chat.proposal.${proposal.status}`)}

@@ -95,7 +95,7 @@ export function SelectionProposalCard({
       role="dialog"
       aria-label={t('documents.editor.ai.title')}
       style={{ position: 'fixed', left: position?.x ?? 0, top: position?.y ?? 0 }}
-      className="z-50 w-80 max-w-[calc(100vw-1rem)] rounded-lg border border-gray-200 bg-white text-sm text-gray-900 shadow-lg dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+      className="z-50 w-80 max-w-[calc(100vw-1rem)] rounded-lg border border-stone-200 bg-white text-sm text-stone-900 shadow-lg dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100"
       onKeyDown={(event) => {
         if (event.key !== 'Escape') return;
         event.stopPropagation();
@@ -119,7 +119,7 @@ export function SelectionProposalCard({
                 className={`rounded-md px-2 py-1 text-xs ${
                   state.scope === scope
                     ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700'
+                    : 'text-stone-600 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-700'
                 }`}
               >
                 {t(
@@ -162,15 +162,15 @@ export function SelectionProposalCard({
       {state.phase === 'proposal' && (
         <div className="space-y-3 p-3">
           <div>
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+            <p className="text-xs font-medium text-stone-500 dark:text-stone-400">
               {t('documents.editor.ai.original')}
             </p>
-            <p className="mt-0.5 max-h-24 overflow-y-auto whitespace-pre-wrap text-gray-600 dark:text-gray-400">
+            <p className="mt-0.5 max-h-24 overflow-y-auto whitespace-pre-wrap text-stone-600 dark:text-stone-400">
               {state.range.text}
             </p>
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+            <p className="text-xs font-medium text-stone-500 dark:text-stone-400">
               {t('documents.editor.ai.suggestion')}
             </p>
             <div className="mt-0.5 max-h-40 overflow-y-auto" data-testid="ai-suggestion">
@@ -191,7 +191,7 @@ export function SelectionProposalCard({
               ref={acceptRef}
               type="button"
               onClick={() => ai.accept()}
-              className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+              className="rounded-md bg-blue-800 dark:bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-900 dark:hover:bg-blue-600"
             >
               {t('documents.editor.ai.accept')}
             </button>

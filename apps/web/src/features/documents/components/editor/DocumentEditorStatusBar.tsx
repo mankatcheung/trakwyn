@@ -69,7 +69,7 @@ export function DocumentEditorStatusBar({
   return (
     <div
       data-testid="editor-status-bar"
-      className="flex h-8 items-center gap-2 overflow-hidden rounded-b-lg border-t border-gray-200 bg-gray-50 px-3 text-xs whitespace-nowrap text-gray-600 tabular-nums dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+      className="flex h-8 items-center gap-2 overflow-hidden rounded-b-lg border-t border-stone-200 bg-stone-50 px-3 text-xs whitespace-nowrap text-stone-600 tabular-nums dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400"
     >
       <span>{words}</span>
       <span aria-hidden="true">·</span>
@@ -139,7 +139,7 @@ function LanguageSelect({
       onChange={(event) => {
         if (isDocumentLanguage(event.target.value)) onChange(event.target.value);
       }}
-      className="max-w-40 truncate rounded-sm border-0 bg-transparent py-0 pr-6 pl-1 text-xs text-gray-600 focus:ring-1 focus:ring-blue-500 dark:text-gray-400"
+      className="max-w-40 truncate rounded-sm border-0 bg-transparent py-0 pr-6 pl-1 text-xs text-stone-600 focus:ring-1 focus:ring-blue-500 dark:text-stone-400"
     >
       {DOCUMENT_LANGUAGES.map((language) => (
         <option key={language.tag} value={language.tag}>

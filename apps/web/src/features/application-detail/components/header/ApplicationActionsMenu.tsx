@@ -8,7 +8,7 @@ import type { ApplicationStatus } from '#/graphql/generated/graphql';
 
 /** The 44px "…" trigger, shared with the phone's sheet so the header never shifts. */
 export const ACTIONS_TRIGGER_CLASS =
-  'flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700';
+  'flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-700';
 
 const STATUS_PREFIX = 'status:';
 
@@ -52,11 +52,15 @@ export function ApplicationActionsMenu({
       icon: (
         <StarIcon
           size={16}
-          className={starred ? 'fill-yellow-400 text-yellow-400' : 'text-gray-500'}
+          className={starred ? 'fill-yellow-400 text-yellow-400' : 'text-stone-500'}
         />
       ),
     },
-    { id: 'edit', label: t('common.edit'), icon: <EditIcon size={16} className="text-gray-500" /> },
+    {
+      id: 'edit',
+      label: t('common.edit'),
+      icon: <EditIcon size={16} className="text-stone-500" />,
+    },
     {
       id: 'status',
       label: t('applicationDetail.changeStatus'),
@@ -81,7 +85,7 @@ export function ApplicationActionsMenu({
     {
       id: 'back',
       label: t('applicationDetail.changeStatus'),
-      icon: <ChevronLeftIcon size={16} className="text-gray-500" />,
+      icon: <ChevronLeftIcon size={16} className="text-stone-500" />,
       keepOpen: true,
     },
     ...APPLICATION_STATUSES.map((value, index) => ({

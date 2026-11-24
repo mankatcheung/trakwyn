@@ -118,7 +118,7 @@ function createStyles(colors: ThemeColors) {
     description: { fontSize: 14, color: colors.textMuted },
     generatedAt: { fontSize: 12, color: colors.textFaint },
     sources: { gap: 4, paddingTop: 4 },
-    sourcesTitle: { fontSize: 12, fontWeight: '600', color: colors.textMuted },
+    sourcesTitle: { fontSize: 12, fontWeight: '500', color: colors.textMuted },
     source: { fontSize: 14, color: colors.primary },
     sourceDate: { fontSize: 12, color: colors.textFaint },
   });

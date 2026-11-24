@@ -6,7 +6,7 @@ vi.mock('#/lib/i18n', () => ({
 }));
 
 import { ThemedScreenshot } from '#/features/marketing/components/ThemedScreenshot';
-import { getScreenshot } from '#/features/marketing/lib/screenshots';
+import { getScreenshot, SCREENSHOT_SCALE } from '#/features/marketing/lib/screenshots';
 
 describe('ThemedScreenshot', () => {
   it('loads the light image eagerly and both at high priority when priority is set', () => {
@@ -44,5 +44,29 @@ describe('ThemedScreenshot', () => {
     expect(dark).toHaveClass('hidden', 'dark:block');
     expect(light).toHaveAttribute('loading', 'lazy');
     expect(dark).toHaveAttribute('loading', 'lazy');
+  });
+
+  it('goes edge to edge below sm when bleed is set (JEF-675)', () => {
+    render(<ThemedScreenshot name="board" bleed />);
+    for (const img of screen.getAllByAltText('t:screenshots.board.alt')) {
+      expect(img).toHaveClass('rounded-none', 'border-x-0', 'sm:rounded-2xl', 'sm:border-x');
+    }
+  });
+
+  it('keeps the rounded frame without bleed', () => {
+    render(<ThemedScreenshot name="board" />);
+    expect(screen.getAllByAltText('t:screenshots.board.alt')[0]).toHaveClass(
+      'rounded-2xl',
+      'border',
+    );
+  });
+
+  it('never stretches a small crop past its own CSS size (JEF-674)', () => {
+    render(<ThemedScreenshot name="crop-chat-history" />);
+
+    const [light] = screen.getAllByAltText('t:screenshots.cropChatHistory.alt');
+    const shot = getScreenshot('crop-chat-history', 'light');
+    expect(light).toHaveStyle({ maxWidth: `${shot.width / SCREENSHOT_SCALE}px` });
+    expect(light).toHaveAttribute('width', String(shot.width));
   });
 });

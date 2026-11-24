@@ -16,6 +16,7 @@ import { ERROR_CODES } from '../../../constants';
 import { getErrorCode, getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import { fixedColors } from '../../../theme/colors';
 import { useRequestEmailChange } from '../../settings/hooks/useProfile';
 import { useEmailVerification, useResendVerificationEmail } from '../hooks/useEmailVerification';
 
@@ -236,16 +237,16 @@ function createStyles(colors: ThemeColors) {
       borderRadius: 16,
       padding: 24,
       gap: 16,
-      shadowColor: '#000000',
+      shadowColor: fixedColors.shadow,
       shadowOpacity: 0.06,
       shadowRadius: 12,
       shadowOffset: { width: 0, height: 4 },
       elevation: 2,
     },
-    title: { fontSize: 24, fontWeight: '700', color: colors.text },
+    title: { fontSize: 24, fontWeight: '500', color: colors.text },
     body: { fontSize: 14, color: colors.textSubtle },
     field: { gap: 6 },
-    fieldLabel: { fontSize: 14, fontWeight: '600', color: colors.text },
+    fieldLabel: { fontSize: 14, fontWeight: '500', color: colors.text },
     input: {
       borderWidth: 1,
       borderColor: colors.borderStrong,
@@ -264,7 +265,7 @@ function createStyles(colors: ThemeColors) {
       justifyContent: 'center',
     },
     buttonDisabled: { opacity: 0.6 },
-    buttonText: { color: colors.onPrimary, fontSize: 16, fontWeight: '600' },
+    buttonText: { color: colors.onPrimary, fontSize: 16, fontWeight: '500' },
     secondaryButton: {
       minHeight: 48,
       borderRadius: 10,
@@ -273,7 +274,7 @@ function createStyles(colors: ThemeColors) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    secondaryButtonText: { color: colors.text, fontSize: 16, fontWeight: '600' },
+    secondaryButtonText: { color: colors.text, fontSize: 16, fontWeight: '500' },
     changeForm: { gap: 12 },
     error: {
       color: colors.danger,
@@ -290,7 +291,7 @@ function createStyles(colors: ThemeColors) {
       fontSize: 14,
     },
     divider: { height: 1, backgroundColor: colors.border },
-    link: { color: colors.primary, textAlign: 'center', fontSize: 14, fontWeight: '600' },
+    link: { color: colors.primary, textAlign: 'center', fontSize: 14, fontWeight: '500' },
     backToSignIn: { color: colors.textSubtle, textAlign: 'center', fontSize: 14 },
   });
 }

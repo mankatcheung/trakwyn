@@ -84,7 +84,7 @@ export function CompanyBriefingTab({ applicationId }: { applicationId: string })
   return (
     <div className="space-y-4">
       <Card className="space-y-3 p-4">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-stone-600 dark:text-stone-400">
           {t('companyBriefing.description')}
         </p>
         <AiActionBar
@@ -116,10 +116,10 @@ export function CompanyBriefingTab({ applicationId }: { applicationId: string })
         <Card className="space-y-3 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <h3 className="text-sm font-medium text-stone-700 dark:text-stone-300">
                 {t('companyBriefing.title')}
               </h3>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-stone-400">
                 {t('companyBriefing.generatedAt', {
                   date: formatDate(new Date(briefing.generatedAt), {
                     dateStyle: 'medium',
@@ -142,7 +142,7 @@ export function CompanyBriefingTab({ applicationId }: { applicationId: string })
               </span>
             </Button>
           </div>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-stone-400">
             {t(
               sources.length > 0
                 ? 'companyBriefing.disclaimerWithSources'
@@ -151,25 +151,25 @@ export function CompanyBriefingTab({ applicationId }: { applicationId: string })
           </p>
           {/* Briefings stored before markdown were "Header:\nbody" with single
               newlines, which markdown folds into one run-on line. */}
-          <div className="text-gray-800 dark:text-gray-200 [&_p]:whitespace-pre-line">
+          <div className="text-stone-800 dark:text-stone-200 [&_p]:whitespace-pre-line">
             <Markdown content={briefing.content} />
           </div>
           {sources.length > 0 && (
             <div data-testid="briefing-sources">
-              <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400">
+              <h4 className="text-xs font-medium text-stone-500 dark:text-stone-400">
                 {t('companyBriefing.sources')}
               </h4>
               {/* Numbered to match the [1], [2] the briefing cites. */}
               <ol className="mt-1 space-y-0.5 text-sm">
                 {sources.map((source, index) => (
                   <li key={source.url} className="flex gap-1.5">
-                    <span className="text-gray-400">[{index + 1}]</span>
+                    <span className="text-stone-400">[{index + 1}]</span>
                     {isWebUrl(source.url) ? (
                       <a
                         href={source.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="truncate text-blue-600 hover:underline dark:text-blue-400"
+                        className="truncate text-blue-800 hover:underline dark:text-blue-400"
                       >
                         {source.title}
                       </a>
@@ -180,7 +180,7 @@ export function CompanyBriefingTab({ applicationId }: { applicationId: string })
                     {source.publishedAt ? (
                       <time
                         dateTime={source.publishedAt}
-                        className="shrink-0 text-xs/5 text-gray-400"
+                        className="shrink-0 text-xs/5 text-stone-400"
                       >
                         {formatDate(new Date(source.publishedAt), { dateStyle: 'medium' })}
                       </time>

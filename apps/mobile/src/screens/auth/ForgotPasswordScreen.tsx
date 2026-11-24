@@ -17,6 +17,7 @@ import { getErrorMessage } from '../../lib/errors';
 import { forgotPasswordSchema } from './forgotPasswordSchema';
 import { useTheme } from '../../theme/ThemeContext';
 import type { ThemeColors } from '../../theme/colors';
+import { fixedColors } from '../../theme/colors';
 
 const REQUEST_PASSWORD_RESET_MUTATION = `
   mutation RequestPasswordResetMobile($email: String!) {
@@ -170,22 +171,22 @@ function createStyles(colors: ThemeColors) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    backChevron: { fontSize: 26, color: colors.text, fontWeight: '600' },
+    backChevron: { fontSize: 26, color: colors.text, fontWeight: '500' },
     card: {
       backgroundColor: colors.surface,
       borderRadius: 16,
       padding: 24,
       gap: 16,
-      shadowColor: '#000000',
+      shadowColor: fixedColors.shadow,
       shadowOpacity: 0.06,
       shadowRadius: 12,
       shadowOffset: { width: 0, height: 4 },
       elevation: 2,
     },
-    title: { fontSize: 26, fontWeight: '700', color: colors.text },
+    title: { fontSize: 26, fontWeight: '500', color: colors.text },
     subtitle: { fontSize: 14, color: colors.textSubtle, marginTop: -8 },
     field: { gap: 6 },
-    fieldLabel: { fontSize: 14, fontWeight: '600', color: colors.text },
+    fieldLabel: { fontSize: 14, fontWeight: '500', color: colors.text },
     input: {
       borderWidth: 1,
       borderColor: colors.borderStrong,
@@ -204,7 +205,7 @@ function createStyles(colors: ThemeColors) {
       justifyContent: 'center',
     },
     buttonDisabled: { opacity: 0.6 },
-    buttonText: { color: colors.onPrimary, fontSize: 16, fontWeight: '600' },
+    buttonText: { color: colors.onPrimary, fontSize: 16, fontWeight: '500' },
     error: {
       color: colors.danger,
       backgroundColor: colors.dangerSurface,
@@ -220,7 +221,7 @@ function createStyles(colors: ThemeColors) {
       fontSize: 14,
     },
     divider: { height: 1, backgroundColor: colors.border },
-    link: { color: colors.primary, textAlign: 'center', fontSize: 14, fontWeight: '600' },
+    link: { color: colors.primary, textAlign: 'center', fontSize: 14, fontWeight: '500' },
     backToSignIn: { color: colors.textSubtle, textAlign: 'center', fontSize: 14, marginTop: -4 },
   });
 }

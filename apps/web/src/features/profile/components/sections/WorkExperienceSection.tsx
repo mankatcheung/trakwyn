@@ -141,7 +141,7 @@ export function WorkExperienceSection() {
       ) : (
         workExperiences.length === 0 &&
         !formOpen && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             {t('experience.noWorkExperiencesYet')}
           </p>
         )
@@ -150,18 +150,18 @@ export function WorkExperienceSection() {
       {workExperiences.map((we) => (
         <div key={we.id} className={ENTRY_CLASS}>
           <div className="min-w-0">
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
               {t('experience.titleAtCompany', { title: we.title, company: we.company })}
             </p>
             {we.location && (
-              <p className="text-xs text-gray-500 dark:text-gray-400">{we.location}</p>
+              <p className="text-xs text-stone-500 dark:text-stone-400">{we.location}</p>
             )}
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-stone-500 dark:text-stone-400">
               {we.startDate.slice(0, 10)} –{' '}
               {we.endDate ? we.endDate.slice(0, 10) : t('experience.present')}
             </p>
             {we.description && (
-              <p className="mt-1 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">
+              <p className="mt-1 line-clamp-2 text-xs text-stone-500 dark:text-stone-400">
                 {we.description}
               </p>
             )}

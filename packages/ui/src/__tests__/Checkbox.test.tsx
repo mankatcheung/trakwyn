@@ -13,7 +13,7 @@ describe('Checkbox', () => {
     const { container } = render(<Checkbox />);
     const el = container.firstChild as HTMLElement;
     expect(el.className).toContain('h-4');
-    expect(el.className).toContain('text-blue-600');
+    expect(el.className).toContain('text-blue-800');
   });
 
   it('applies the sm size', () => {

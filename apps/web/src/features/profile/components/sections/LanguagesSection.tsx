@@ -118,7 +118,7 @@ export function LanguagesSection() {
       ) : (
         languages.length === 0 &&
         !formOpen && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             {t('experience.noLanguagesYet')}
           </p>
         )
@@ -129,11 +129,11 @@ export function LanguagesSection() {
           {languages.map((language) => (
             <div
               key={language.id}
-              className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800"
+              className="flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm dark:border-stone-700 dark:bg-stone-800"
             >
-              <span className="text-gray-900 dark:text-gray-100">{language.name}</span>
+              <span className="text-stone-900 dark:text-stone-100">{language.name}</span>
               {language.proficiency && (
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+                <span className="text-xs text-stone-500 dark:text-stone-400">
                   · {language.proficiency}
                 </span>
               )}

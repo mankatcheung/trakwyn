@@ -4,14 +4,15 @@ import { statusLabel } from '../../applications/components/StatusBadge';
 import type { FunnelPoint } from '../lib/analyticsSummary';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import { fixedColors } from '../../../theme/colors';
 
 function statusColors(colors: ThemeColors): Record<string, string> {
   return {
     draft: colors.textFaint,
     applied: colors.primary,
-    interviewing: '#a855f7',
-    offered: '#f97316',
-    accepted: '#22c55e',
+    interviewing: fixedColors.interview,
+    offered: fixedColors.offered,
+    accepted: fixedColors.accepted,
     rejected: colors.danger,
     withdrawn: colors.textSubtle,
   };
@@ -51,7 +52,7 @@ function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     chart: { gap: 6 },
     row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    label: { width: 84, fontSize: 11, color: colors.textMuted },
+    label: { width: 84, fontSize: 12, color: colors.textMuted },
     track: {
       flex: 1,
       height: 14,
@@ -63,8 +64,8 @@ function createStyles(colors: ThemeColors) {
     count: {
       width: 24,
       textAlign: 'right',
-      fontSize: 11,
-      fontWeight: '600',
+      fontSize: 12,
+      fontWeight: '500',
       color: colors.textMuted,
     },
   });

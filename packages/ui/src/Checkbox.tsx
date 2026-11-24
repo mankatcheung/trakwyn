@@ -9,7 +9,7 @@ const SIZE_CLASSES: Record<CheckboxSize, string> = {
 };
 
 const TONE_CLASSES: Record<CheckboxTone, string> = {
-  blue: 'text-blue-600 focus:ring-blue-500',
+  blue: 'text-blue-800 dark:text-blue-400 focus:ring-blue-500',
   yellow: 'text-yellow-400 focus:ring-yellow-400',
 };
 
@@ -28,7 +28,7 @@ export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement
  */
 export function Checkbox({ size = 'md', tone = 'blue', className, ...rest }: CheckboxProps) {
   const classes = [
-    'rounded border-gray-300',
+    'rounded border-stone-300',
     SIZE_CLASSES[size],
     TONE_CLASSES[tone],
     className ?? '',

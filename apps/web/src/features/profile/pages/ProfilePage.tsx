@@ -70,10 +70,10 @@ export function ProfilePage() {
       )}
       <header className="mb-6 flex flex-wrap items-start justify-between gap-3 sm:mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
             {t('profile.title')}
           </h1>
-          <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
+          <p className="mt-1 max-w-2xl text-sm text-stone-600 dark:text-stone-300">
             {t('profile.description')}
           </p>
         </div>
@@ -100,7 +100,7 @@ export function ProfilePage() {
                 <li key={id} className="shrink-0">
                   <a
                     href={`#${id}`}
-                    className="flex items-center gap-2 rounded-full border border-gray-200 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900 lg:rounded-lg lg:border-transparent dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-gray-100 lg:dark:border-transparent"
+                    className="flex items-center gap-2 rounded-full border border-stone-200 px-3 py-1.5 text-sm text-stone-700 transition-colors hover:bg-stone-100 hover:text-stone-900 lg:rounded-lg lg:border-transparent dark:border-stone-700 dark:text-stone-300 dark:hover:bg-stone-700 dark:hover:text-stone-100 lg:dark:border-transparent"
                   >
                     <Icon size={15} />
                     {t(labelKey)}

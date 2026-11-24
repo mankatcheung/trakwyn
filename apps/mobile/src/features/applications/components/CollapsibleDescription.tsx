@@ -49,6 +49,6 @@ function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     fieldValue: { fontSize: 15, color: colors.text, lineHeight: 21 },
     measure: { position: 'absolute', opacity: 0 },
-    toggle: { fontSize: 14, color: colors.primary, fontWeight: '600', marginTop: 4 },
+    toggle: { fontSize: 14, color: colors.primary, fontWeight: '500', marginTop: 4 },
   });
 }

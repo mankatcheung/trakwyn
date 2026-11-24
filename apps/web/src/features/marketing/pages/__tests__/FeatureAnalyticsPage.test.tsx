@@ -50,4 +50,16 @@ describe('FeatureAnalyticsPage', () => {
       screen.getByRole('heading', { name: 'Where your offers come from' }),
     ).toBeInTheDocument();
   });
+
+  it('shows a real screenshot, in both themes, for each benefit (JEF-674)', () => {
+    render(<FeatureAnalyticsPage />);
+
+    [
+      'screenshots.cropAnalyticsStats.alt',
+      'screenshots.cropGhosted.alt',
+      'screenshots.cropChannels.alt',
+    ].forEach((key) => {
+      expect(screen.getAllByAltText((en as Record<string, string>)[key])).toHaveLength(2);
+    });
+  });
 });

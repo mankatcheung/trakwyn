@@ -25,7 +25,7 @@ interface AiFeedbackControlProps {
   className?: string;
 }
 
-const ACTIVE = 'text-blue-600 dark:text-blue-400';
+const ACTIVE = 'text-blue-800 dark:text-blue-400';
 
 /**
  * Thumbs up/down on one AI output (JEF-547). A thumbs down saves at once and
@@ -98,7 +98,7 @@ export function AiFeedbackControl({
   return (
     <div className={className}>
       <div className="flex items-center gap-1">
-        {caption && <span className="text-xs text-gray-500 dark:text-gray-400">{caption}</span>}
+        {caption && <span className="text-xs text-stone-500 dark:text-stone-400">{caption}</span>}
         <IconButton
           size="sm"
           variant="subtle"
@@ -127,7 +127,7 @@ export function AiFeedbackControl({
           aria-label={t('aiFeedback.reasonPrompt')}
           className="mt-1.5 flex flex-wrap items-center gap-1.5"
         >
-          <span className="text-xs text-gray-500 dark:text-gray-400">
+          <span className="text-xs text-stone-500 dark:text-stone-400">
             {t('aiFeedback.reasonPrompt')}
           </span>
           {AI_FEEDBACK_REASONS.map((reason) => (
@@ -135,7 +135,7 @@ export function AiFeedbackControl({
               key={reason}
               type="button"
               onClick={() => chooseReason(reason)}
-              className="rounded-full border border-gray-300 px-2.5 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+              className="rounded-full border border-stone-300 px-2.5 py-1 text-xs text-stone-600 transition-colors hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-700"
             >
               {t(`aiFeedback.reason.${reason}`)}
             </button>
@@ -143,7 +143,7 @@ export function AiFeedbackControl({
           <button
             type="button"
             onClick={() => setAskReason(false)}
-            className="px-1.5 py-1 text-xs text-gray-500 underline hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="px-1.5 py-1 text-xs text-stone-500 underline hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
           >
             {t('aiFeedback.reasonSkip')}
           </button>

@@ -113,9 +113,9 @@ function createStyles(colors: ThemeColors) {
       padding: 16,
       gap: 12,
     },
-    title: { fontSize: 16, fontWeight: '700', color: colors.danger },
+    title: { fontSize: 16, fontWeight: '500', color: colors.danger },
     description: { fontSize: 13, color: colors.danger },
-    fieldLabel: { fontSize: 13, fontWeight: '600', color: colors.text, marginTop: 4 },
+    fieldLabel: { fontSize: 13, fontWeight: '500', color: colors.text, marginTop: 4 },
     input: {
       borderWidth: 1,
       borderColor: colors.borderStrong,
@@ -149,6 +149,6 @@ function createStyles(colors: ThemeColors) {
       marginTop: 4,
     },
     deleteButtonDisabled: { opacity: 0.6 },
-    deleteButtonText: { color: colors.onDanger, fontSize: 14, fontWeight: '600' },
+    deleteButtonText: { color: colors.onDanger, fontSize: 14, fontWeight: '500' },
   });
 }

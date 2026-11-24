@@ -201,7 +201,7 @@ export function ResumeGapsCard({ applicationId }: ResumeGapsCardProps) {
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     group: { gap: 8 },
-    groupTitle: { fontSize: 12, fontWeight: '600', color: colors.textSubtle },
+    groupTitle: { fontSize: 12, fontWeight: '500', color: colors.textSubtle },
     muted: { fontSize: 13, color: colors.textFaint, lineHeight: 18 },
     row: {
       gap: 8,
@@ -211,7 +211,7 @@ function createStyles(colors: ThemeColors) {
       padding: 10,
     },
     question: { fontSize: 14, color: colors.text, lineHeight: 20 },
-    strong: { fontWeight: '700' },
+    strong: { fontWeight: '500' },
     buttons: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
     secondary: {
       minHeight: 36,
@@ -222,14 +222,14 @@ function createStyles(colors: ThemeColors) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    secondaryText: { color: colors.primary, fontSize: 13, fontWeight: '600' },
+    secondaryText: { color: colors.primary, fontSize: 13, fontWeight: '500' },
     ghost: {
       minHeight: 36,
       paddingHorizontal: 12,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    ghostText: { color: colors.textSubtle, fontSize: 13, fontWeight: '600' },
+    ghostText: { color: colors.textSubtle, fontSize: 13, fontWeight: '500' },
     disabled: { opacity: 0.5 },
     input: {
       borderWidth: 1,

@@ -135,8 +135,8 @@ describe('NotificationPopover', () => {
     expect(screen.getByText('5m ago')).toBeInTheDocument();
     expect(screen.getByText('3h ago')).toBeInTheDocument();
     expect(screen.getByText('3d ago')).toBeInTheDocument();
-    expect(screen.getByText('Fresh')).toHaveClass('font-semibold');
-    expect(screen.getByText('Minutes')).not.toHaveClass('font-semibold');
+    expect(screen.getByText('Fresh')).toHaveClass('font-medium');
+    expect(screen.getByText('Minutes')).not.toHaveClass('font-medium');
   });
 
   it('marks an unread notification read, closes, and opens its address', async () => {

@@ -23,8 +23,8 @@ function RequirementList({ title, items }: { title: string; items: string[] }) {
   if (items.length === 0) return null;
   return (
     <div>
-      <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400">{title}</h4>
-      <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-gray-700 dark:text-gray-300">
+      <h4 className="text-xs font-medium text-stone-500 dark:text-stone-400">{title}</h4>
+      <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-stone-700 dark:text-stone-300">
         {items.map((item) => (
           <li key={item}>{item}</li>
         ))}
@@ -47,21 +47,23 @@ function Requirements({ requirements }: { requirements: PostingRequirements }) {
         </p>
       )}
       {isEmpty ? (
-        <p className="text-sm text-gray-500 dark:text-gray-400">{t('postingRequirements.none')}</p>
+        <p className="text-sm text-stone-500 dark:text-stone-400">
+          {t('postingRequirements.none')}
+        </p>
       ) : (
         <>
           <RequirementList title={t('postingRequirements.mustHave')} items={mustHave} />
           <RequirementList title={t('postingRequirements.niceToHave')} items={niceToHave} />
           {keywords.length > 0 && (
             <div>
-              <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+              <h4 className="text-xs font-medium text-stone-500 dark:text-stone-400">
                 {t('postingRequirements.keywords')}
               </h4>
               <ul className="mt-1.5 flex flex-wrap gap-1.5">
                 {keywords.map((keyword) => (
                   <li
                     key={keyword}
-                    className="rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-200"
+                    className="rounded-md bg-stone-100 px-2 py-0.5 text-xs text-stone-700 dark:bg-stone-700 dark:text-stone-200"
                   >
                     {keyword}
                   </li>
@@ -71,7 +73,7 @@ function Requirements({ requirements }: { requirements: PostingRequirements }) {
           )}
         </>
       )}
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-stone-400">
         {t('postingRequirements.readOn', {
           date: formatDate(new Date(requirements.generatedAt), { dateStyle: 'medium' }),
         })}
@@ -117,12 +119,12 @@ export function PostingRequirementsPanel({ applicationId }: PostingRequirementsP
   return (
     <section
       aria-labelledby="posting-requirements-title"
-      className="mt-4 rounded-xl border border-gray-100 p-3 dark:border-gray-700"
+      className="mt-4 rounded-xl border border-stone-100 p-3 dark:border-stone-700"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3
           id="posting-requirements-title"
-          className="flex items-center gap-1.5 text-sm font-semibold text-gray-800 dark:text-gray-100"
+          className="flex items-center gap-1.5 text-sm font-medium text-stone-800 dark:text-stone-100"
         >
           <ListChecksIcon size={16} aria-hidden="true" />
           {t('postingRequirements.title')}
@@ -139,7 +141,7 @@ export function PostingRequirementsPanel({ applicationId }: PostingRequirementsP
               type="button"
               onClick={() => extract.mutate()}
               disabled={extract.isPending}
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-sm font-medium text-blue-700 transition-colors hover:bg-gray-50 disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-gray-700"
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-2.5 py-1.5 text-sm font-medium text-blue-700 transition-colors hover:bg-stone-50 disabled:opacity-60 dark:border-stone-600 dark:bg-stone-800 dark:text-blue-400 dark:hover:bg-stone-700"
             >
               {extract.isPending && <Spinner />}
               {extract.isPending
@@ -151,7 +153,7 @@ export function PostingRequirementsPanel({ applicationId }: PostingRequirementsP
       </div>
 
       {!requirements && (
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+        <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
           {t('postingRequirements.notRead')}
         </p>
       )}

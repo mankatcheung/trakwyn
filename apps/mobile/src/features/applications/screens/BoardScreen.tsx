@@ -22,8 +22,9 @@ import { APPLICATION_STATUSES, type Application, type ApplicationStatus } from '
 import { getErrorMessage } from '../../../lib/errors';
 import { useTheme } from '../../../theme/ThemeContext';
 import type { ThemeColors } from '../../../theme/colors';
+import { fixedColors } from '../../../theme/colors';
 
-const STAR_COLOR = '#eab308';
+const STAR_COLOR = fixedColors.star;
 
 const COLUMN_WIDTH = 220;
 
@@ -241,14 +242,14 @@ function createStyles(colors: ThemeColors) {
     },
     columnTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
     columnDot: { width: 8, height: 8, borderRadius: 9999, flexShrink: 0 },
-    columnTitle: { fontSize: 12, fontWeight: '700', color: colors.textMuted },
+    columnTitle: { fontSize: 12, fontWeight: '500', color: colors.textMuted },
     countBadge: {
       backgroundColor: colors.border,
       borderRadius: 9999,
       paddingHorizontal: 6,
       paddingVertical: 1,
     },
-    countText: { fontSize: 11, color: colors.textSubtle },
+    countText: { fontSize: 12, color: colors.textSubtle },
     columnList: { gap: 8 },
     card: {
       backgroundColor: colors.surface,
@@ -258,13 +259,13 @@ function createStyles(colors: ThemeColors) {
       padding: 10,
       marginBottom: 8,
     },
-    cardCompany: { fontSize: 13, fontWeight: '600', color: colors.text },
+    cardCompany: { fontSize: 13, fontWeight: '500', color: colors.text },
     cardRole: { fontSize: 12, color: colors.textSubtle, marginTop: 2 },
-    cardLocation: { fontSize: 11, color: colors.textFaint, marginTop: 2 },
+    cardLocation: { fontSize: 12, color: colors.textFaint, marginTop: 2 },
     cardTagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 6 },
     cardTag: {
-      fontSize: 10,
-      fontWeight: '600',
+      fontSize: 12,
+      fontWeight: '500',
       color: colors.primary,
       backgroundColor: colors.primarySurface,
       borderRadius: 4,
@@ -272,7 +273,7 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 2,
       maxWidth: COLUMN_WIDTH - 40,
     },
-    cardTagsMore: { fontSize: 10, color: colors.textFaint, alignSelf: 'center' },
+    cardTagsMore: { fontSize: 12, color: colors.textFaint, alignSelf: 'center' },
     cardMetaRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -282,10 +283,10 @@ function createStyles(colors: ThemeColors) {
     },
     cardMetaLeading: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 },
     cardMetaTrailing: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 0 },
-    cardDate: { fontSize: 11, color: colors.textFaint },
-    cardGhostedBadge: { fontSize: 10, fontWeight: '600', color: colors.warning },
+    cardDate: { fontSize: 12, color: colors.textFaint },
+    cardGhostedBadge: { fontSize: 12, fontWeight: '500', color: colors.warning },
     moveButton: { alignSelf: 'flex-end', marginTop: 6 },
-    moveButtonText: { fontSize: 11, color: colors.primary, fontWeight: '600' },
+    moveButtonText: { fontSize: 12, color: colors.primary, fontWeight: '500' },
     modalBackdrop: {
       flex: 1,
       backgroundColor: 'rgba(0,0,0,0.5)',
@@ -301,9 +302,9 @@ function createStyles(colors: ThemeColors) {
       padding: 16,
       gap: 4,
     },
-    modalTitle: { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: 8 },
+    modalTitle: { fontSize: 15, fontWeight: '500', color: colors.text, marginBottom: 8 },
     modalOption: { paddingVertical: 10 },
     modalOptionText: { fontSize: 14, color: colors.text },
-    modalCancel: { fontSize: 14, color: colors.textSubtle, fontWeight: '600', marginTop: 8 },
+    modalCancel: { fontSize: 14, color: colors.textSubtle, fontWeight: '500', marginTop: 8 },
   });
 }

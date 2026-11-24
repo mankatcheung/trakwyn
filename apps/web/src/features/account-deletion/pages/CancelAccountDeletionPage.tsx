@@ -41,7 +41,7 @@ export function CancelAccountDeletionPage() {
         <Alert tone="success">{t('accountDeletion.cancelledBody')}</Alert>
       ) : (
         <>
-          <p className="text-sm text-gray-600 dark:text-gray-300">
+          <p className="text-sm text-stone-600 dark:text-stone-300">
             {t('accountDeletion.cancelBody')}
           </p>
           {error && <Alert>{error}</Alert>}
@@ -50,7 +50,7 @@ export function CancelAccountDeletionPage() {
           </Button>
         </>
       )}
-      <Link to="/login" className="text-sm text-blue-600 hover:underline">
+      <Link to="/login" className="text-sm text-blue-800 dark:text-blue-400 hover:underline">
         {t('auth.backToSignIn')}
       </Link>
     </AccountDeletionLayout>

@@ -42,10 +42,10 @@ export function McpClientsCard() {
   return (
     <Card className="space-y-4 p-5">
       <div>
-        <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+        <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
           {t('integrations.mcpGrantsTitle')}
         </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           {t('integrations.mcpGrantsDescription')}
         </p>
       </div>
@@ -55,15 +55,15 @@ export function McpClientsCard() {
       {mcpGrantsLoading ? (
         <Skeleton className="h-16 rounded-lg" />
       ) : mcpGrants.length === 0 ? (
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           {t('integrations.mcpGrantsEmpty')}
         </p>
       ) : (
-        <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
+        <ul className="divide-y divide-stone-200 rounded-lg border border-stone-200 dark:divide-stone-700 dark:border-stone-700">
           {mcpGrants.map((grant) => (
             <li key={grant.id} className="flex items-center justify-between gap-4 px-3 py-2">
               <div className="min-w-0">
-                <p className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                <p className="flex items-center gap-2 text-sm font-medium text-stone-900 dark:text-stone-100">
                   <span className="truncate">{grant.clientName}</span>
                   <Badge tone={grant.scope === 'read' ? 'gray' : 'yellow'}>
                     {grant.scope === 'read'
@@ -71,7 +71,7 @@ export function McpClientsCard() {
                       : t('integrations.scopeFull')}
                   </Badge>
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-stone-500 dark:text-stone-400">
                   {t('integrations.mcpGrantAuthorizedOn', {
                     date: new Date(grant.authorizedAt).toLocaleDateString(),
                   })}

@@ -90,9 +90,9 @@ function createStyles(colors: ThemeColors) {
     empty: { fontSize: 12, color: colors.textFaint },
     currencyGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
     currencyCol: { minWidth: 120, gap: 2 },
-    currencyLabel: { fontSize: 10, color: colors.textFaint },
-    currencyValue: { fontSize: 15, fontWeight: '700', color: colors.text },
-    currencyRange: { fontSize: 10, color: colors.textFaint },
+    currencyLabel: { fontSize: 12, color: colors.textFaint },
+    currencyValue: { fontSize: 15, fontWeight: '500', color: colors.text },
+    currencyRange: { fontSize: 12, color: colors.textFaint },
     trendRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -101,8 +101,8 @@ function createStyles(colors: ThemeColors) {
       borderTopColor: colors.surfaceAlt,
       paddingTop: 6,
     },
-    trendDate: { width: 52, fontSize: 10, color: colors.textFaint },
+    trendDate: { width: 52, fontSize: 12, color: colors.textFaint },
     trendCompany: { flex: 1, fontSize: 12, color: colors.text },
-    trendSalary: { fontSize: 12, fontWeight: '600', color: colors.textMuted },
+    trendSalary: { fontSize: 12, fontWeight: '500', color: colors.textMuted },
   });
 }

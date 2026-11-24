@@ -36,24 +36,24 @@ export function ResponseTimeAnalyticsPanel() {
 
   return (
     <Card className="p-6">
-      <h2 className="mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+      <h2 className="mb-1 text-sm font-medium text-stone-700 dark:text-stone-300">
         {t('responseTime.title')}
       </h2>
-      <p className="mb-4 text-xs text-gray-400 dark:text-gray-500">
+      <p className="mb-4 text-xs text-stone-400 dark:text-stone-500">
         {t('responseTime.description')}
       </p>
 
       <div className="mb-6">
-        <p className="mb-1 text-xs text-gray-400 dark:text-gray-500">
+        <p className="mb-1 text-xs text-stone-400 dark:text-stone-500">
           {t('responseTime.firstResponseLabel')}
         </p>
-        <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <p className="text-lg font-medium text-stone-900 dark:text-stone-100">
           {formatDays(analytics.timeToFirstResponse.medianDays)}{' '}
-          <span className="text-xs font-normal text-gray-400">
+          <span className="text-xs font-normal text-stone-400">
             {t('interviewAnalytics.median')}
           </span>
         </p>
-        <p className="text-[10px] text-gray-400 dark:text-gray-500">
+        <p className="text-xs text-stone-400 dark:text-stone-500">
           {analytics.timeToFirstResponse.sampleSize > 0
             ? t('responseTime.applicationsCount', {
                 count: analytics.timeToFirstResponse.sampleSize,
@@ -72,19 +72,19 @@ export function ResponseTimeAnalyticsPanel() {
             return (
               <div
                 key={stat.status}
-                className="flex items-center gap-3 border-b border-gray-100 py-2 last:border-0 dark:border-gray-700"
+                className="flex items-center gap-3 border-b border-stone-100 py-2 last:border-0 dark:border-stone-700"
               >
-                <span className="w-24 shrink-0 text-sm text-gray-900 dark:text-gray-100">
+                <span className="w-24 shrink-0 text-sm text-stone-900 dark:text-stone-100">
                   {t(`status.${stat.status}`, { defaultValue: stat.status })}
                 </span>
-                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-stone-100 dark:bg-stone-700">
                   <div className="h-full bg-blue-500" style={{ width: `${widthPercent}%` }} />
                 </div>
-                <span className="w-12 shrink-0 text-right text-xs font-medium text-gray-700 dark:text-gray-300">
+                <span className="w-12 shrink-0 text-right text-xs font-medium text-stone-700 dark:text-stone-300">
                   {formatDays(stat.medianDays)}
                 </span>
                 {smallSample && (
-                  <span className="shrink-0 text-[10px] text-gray-400 dark:text-gray-500">
+                  <span className="shrink-0 text-xs text-stone-400 dark:text-stone-500">
                     {t('interviewAnalytics.smallSample')}
                   </span>
                 )}

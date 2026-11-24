@@ -124,7 +124,7 @@ function CellValue({ cell }: { cell: Cell }) {
     </>
   ) : (
     <>
-      <Minus className="mx-auto size-4 text-gray-400" aria-hidden="true" />
+      <Minus className="mx-auto size-4 text-stone-400" aria-hidden="true" />
       <span className="sr-only">{t('plan.notIncluded')}</span>
     </>
   );
@@ -159,35 +159,37 @@ export function PricingPage() {
   const faqItems = PRICING_FAQ.map((item) => ({ ...item, values: faqValues }));
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
+    <div className="min-h-screen bg-white dark:bg-stone-950">
       <MarketingHeader activePricing />
 
       <main>
         <section className="mx-auto max-w-3xl px-4 pt-20 pb-12 text-center sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl dark:text-gray-100">
+          <h1 className="text-4xl font-medium tracking-tight text-stone-900 sm:text-5xl dark:text-stone-100">
             {t('pricing.title')}
           </h1>
-          <p className="mt-5 text-lg/8 text-gray-600 dark:text-gray-400">{t('pricing.subtitle')}</p>
+          <p className="mt-5 text-lg/8 text-stone-600 dark:text-stone-400">
+            {t('pricing.subtitle')}
+          </p>
         </section>
 
         <section className="mx-auto grid max-w-4xl gap-6 px-4 sm:grid-cols-2 sm:px-6 lg:px-8">
-          <div className="flex flex-col rounded-xl border border-gray-200 p-6 dark:border-gray-800">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <div className="flex flex-col rounded-xl border border-stone-200 p-6 dark:border-stone-800">
+            <h2 className="text-lg font-medium text-stone-900 dark:text-stone-100">
               {t('plan.badgeFree')}
             </h2>
-            <p className="mt-1 text-sm font-medium text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-sm font-medium text-stone-500 dark:text-stone-400">
               {t('pricing.freeAudience')}
             </p>
-            <p className="mt-4 text-4xl font-bold text-gray-900 dark:text-gray-100">
+            <p className="mt-4 text-4xl font-medium text-stone-900 dark:text-stone-100">
               {t('pricing.freePrice')}
             </p>
-            <p className="mt-3 flex-1 text-sm text-gray-600 dark:text-gray-400">
+            <p className="mt-3 flex-1 text-sm text-stone-600 dark:text-stone-400">
               {t('pricing.freeTagline')}
             </p>
             <Link
               to="/register"
               onClick={() => trackCta('start_free', 'pricing_free')}
-              className="mt-6 rounded-lg border border-gray-300 px-5 py-2.5 text-center text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="mt-6 rounded-lg border border-stone-300 px-5 py-2.5 text-center text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
             >
               {t('landing.startFree')}
             </Link>
@@ -195,35 +197,35 @@ export function PricingPage() {
           <div className="relative flex flex-col rounded-xl border-2 border-blue-600 bg-blue-50 p-6 dark:bg-blue-950/30">
             <span
               data-testid="recommended-badge"
-              className="absolute -top-3 left-6 rounded-full bg-blue-600 px-2.5 py-0.5 text-xs font-semibold text-white"
+              className="absolute -top-3 left-6 rounded-full bg-blue-800 px-2.5 py-0.5 text-xs font-medium text-white"
             >
               {t('pricing.recommended')}
             </span>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <h2 className="text-lg font-medium text-stone-900 dark:text-stone-100">
               {t('plan.badgePro')}
             </h2>
             <p className="mt-1 text-sm font-medium text-blue-800 dark:text-blue-400">
               {t('pricing.proAudience')}
             </p>
-            <p className="mt-4 text-4xl font-bold text-gray-900 dark:text-gray-100">
+            <p className="mt-4 text-4xl font-medium text-stone-900 dark:text-stone-100">
               {t('pricing.proPrice')}{' '}
-              <span className="text-base font-medium text-gray-500 dark:text-gray-400">
+              <span className="text-base font-medium text-stone-500 dark:text-stone-400">
                 {t('pricing.perMonth')}
               </span>
             </p>
-            <p className="mt-3 flex-1 text-sm text-gray-600 dark:text-gray-400">
+            <p className="mt-3 flex-1 text-sm text-stone-600 dark:text-stone-400">
               {t('pricing.proTagline')}
             </p>
             <Link
               to={proTo}
               onClick={() => trackCta('get_pro', 'pricing_pro')}
-              className="mt-6 rounded-lg bg-blue-600 px-5 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+              className="mt-6 rounded-lg bg-blue-800 px-5 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-blue-900"
             >
               {t('plan.upgradeTitle')}
             </Link>
             <p
               data-testid="guarantee-short"
-              className="mt-3 flex items-center justify-center gap-1.5 text-xs text-gray-600 dark:text-gray-400"
+              className="mt-3 flex items-center justify-center gap-1.5 text-xs text-stone-600 dark:text-stone-400"
             >
               <ShieldCheck aria-hidden="true" className="size-4 shrink-0 text-green-600" />
               {t('pricing.guaranteeShort')}
@@ -231,36 +233,36 @@ export function PricingPage() {
           </div>
           <p
             data-testid="ai-summary"
-            className="text-center font-medium text-gray-900 sm:col-span-2 dark:text-gray-100"
+            className="text-center font-medium text-stone-900 sm:col-span-2 dark:text-stone-100"
           >
             {t('pricing.aiSummary', { credits: t('pricing.proAiCredits') })}
           </p>
         </section>
 
         <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <h2 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
             {t('pricing.optionsTitle')}
           </h2>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">{t('pricing.optionsSubtitle')}</p>
-          <ul className="mt-6 grid divide-y divide-gray-200 overflow-hidden rounded-lg border border-gray-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0 dark:divide-gray-800 dark:border-gray-800">
+          <p className="mt-2 text-stone-600 dark:text-stone-400">{t('pricing.optionsSubtitle')}</p>
+          <ul className="mt-6 grid divide-y divide-stone-200 overflow-hidden rounded-lg border border-stone-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0 dark:divide-stone-800 dark:border-stone-800">
             {OPTIONS.map(({ nameKey, priceKey, noteKey, months, featured }) => {
               const monthly = priceAmount(t(MONTHLY_PRICE_KEY));
               const savings =
                 months > 1 ? derivePassPricing(priceAmount(t(priceKey)), months, monthly) : null;
               return (
                 <li key={nameKey} className="p-4">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <p className="text-sm font-medium text-stone-700 dark:text-stone-300">
                     {t(nameKey)}
                     {featured && (
                       <span
                         data-testid="best-value-badge"
-                        className="ml-2 font-normal text-gray-500 dark:text-gray-400"
+                        className="ml-2 font-normal text-stone-500 dark:text-stone-400"
                       >
                         · {t('pricing.bestValue')}
                       </span>
                     )}
                   </p>
-                  <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  <p className="mt-2 text-2xl font-medium text-stone-900 dark:text-stone-100">
                     {t(priceKey)}
                   </p>
                   {savings && (
@@ -278,24 +280,24 @@ export function PricingPage() {
                   {months > 1 && (
                     <span
                       data-testid="no-auto-renew-chip"
-                      className="mt-2 inline-block rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800 dark:bg-green-900/40 dark:text-green-300"
+                      className="mt-2 inline-block rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300"
                     >
                       {t('pricing.noAutoRenew')}
                     </span>
                   )}
-                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t(noteKey)}</p>
+                  <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">{t(noteKey)}</p>
                 </li>
               );
             })}
           </ul>
-          <p className="mt-6 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-6 text-sm text-stone-500 dark:text-stone-400">
             {t('legal.terms.paymentsPrices')}
           </p>
           <details
             data-testid="billing-details"
-            className="mt-3 text-sm text-gray-500 dark:text-gray-400"
+            className="mt-3 text-sm text-stone-500 dark:text-stone-400"
           >
-            <summary className="cursor-pointer font-medium text-gray-700 dark:text-gray-300">
+            <summary className="cursor-pointer font-medium text-stone-700 dark:text-stone-300">
               {t('pricing.billingDetails')}
             </summary>
             <div className="mt-2 space-y-2">
@@ -306,28 +308,28 @@ export function PricingPage() {
         </section>
 
         <section className="mx-auto max-w-4xl px-4 pb-24 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <h2 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
             {t('plan.compareTitle')}
           </h2>
           <div className="mt-6 overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-800">
+                <tr className="border-b border-stone-200 dark:border-stone-800">
                   <th
                     scope="col"
-                    className="py-3 pr-4 font-semibold text-gray-900 dark:text-gray-100"
+                    className="py-3 pr-4 font-medium text-stone-900 dark:text-stone-100"
                   >
                     {t('plan.colFeature')}
                   </th>
                   <th
                     scope="col"
-                    className="w-24 py-3 text-center font-semibold text-gray-900 sm:w-32 dark:text-gray-100"
+                    className="w-24 py-3 text-center font-medium text-stone-900 sm:w-32 dark:text-stone-100"
                   >
                     {t('plan.colFree')}
                   </th>
                   <th
                     scope="col"
-                    className="w-24 py-3 text-center font-semibold text-gray-900 sm:w-32 dark:text-gray-100"
+                    className="w-24 py-3 text-center font-medium text-stone-900 sm:w-32 dark:text-stone-100"
                   >
                     {t('plan.colPro')}
                   </th>
@@ -340,20 +342,20 @@ export function PricingPage() {
                     data-differs={cellsDiffer(free, pro) || undefined}
                     className={
                       cellsDiffer(free, pro)
-                        ? 'border-b border-gray-100 bg-blue-50/60 dark:border-gray-900 dark:bg-blue-950/20'
-                        : 'border-b border-gray-100 dark:border-gray-900'
+                        ? 'border-b border-stone-100 bg-blue-50/60 dark:border-stone-900 dark:bg-blue-950/20'
+                        : 'border-b border-stone-100 dark:border-stone-900'
                     }
                   >
                     <th
                       scope="row"
-                      className="py-3 pr-4 font-normal text-gray-700 dark:text-gray-300"
+                      className="py-3 pr-4 font-normal text-stone-700 dark:text-stone-300"
                     >
                       {t(labelKey)}
                     </th>
-                    <td className="py-3 text-center text-gray-700 dark:text-gray-300">
+                    <td className="py-3 text-center text-stone-700 dark:text-stone-300">
                       <CellValue cell={free} />
                     </td>
-                    <td className="py-3 text-center text-gray-700 dark:text-gray-300">
+                    <td className="py-3 text-center text-stone-700 dark:text-stone-300">
                       <CellValue cell={pro} />
                     </td>
                   </tr>

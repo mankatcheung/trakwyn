@@ -122,7 +122,7 @@ function createStyles(colors: ThemeColors) {
     },
     offerCardHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
     offerCardBody: { flex: 1 },
-    offerSalary: { fontSize: 24, fontWeight: '800', color: colors.text },
+    offerSalary: { fontSize: 24, fontWeight: '500', color: colors.text },
     offerMeta: { fontSize: 15, color: colors.textSubtle, marginTop: 6, lineHeight: 20 },
     offerNotes: { fontSize: 13, color: colors.textFaint, marginTop: 10 },
     offerActions: { flexDirection: 'row', gap: 14, alignItems: 'flex-start' },

@@ -114,7 +114,7 @@ export function MarketingLocalePicker() {
         onKeyDown={onTriggerKeyDown}
         // Same visual treatment as MarketingThemeToggle's IconButton so the
         // two read as one icon group in the header.
-        className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+        className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:bg-stone-700 dark:hover:text-stone-200"
       >
         <GlobeIcon size={18} />
       </button>
@@ -130,7 +130,7 @@ export function MarketingLocalePicker() {
           onKeyDown={onListKeyDown}
           // right-0: the picker sits at the header's outer edge in both the
           // desktop cluster and the mobile one, so the popup must grow left.
-          className="absolute top-full right-0 z-50 mt-2 min-w-36 rounded-lg border border-gray-200 bg-white py-1 shadow-lg focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+          className="absolute top-full right-0 z-50 mt-2 min-w-36 rounded-lg border border-stone-200 bg-white py-1 shadow-lg focus:outline-none dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200"
         >
           {LOCALE_OPTIONS.map((option, index) => {
             const selected = option.value === locale;
@@ -144,7 +144,7 @@ export function MarketingLocalePicker() {
                 onPointerEnter={() => setActiveIndex(index)}
                 onClick={() => pick(option.value)}
                 className={`flex cursor-pointer items-center gap-2 px-3 py-1.5 text-sm whitespace-nowrap ${
-                  active ? 'bg-gray-100 dark:bg-gray-700' : ''
+                  active ? 'bg-stone-100 dark:bg-stone-700' : ''
                 }`}
               >
                 <span className="flex-1">{option.label}</span>

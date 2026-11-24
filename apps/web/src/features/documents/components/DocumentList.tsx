@@ -38,7 +38,7 @@ const EMPTY_MESSAGE_KEY: Record<DocumentCategory, string> = {
 };
 
 const UPLOAD_CLASS =
-  'flex min-h-10 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm font-medium text-gray-900 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700';
+  'flex min-h-10 items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3.5 py-2 text-sm font-medium text-stone-900 transition-colors hover:bg-stone-50 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:hover:bg-stone-700';
 
 const FILTERS: readonly { id: ListFilter; labelKey: string }[] = [
   { id: 'all', labelKey: 'documents.filterAll' },
@@ -151,7 +151,7 @@ export function DocumentList({ applicationId, category }: DocumentListProps) {
         <div
           role="group"
           aria-label={t('documents.filterLabel')}
-          className="flex w-full rounded-[10px] bg-gray-200 p-[3px] dark:bg-gray-700"
+          className="flex w-full rounded-[10px] bg-stone-200 p-[3px] dark:bg-stone-700"
         >
           {FILTERS.map(({ id, labelKey }) => (
             <button
@@ -161,8 +161,8 @@ export function DocumentList({ applicationId, category }: DocumentListProps) {
               onClick={() => setFilter(id)}
               className={`min-h-9 min-w-0 flex-1 truncate rounded-lg px-2 text-sm whitespace-nowrap transition-colors ${
                 activeFilter === id
-                  ? 'bg-white font-semibold text-gray-900 shadow-sm dark:bg-gray-900 dark:text-gray-100'
-                  : 'text-gray-700 dark:text-gray-300'
+                  ? 'bg-white font-medium text-stone-900 shadow-sm dark:bg-stone-900 dark:text-stone-100'
+                  : 'text-stone-700 dark:text-stone-300'
               }`}
             >
               {t(labelKey)} {counts[id]}
@@ -178,7 +178,7 @@ export function DocumentList({ applicationId, category }: DocumentListProps) {
       />
 
       {visible.length > 0 && (
-        <ul className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+        <ul className="overflow-hidden rounded-xl border border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-800">
           {visible.map((item) =>
             item.kind === 'draft' ? (
               <DraftRow

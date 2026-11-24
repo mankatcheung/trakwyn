@@ -49,7 +49,7 @@ export function GoalsStep({ goals, onChange }: GoalsStepProps) {
                 className={`flex h-full cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
                   selected
                     ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/20'
-                    : 'border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/40'
+                    : 'border-stone-200 hover:bg-stone-50 dark:border-stone-700 dark:hover:bg-stone-700/40'
                 }`}
               >
                 <Checkbox
@@ -59,10 +59,10 @@ export function GoalsStep({ goals, onChange }: GoalsStepProps) {
                   onChange={(e) => toggle(goal, e.target.checked)}
                 />
                 <span>
-                  <span className="block text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <span className="block text-sm font-medium text-stone-900 dark:text-stone-100">
                     {t(GOAL_COPY[goal].title)}
                   </span>
-                  <span className="mt-0.5 block text-xs text-gray-600 dark:text-gray-400">
+                  <span className="mt-0.5 block text-xs text-stone-600 dark:text-stone-400">
                     {t(GOAL_COPY[goal].description)}
                   </span>
                 </span>

@@ -64,7 +64,7 @@ function createStyles(colors: ThemeColors) {
       padding: 14,
       gap: 8,
     },
-    title: { fontSize: 14, fontWeight: '600', color: colors.text },
+    title: { fontSize: 14, fontWeight: '500', color: colors.text },
     left: { fontSize: 14, color: colors.text },
     help: { fontSize: 13, color: colors.textSubtle },
     track: { height: 6, borderRadius: 3, backgroundColor: colors.border, overflow: 'hidden' },

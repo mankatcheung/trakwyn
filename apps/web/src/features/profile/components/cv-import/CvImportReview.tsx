@@ -29,7 +29,7 @@ export function CvImportReview({ drafts, onChange, truncated, disabled }: CvImpo
   const { t } = useLocale();
   return (
     <div className="space-y-5">
-      <p className="text-sm text-gray-600 dark:text-gray-300">{t('cvImport.reviewIntro')}</p>
+      <p className="text-sm text-stone-600 dark:text-stone-300">{t('cvImport.reviewIntro')}</p>
       {truncated && <Alert role="status">{t('cvImport.truncated')}</Alert>}
 
       <WorkReviewGroup
