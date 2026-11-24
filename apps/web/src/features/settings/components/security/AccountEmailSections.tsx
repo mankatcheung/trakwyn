@@ -69,7 +69,13 @@ export function AccountEmailSections({ withStepUp }: { withStepUp: WithStepUp })
           <div className="space-y-3">
             <p className="text-sm text-stone-900 dark:text-stone-100">
               {backupEmail}{' '}
-              <span className={backupEmailVerified ? 'text-green-600' : 'text-amber-600'}>
+              <span
+                className={
+                  backupEmailVerified
+                    ? 'text-green-700 dark:text-green-400'
+                    : 'text-amber-700 dark:text-amber-400'
+                }
+              >
                 {backupEmailVerified ? t('security.verified') : t('security.verificationPending')}
               </span>
             </p>

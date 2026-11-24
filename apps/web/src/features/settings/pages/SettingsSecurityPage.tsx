@@ -218,7 +218,9 @@ export function SettingsSecurityPage() {
           <Skeleton className="h-24 rounded-lg" />
         ) : backupCodes ? (
           <div className="space-y-3">
-            <p className="text-sm text-green-600">{t('security.twoFactorEnabled')}</p>
+            <p className="text-sm text-green-700 dark:text-green-400">
+              {t('security.twoFactorEnabled')}
+            </p>
             <p className="text-sm text-stone-500 dark:text-stone-400">
               {t('security.backupCodesSaveNote')}
             </p>
@@ -300,7 +302,7 @@ export function SettingsSecurityPage() {
                 <p className="truncate text-sm text-stone-900 dark:text-stone-100">
                   {session.deviceLabel ?? session.userAgent ?? t('security.unknownDevice')}
                   {session.current && (
-                    <span className="ml-2 text-xs font-medium text-green-600">
+                    <span className="ml-2 text-xs font-medium text-green-700 dark:text-green-400">
                       {t('security.thisDevice')}
                     </span>
                   )}
