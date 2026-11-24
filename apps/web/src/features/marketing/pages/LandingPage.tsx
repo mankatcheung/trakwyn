@@ -137,7 +137,7 @@ export function LandingPage() {
                 {authLabel}
               </Link>
             </div>
-            <p className="mt-4 text-sm text-stone-500 dark:text-stone-400">
+            <p className="mt-4 text-sm text-stone-600 dark:text-stone-400">
               {t('landing.heroTrustLine')}
             </p>
           </div>
@@ -163,7 +163,7 @@ export function LandingPage() {
             <ol className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
               {stepKeys.map((stepKey, i) => (
                 <li key={stepKey} className="flex items-start gap-4 lg:flex-col lg:gap-3">
-                  <div className="w-8 shrink-0 border-t-2 border-blue-800 pt-1.5 font-mono text-sm text-stone-500 tabular-nums dark:border-blue-400 dark:text-stone-400">
+                  <div className="w-8 shrink-0 border-t-2 border-blue-800 pt-1.5 font-mono text-sm text-stone-600 tabular-nums dark:border-blue-400 dark:text-stone-400">
                     {String(i + 1).padStart(2, '0')}
                   </div>
                   <p className="pt-0.5 text-lg text-stone-700 lg:pt-0 dark:text-stone-300">

@@ -1345,6 +1345,7 @@
   "guides.aiMcpSetup.addStep2": "登录 Trakwyn，前往 设置 → AI。",
   "guides.aiMcpSetup.addStep3": "粘贴密钥并保存。除自定义端点外，其他服务商的模型字段均为可选；自定义端点则必须同时填写基础 URL 和模型 ID。",
   "guides.aiMcpSetup.providerCustomLabel": "自定义端点",
+  "guides.aiMcpSetup.providerKeyLink": "获取 {{provider}} 密钥（在新标签页打开）",
   "guides.aiMcpSetup.providerOpenaiNote": "在 platform.openai.com/api-keys 创建密钥。",
   "guides.aiMcpSetup.providerAnthropicNote": "在 console.anthropic.com 创建密钥。",
   "guides.aiMcpSetup.providerGoogleNote": "在 aistudio.google.com/apikey 创建密钥。",

@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { Link, type LinkProps } from '@tanstack/react-router';
 import { trackCta, type CtaLocation } from '#/lib/analytics';
 import { useLocale } from '#/lib/i18n';
@@ -24,9 +25,16 @@ export function MarketingClosingCta({
   secondaryLink,
 }: MarketingClosingCtaProps) {
   const { t } = useLocale();
+  const headingId = useId();
   return (
-    <section className="border-t border-stone-200 bg-stone-100 px-4 py-16 text-center sm:px-6 sm:py-20 lg:px-8 dark:border-stone-800 dark:bg-stone-800/40">
-      <h2 className="mx-auto max-w-2xl text-2xl font-medium tracking-tight text-stone-900 sm:text-3xl dark:text-stone-100">
+    <section
+      aria-labelledby={headingId}
+      className="border-t border-stone-200 bg-stone-100 px-4 py-16 text-center sm:px-6 sm:py-20 lg:px-8 dark:border-stone-800 dark:bg-stone-800/40"
+    >
+      <h2
+        id={headingId}
+        className="mx-auto max-w-2xl text-2xl font-medium tracking-tight text-stone-900 sm:text-3xl dark:text-stone-100"
+      >
         {headline}
       </h2>
       <div className="mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-3">

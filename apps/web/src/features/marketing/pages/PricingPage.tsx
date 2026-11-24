@@ -177,7 +177,7 @@ export function PricingPage() {
             <h2 className="text-lg font-medium text-stone-900 dark:text-stone-100">
               {t('plan.badgeFree')}
             </h2>
-            <p className="mt-1 text-sm font-medium text-stone-500 dark:text-stone-400">
+            <p className="mt-1 text-sm font-medium text-stone-600 dark:text-stone-400">
               {t('pricing.freeAudience')}
             </p>
             <p className="mt-4 text-4xl font-medium text-stone-900 dark:text-stone-100">
@@ -209,7 +209,7 @@ export function PricingPage() {
             </p>
             <p className="mt-4 text-4xl font-medium text-stone-900 dark:text-stone-100">
               {t('pricing.proPrice')}{' '}
-              <span className="text-base font-medium text-stone-500 dark:text-stone-400">
+              <span className="text-base font-medium text-stone-600 dark:text-stone-400">
                 {t('pricing.perMonth')}
               </span>
             </p>
@@ -256,7 +256,7 @@ export function PricingPage() {
                     {featured && (
                       <span
                         data-testid="best-value-badge"
-                        className="ml-2 font-normal text-stone-500 dark:text-stone-400"
+                        className="ml-2 font-normal text-stone-600 dark:text-stone-400"
                       >
                         · {t('pricing.bestValue')}
                       </span>
@@ -285,17 +285,17 @@ export function PricingPage() {
                       {t('pricing.noAutoRenew')}
                     </span>
                   )}
-                  <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">{t(noteKey)}</p>
+                  <p className="mt-2 text-sm text-stone-600 dark:text-stone-400">{t(noteKey)}</p>
                 </li>
               );
             })}
           </ul>
-          <p className="mt-6 text-sm text-stone-500 dark:text-stone-400">
+          <p className="mt-6 text-sm text-stone-600 dark:text-stone-400">
             {t('legal.terms.paymentsPrices')}
           </p>
           <details
             data-testid="billing-details"
-            className="mt-3 text-sm text-stone-500 dark:text-stone-400"
+            className="mt-3 text-sm text-stone-600 dark:text-stone-400"
           >
             <summary className="cursor-pointer font-medium text-stone-700 dark:text-stone-300">
               {t('pricing.billingDetails')}

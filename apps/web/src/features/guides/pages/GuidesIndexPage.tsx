@@ -59,7 +59,7 @@ export function GuidesIndexPage({ tag }: { tag?: string }) {
           to="/ai-mcp-setup"
           className="mt-10 block rounded-2xl border border-stone-300 bg-stone-100 p-6 transition-shadow hover:shadow-md dark:border-stone-700 dark:bg-stone-800"
         >
-          <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
+          <p className="text-sm font-medium text-stone-600 dark:text-stone-400">
             {t('guides.aiMcpSetup.eyebrow')}
           </p>
           <h2 className="mt-1 text-xl font-medium text-stone-900 dark:text-stone-100">
@@ -87,7 +87,7 @@ export function GuidesIndexPage({ tag }: { tag?: string }) {
                   <p className="mt-2 text-stone-600 dark:text-stone-400">
                     {guide.frontmatter.description}
                   </p>
-                  <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">
+                  <p className="mt-3 text-sm text-stone-600 dark:text-stone-400">
                     {formatDate(guide.frontmatter.date, { dateStyle: 'long', timeZone: 'UTC' })}
                   </p>
                 </Link>

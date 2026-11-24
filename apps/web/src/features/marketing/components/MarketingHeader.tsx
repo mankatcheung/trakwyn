@@ -55,7 +55,7 @@ export function MarketingHeader({
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" className="flex min-h-11 items-center gap-2">
             <LogoMark size={24} />
             <span className="text-lg font-medium text-stone-900 dark:text-stone-100">
               {t('marketing.brandName')}
@@ -112,14 +112,16 @@ export function MarketingHeader({
             <Link
               to="/register"
               onClick={() => trackCta('get_started', 'header_mobile')}
-              className="rounded-lg bg-blue-800 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-900"
+              className="inline-flex min-h-11 items-center rounded-lg bg-blue-800 px-3 text-sm font-medium text-white transition-colors hover:bg-blue-900"
             >
               {t('landing.startFree')}
             </Link>
             <button
               type="button"
-              className="p-2 text-stone-600 dark:text-stone-400"
-              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              className="inline-flex size-11 items-center justify-center rounded-lg text-stone-600 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none dark:text-stone-400"
+              aria-label={t(
+                mobileMenuOpen ? 'authenticatedLayout.closeMenu' : 'authenticatedLayout.openMenu',
+              )}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
@@ -132,8 +134,8 @@ export function MarketingHeader({
               to="/features"
               className={
                 activeFeatures
-                  ? 'block rounded-lg bg-stone-100 px-3 py-2 text-sm font-medium text-stone-900 dark:bg-stone-800 dark:text-stone-100'
-                  : 'block rounded-lg px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800'
+                  ? 'block rounded-lg bg-stone-100 px-3 py-3 text-sm font-medium text-stone-900 dark:bg-stone-800 dark:text-stone-100'
+                  : 'block rounded-lg px-3 py-3 text-sm font-medium text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800'
               }
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -143,8 +145,8 @@ export function MarketingHeader({
               to="/pricing"
               className={
                 activePricing
-                  ? 'block rounded-lg bg-stone-100 px-3 py-2 text-sm font-medium text-stone-900 dark:bg-stone-800 dark:text-stone-100'
-                  : 'block rounded-lg px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800'
+                  ? 'block rounded-lg bg-stone-100 px-3 py-3 text-sm font-medium text-stone-900 dark:bg-stone-800 dark:text-stone-100'
+                  : 'block rounded-lg px-3 py-3 text-sm font-medium text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800'
               }
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -154,8 +156,8 @@ export function MarketingHeader({
               to="/guides"
               className={
                 activeGuides
-                  ? 'block rounded-lg bg-stone-100 px-3 py-2 text-sm font-medium text-stone-900 dark:bg-stone-800 dark:text-stone-100'
-                  : 'block rounded-lg px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800'
+                  ? 'block rounded-lg bg-stone-100 px-3 py-3 text-sm font-medium text-stone-900 dark:bg-stone-800 dark:text-stone-100'
+                  : 'block rounded-lg px-3 py-3 text-sm font-medium text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800'
               }
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -163,7 +165,7 @@ export function MarketingHeader({
             </Link>
             <Link
               to={authLink}
-              className="block rounded-lg px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800"
+              className="block rounded-lg px-3 py-3 text-sm font-medium text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800"
               onClick={() => setMobileMenuOpen(false)}
             >
               {authLabel}

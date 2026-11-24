@@ -114,7 +114,7 @@ export function MarketingLocalePicker() {
         onKeyDown={onTriggerKeyDown}
         // Same visual treatment as MarketingThemeToggle's IconButton so the
         // two read as one icon group in the header.
-        className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:bg-stone-700 dark:hover:text-stone-200"
+        className="inline-flex size-11 items-center justify-center rounded-lg text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-200"
       >
         <GlobeIcon size={18} />
       </button>

@@ -1367,6 +1367,7 @@
   "guides.aiMcpSetup.addStep2": "Sign in to Trakwyn and go to Settings → AI.",
   "guides.aiMcpSetup.addStep3": "Paste in the key and save. The model field is optional for every provider except a custom endpoint, where it — and a base URL — are both required.",
   "guides.aiMcpSetup.providerCustomLabel": "Custom endpoint",
+  "guides.aiMcpSetup.providerKeyLink": "Get a {{provider}} key (opens in a new tab)",
   "guides.aiMcpSetup.providerOpenaiNote": "Create a key at platform.openai.com/api-keys.",
   "guides.aiMcpSetup.providerAnthropicNote": "Create a key at console.anthropic.com.",
   "guides.aiMcpSetup.providerGoogleNote": "Create a key at aistudio.google.com/apikey.",

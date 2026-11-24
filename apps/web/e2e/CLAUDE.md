@@ -11,6 +11,14 @@ Loaded when working under `apps/web/e2e`. The rest of the web notes are in `apps
 - **Stop `pnpm dev` first.** `reuseExistingServer` keeps a running server, and it keeps the env it started with.
 - **Change a value in the template, not in `ci.yml`.** `ciWorkflow.test.ts` fails on an inline env block.
 
+## Marketing page checks (JEF-681)
+
+Two specs hold the public marketing pages (`/`, `/features`, the four `/features/*` pages, `/pricing`, `/ai-mcp-setup`, `/guides`) to a standard. A new marketing page goes in the `MARKETING_PAGES` list of `a11y.spec.ts` and the `PAGES` list of `marketing-responsive.spec.ts`.
+
+- **`a11y.spec.ts`** runs axe on each page in light and dark. Failures print one line per node (rule, selector, reason) instead of axe's full result.
+- **`marketing-responsive.spec.ts`** checks no horizontal scroll at 390, 768 and 1440 in both schemes, alt text on every visible image, 44px header controls on a phone, and the keyboard path through the header, the mobile menu and the FAQ.
+- **Lighthouse is not in CI.** To measure: `E2E_PLAIN_BUILD=1 pnpm --filter @trakwyn/web build`, `pnpm --filter @trakwyn/web preview`, then run `lighthouse` (installed outside the repo) against each page. Headless Chrome takes the machine's colour scheme, so state which one you measured.
+
 ## Marketing screenshots (JEF-528)
 
 `pnpm --filter @trakwyn/web screenshots` regenerates `public/screenshots/<screen>-<light|dark>.webp` from the seeded demo account. The images are committed, like `public/og-image.png`; CI does not regenerate them.
