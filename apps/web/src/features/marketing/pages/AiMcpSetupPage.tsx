@@ -63,7 +63,7 @@ function TocLink({ href, children }: { href: string; children: string }) {
 
 function TocHeading({ children }: { children: string }) {
   return (
-    <div className="px-3 pt-4 pb-1 text-xs font-medium text-stone-400 first:pt-0 dark:text-stone-500">
+    <div className="px-3 pt-4 pb-1 text-xs font-medium text-stone-600 first:pt-0 dark:text-stone-400">
       {children}
     </div>
   );
@@ -200,7 +200,7 @@ export function AiMcpSetupPage() {
                     <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
                       {t('guides.aiMcpSetup.readToolsTitle')}
                     </p>
-                    <p className="mt-1 text-xs/relaxed text-stone-500 dark:text-stone-400">
+                    <p className="mt-1 text-xs/relaxed text-stone-600 dark:text-stone-400">
                       {t('guides.aiMcpSetup.readToolsBody')}
                     </p>
                   </div>
@@ -211,7 +211,7 @@ export function AiMcpSetupPage() {
                         — {t('guides.aiMcpSetup.writeToolsBadge')}
                       </span>
                     </p>
-                    <p className="mt-1 text-xs/relaxed text-stone-500 dark:text-stone-400">
+                    <p className="mt-1 text-xs/relaxed text-stone-600 dark:text-stone-400">
                       {t('guides.aiMcpSetup.writeToolsBody')}
                     </p>
                   </div>
@@ -239,7 +239,7 @@ export function AiMcpSetupPage() {
                 <code className="mt-3 block rounded-lg bg-stone-100 px-3 py-2 text-sm text-stone-900 dark:bg-stone-800 dark:text-stone-100">
                   {MCP_ENDPOINT}
                 </code>
-                <p className="mt-3 text-xs/relaxed text-stone-500 dark:text-stone-400">
+                <p className="mt-3 text-xs/relaxed text-stone-600 dark:text-stone-400">
                   {t('guides.aiMcpSetup.oauthRevoke')}
                 </p>
               </div>
@@ -263,7 +263,7 @@ export function AiMcpSetupPage() {
                 <div className="mt-2">
                   <CodeBlock>{CLAUDE_DESKTOP_CURSOR_CONFIG}</CodeBlock>
                 </div>
-                <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">
+                <p className="mt-2 text-xs text-stone-600 dark:text-stone-400">
                   {t('guides.aiMcpSetup.configsClaudeCursorNote')}
                 </p>
                 <p className="mt-5 text-sm font-medium text-stone-700 dark:text-stone-300">
@@ -300,7 +300,7 @@ export function AiMcpSetupPage() {
             </section>
 
             <div className="mt-10 flex flex-wrap items-center gap-4 border-t border-stone-200 pt-6 dark:border-stone-800">
-              <p className="text-sm text-stone-500 dark:text-stone-400">
+              <p className="text-sm text-stone-600 dark:text-stone-400">
                 {t('guides.aiMcpSetup.alreadyUser')}
               </p>
               <Link

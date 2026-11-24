@@ -33,54 +33,54 @@ export function MarketingFooter() {
                 {t('marketing.brandName')}
               </span>
             </Link>
-            <p className="mt-3 max-w-xs text-sm/6 text-stone-500 dark:text-stone-400">
+            <p className="mt-3 max-w-xs text-sm/6 text-stone-600 dark:text-stone-400">
               {t('marketing.footer.tagline')}
             </p>
           </div>
           <div>
-            <div className="text-xs font-medium text-stone-400 dark:text-stone-500">
+            <div className="text-xs font-medium text-stone-600 dark:text-stone-400">
               {t('marketing.footer.productHeading')}
             </div>
             <div className="mt-3.5 flex flex-col gap-2.5">
               <Link
                 to="/features/tracking"
-                className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+                className="text-sm text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
               >
                 {t('marketing.footer.trackingLink')}
               </Link>
               <Link
                 to="/features/ai-assistant"
-                className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+                className="text-sm text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
               >
                 {t('marketing.footer.aiAssistantLink')}
               </Link>
               <Link
                 to="/features/resume-cover-letter"
-                className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+                className="text-sm text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
               >
                 {t('marketing.footer.resumeCoverLettersLink')}
               </Link>
               <Link
                 to="/features/analytics"
-                className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+                className="text-sm text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
               >
                 {t('marketing.footer.analyticsLink')}
               </Link>
               <Link
                 to="/pricing"
-                className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+                className="text-sm text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
               >
                 {t('marketing.footer.pricingLink')}
               </Link>
               <Link
                 to="/guides"
-                className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+                className="text-sm text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
               >
                 {t('marketing.footer.guidesLink')}
               </Link>
               <Link
                 to="/ai-mcp-setup"
-                className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+                className="text-sm text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
               >
                 {t('marketing.footer.setupGuideLink')}
               </Link>
@@ -88,7 +88,7 @@ export function MarketingFooter() {
                 href={CLIPPER_WEB_STORE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+                className="inline-flex items-center gap-1 text-sm text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
               >
                 {t('marketing.footer.clipperLink')}
                 <ExternalLink className="size-3" aria-hidden="true" />
@@ -96,19 +96,19 @@ export function MarketingFooter() {
             </div>
           </div>
           <div>
-            <div className="text-xs font-medium text-stone-400 dark:text-stone-500">
+            <div className="text-xs font-medium text-stone-600 dark:text-stone-400">
               {t('marketing.footer.accountHeading')}
             </div>
             <div className="mt-3.5 flex flex-col gap-2.5">
               <Link
                 to={authLink}
-                className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+                className="text-sm text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
               >
                 {authLabel}
               </Link>
               <Link
                 to="/register"
-                className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+                className="text-sm text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
               >
                 {t('auth.register')}
               </Link>
@@ -119,7 +119,7 @@ export function MarketingFooter() {
           <MarketingThemeToggle />
         </div>
         <div className="mt-6 flex flex-col items-center gap-4 border-t border-stone-200 pt-6 sm:flex-row sm:justify-between dark:border-stone-800">
-          <span className="text-xs text-stone-400 dark:text-stone-500">
+          <span className="text-xs text-stone-600 dark:text-stone-400">
             {t('marketing.footer.copyright', { year: new Date().getFullYear() })}
           </span>
           <LegalFooterLinks className="flex max-w-xs flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-stone-500 sm:max-w-none dark:text-stone-400" />

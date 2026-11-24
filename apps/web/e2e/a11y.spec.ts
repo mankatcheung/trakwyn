@@ -26,7 +26,15 @@ async function scan(page: import('@playwright/test').Page, label: string) {
   // reflect the settled page. Give it a beat to finish.
   await page.waitForTimeout(250);
   const results = await new AxeBuilder({ page }).analyze();
-  expect(results.violations, `A11y violations on ${label}`).toEqual([]);
+  // A compact summary (rule, selector, why) keeps a failure readable; the full
+  // axe result is several hundred lines per violation.
+  const summary = results.violations.flatMap((violation) =>
+    violation.nodes.map(
+      (node) =>
+        `${violation.id}: ${node.target.join(' ')} — ${node.any[0]?.message ?? node.failureSummary}`,
+    ),
+  );
+  expect(summary, `A11y violations on ${label}`).toEqual([]);
 }
 
 test.describe('Accessibility scans – public pages', () => {
@@ -47,6 +55,36 @@ test.describe('Accessibility scans – public pages', () => {
     await expect(page.getByRole('heading', { name: /forgot your password/i })).toBeVisible();
     await scan(page, '/forgot-password');
   });
+});
+
+/**
+ * Every public marketing page (JEF-681). They need no sign-in, so each is
+ * scanned in both colour schemes: the dark palette has its own contrast pairs.
+ * Reduced motion gives the settled page, not a mid-entrance one.
+ */
+const MARKETING_PAGES = [
+  '/',
+  '/features',
+  '/features/tracking',
+  '/features/ai-assistant',
+  '/features/resume-cover-letter',
+  '/features/analytics',
+  '/pricing',
+  '/ai-mcp-setup',
+  '/guides',
+] as const;
+
+test.describe('Accessibility scans – marketing pages (JEF-681)', () => {
+  for (const colorScheme of ['light', 'dark'] as const) {
+    for (const path of MARKETING_PAGES) {
+      test(`${path} passes axe in ${colorScheme}`, async ({ page }) => {
+        await page.emulateMedia({ reducedMotion: 'reduce', colorScheme });
+        await page.goto(path);
+        await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
+        await scan(page, `${path} (${colorScheme})`);
+      });
+    }
+  }
 });
 
 test.describe('Accessibility scans – authenticated pages', () => {

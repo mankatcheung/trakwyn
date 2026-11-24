@@ -22,7 +22,7 @@ export function FeatureResumeCoverLetterPage() {
           description: t('features.resumeCoverLetter.benefit1.description'),
           visual: (
             <div className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-800/50">
-              <div className="text-xs font-medium text-stone-500 dark:text-stone-400">
+              <div className="text-xs font-medium text-stone-600 dark:text-stone-400">
                 {t('features.resumeCoverLetter.drawnFrom')}
               </div>
               <div className="mt-3 flex flex-col gap-2.5">
@@ -51,14 +51,14 @@ export function FeatureResumeCoverLetterPage() {
               <div className="text-xs font-medium text-stone-900 dark:text-stone-100">
                 {t('features.resumeCoverLetter.briefingLabel')}
               </div>
-              <div className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+              <div className="mt-1 text-xs text-stone-600 dark:text-stone-400">
                 {SAMPLE_COMPANY}
               </div>
               <div className="mt-3 space-y-2">
                 <div className="h-1.5 w-11/12 rounded-sm bg-stone-200 dark:bg-stone-700" />
                 <div className="h-1.5 w-3/4 rounded-sm bg-stone-200 dark:bg-stone-700" />
               </div>
-              <div className="mt-3 text-xs text-stone-400">
+              <div className="mt-3 text-xs text-stone-600 dark:text-stone-400">
                 {t('features.resumeCoverLetter.briefingMeta')}
               </div>
             </div>
@@ -73,7 +73,7 @@ export function FeatureResumeCoverLetterPage() {
                 <span className="text-sm font-medium text-stone-700 dark:text-stone-300">
                   {`v3 · ${SAMPLE_COMPANY}`}
                 </span>
-                <span className="text-xs font-medium text-green-600">
+                <span className="text-xs font-medium text-green-700 dark:text-green-400">
                   {t('features.resumeCoverLetter.outcomeReplied')}
                 </span>
               </div>
@@ -81,7 +81,7 @@ export function FeatureResumeCoverLetterPage() {
                 <span className="text-sm text-stone-700 dark:text-stone-300">
                   {`v2 · ${SAMPLE_COMPANY}`}
                 </span>
-                <span className="text-xs text-stone-400">
+                <span className="text-xs text-stone-600 dark:text-stone-400">
                   {t('features.resumeCoverLetter.outcomeNoReply')}
                 </span>
               </div>
@@ -89,7 +89,7 @@ export function FeatureResumeCoverLetterPage() {
                 <span className="text-sm text-stone-700 dark:text-stone-300">
                   {`v1 · ${SAMPLE_COMPANY}`}
                 </span>
-                <span className="text-xs text-stone-400">
+                <span className="text-xs text-stone-600 dark:text-stone-400">
                   {t('features.resumeCoverLetter.outcomeNoReply')}
                 </span>
               </div>

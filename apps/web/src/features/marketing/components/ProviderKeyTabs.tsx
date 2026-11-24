@@ -61,9 +61,10 @@ export function ProviderKeyTabs() {
             href={active.href}
             target="_blank"
             rel="noreferrer"
+            aria-label={t('guides.aiMcpSetup.providerKeyLink', { provider: active.label })}
             className="ml-1 inline-flex items-center gap-1 font-medium text-blue-600 hover:underline dark:text-blue-400"
           >
-            <ExternalLink className="size-3.5" />
+            <ExternalLink className="size-3.5" aria-hidden="true" />
           </a>
         )}
       </p>
