@@ -51,7 +51,7 @@ import { streamChatMessage } from '../../lib/chatStream';
 import { ChatScreen } from '../ChatScreen';
 import type { ChatMessage } from '../../types';
 import { useTheme } from '../../../../theme/ThemeContext';
-import { lightColors } from '../../../../theme/colors';
+import { darkColors, lightColors } from '../../../../theme/colors';
 import { useAiCredits } from '../../../ai/hooks/useAiCredits';
 import {
   exhaustedCredits,
@@ -368,6 +368,28 @@ describe('ChatScreen', () => {
       ),
     );
   });
+
+  // JEF-683: the composer set a background but no text colour, so typed text fell back to the
+  // platform's black on the dark theme.
+  it.each([
+    ['dark', darkColors],
+    ['light', lightColors],
+  ] as const)(
+    'types in the theme text colour on the %s theme (JEF-683)',
+    async (scheme, colors) => {
+      mockedUseTheme.mockReturnValue({
+        mode: scheme,
+        resolvedScheme: scheme,
+        colors,
+        setMode: jest.fn(),
+      } as never);
+      mockedUseChatHistory.mockReturnValue({ data: [], isLoading: false } as never);
+
+      const { getByTestId } = await renderScreen('conv-1');
+
+      expect(StyleSheet.flatten(getByTestId('chat-input').props.style).color).toBe(colors.text);
+    },
+  );
 
   it('sends a multi-line message intact and caps the composer at ten lines (JEF-481)', async () => {
     mockedUseChatHistory.mockReturnValue({ data: [], isLoading: false } as never);

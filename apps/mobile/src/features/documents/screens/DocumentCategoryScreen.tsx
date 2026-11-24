@@ -386,6 +386,7 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 8,
       fontSize: 14,
       backgroundColor: colors.surface,
+      color: colors.text,
     },
     rowActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
     confirmButton: {

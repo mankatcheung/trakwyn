@@ -136,6 +136,7 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 12,
       fontSize: 16,
       backgroundColor: colors.surface,
+      color: colors.text,
     },
     button: {
       minHeight: 44,

@@ -214,6 +214,7 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 10,
       fontSize: 15,
       backgroundColor: colors.surface,
+      color: colors.text,
     },
     actions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 20 },
     cancelText: { color: colors.textSubtle, fontSize: 14, fontWeight: '500' },

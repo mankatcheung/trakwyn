@@ -295,6 +295,7 @@ function createStyles(colors: ThemeColors) {
       fontSize: 15,
       lineHeight: INPUT_LINE_HEIGHT,
       backgroundColor: colors.surfaceAlt,
+      color: colors.text,
     },
     sendButton: {
       width: 44,
