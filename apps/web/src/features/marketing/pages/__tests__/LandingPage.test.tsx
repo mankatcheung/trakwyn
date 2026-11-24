@@ -111,6 +111,33 @@ describe('LandingPage', () => {
     expect(demo.compareDocumentPosition(features)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
+  it('puts How it works directly after the AI demo, before the feature cards (JEF-677)', () => {
+    mockHasSessionCookie.mockReturnValue(false);
+
+    render(<LandingPage />);
+
+    const demo = screen.getByRole('region', { name: 'landing.aiDemo.title' });
+    const heading = screen.getByRole('heading', { name: 'landing.getStartedMinutes' });
+    const stepsSection = heading.closest('section')!;
+    const features = screen.getAllByTestId('feature-row')[0];
+    expect(demo.nextElementSibling).toBe(stepsSection);
+    expect(heading.compareDocumentPosition(features)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(within(stepsSection).getAllByRole('listitem')).toHaveLength(4);
+  });
+
+  it('ends the page on the one closing sign-up call to action (JEF-677)', () => {
+    mockHasSessionCookie.mockReturnValue(false);
+
+    render(<LandingPage />);
+
+    const faq = screen.getByRole('region', { name: 'faq.title' });
+    const closing = screen.getAllByRole('link', { name: 'Start for free' }).at(-1)!;
+    const pricing = screen.getByRole('link', { name: 'landing.seePricing' });
+    expect(faq.compareDocumentPosition(pricing)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(faq.compareDocumentPosition(closing)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(closing.closest('main')?.lastElementChild).toContainElement(closing);
+  });
+
   it('loads the hero board screenshot eagerly at high priority, with its size set (JEF-530)', () => {
     mockHasSessionCookie.mockReturnValue(false);
 
@@ -224,7 +251,7 @@ describe('LandingPage', () => {
     expect(within(rows[0]).queryByText('plan.badgePro')).toBeNull();
   });
 
-  it('offers the Clipper between the feature cards and the steps (JEF-424)', () => {
+  it('offers the Clipper after the feature cards (JEF-424)', () => {
     mockHasSessionCookie.mockReturnValue(false);
 
     render(<LandingPage />);
@@ -235,20 +262,18 @@ describe('LandingPage', () => {
       CLIPPER_WEB_STORE_URL,
     );
     const features = screen.getAllByTestId('feature-row')[3];
-    const steps = screen.getByText('landing.step1');
     expect(features.compareDocumentPosition(clipper)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect(clipper.compareDocumentPosition(steps)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
-  it('answers four questions before the closing steps, with FAQPage JSON-LD (JEF-519)', () => {
+  it('answers four questions before the closing call to action, with FAQPage JSON-LD (JEF-519)', () => {
     mockHasSessionCookie.mockReturnValue(false);
     const { container } = render(<LandingPage />);
 
     const ids = ['free', 'privacy', 'clipper', 'mobile'];
     for (const id of ids) expect(screen.getByTestId(`faq-${id}`)).not.toHaveAttribute('open');
     const faq = screen.getByRole('region', { name: 'faq.title' });
-    const steps = screen.getByRole('heading', { name: 'landing.getStartedMinutes' });
-    expect(faq.compareDocumentPosition(steps) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const closing = screen.getAllByRole('link', { name: 'Start for free' }).at(-1)!;
+    expect(faq.compareDocumentPosition(closing) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     const faqScript = [...container.querySelectorAll('script[type="application/ld+json"]')]
       .map((s) => JSON.parse(s.textContent ?? '{}') as { '@type': string; mainEntity?: unknown[] })
