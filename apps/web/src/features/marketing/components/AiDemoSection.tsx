@@ -128,7 +128,7 @@ export function AiDemoSection() {
             to="/features/resume-cover-letter"
             className="inline-flex items-center gap-1 text-sm font-medium text-blue-800 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
           >
-            {t('landing.learnMore')}
+            {t('landing.aiDemo.learnMore')}
             <ArrowUpRight className="size-3.5" aria-hidden="true" />
           </Link>
         </div>

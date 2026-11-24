@@ -19,10 +19,17 @@ import {
 import { CLIPPER_WEB_STORE_URL } from '#/constants';
 import { MarketingHeader } from '#/features/marketing/components/MarketingHeader';
 import { MarketingFooter } from '#/features/marketing/components/MarketingFooter';
+import { FaqSection, type FaqItem } from '#/features/marketing/components/FaqSection';
 import { MarketingClosingCta } from '#/features/marketing/components/MarketingClosingCta';
 import { ThemedScreenshot } from '#/features/marketing/components/ThemedScreenshot';
 import type { ScreenshotName } from '#/features/marketing/lib/screenshots';
 import { useLocale } from '#/lib/i18n';
+
+const FEATURES_FAQ: readonly FaqItem[] = [
+  { id: 'free', questionKey: 'features.faq.free.q', answerKey: 'features.faq.free.a' },
+  { id: 'ai-key', questionKey: 'features.faq.aiKey.q', answerKey: 'features.faq.aiKey.a' },
+  { id: 'boards', questionKey: 'features.faq.boards.q', answerKey: 'features.faq.boards.a' },
+];
 
 interface DeepDive {
   icon: LucideIcon;
@@ -290,6 +297,15 @@ export function FeaturesIndexPage() {
             ))}
           </ul>
         </section>
+
+        {/* What visitors compare before signing up (JEF-680) */}
+        <FaqSection
+          items={FEATURES_FAQ.map((item) => ({
+            ...item,
+            values: { applications: t('pricing.freeApplications') },
+          }))}
+          structuredData
+        />
 
         <MarketingClosingCta headline={t('features.index.ctaTitle')} />
       </main>
