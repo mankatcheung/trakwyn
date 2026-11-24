@@ -126,6 +126,16 @@ describe('LandingPage', () => {
     }
   });
 
+  it('shows the hero board wide and edge to edge on a phone (JEF-675)', () => {
+    mockHasSessionCookie.mockReturnValue(false);
+
+    render(<LandingPage />);
+
+    const [light] = screen.getAllByAltText('screenshots.board.alt');
+    expect(light.parentElement).toHaveClass('max-w-6xl');
+    expect(light).toHaveClass('rounded-none', 'border-x-0', 'sm:rounded-2xl');
+  });
+
   it('mentions the self-ending passes once, by the closing CTA', () => {
     mockHasSessionCookie.mockReturnValue(false);
     render(<LandingPage />);

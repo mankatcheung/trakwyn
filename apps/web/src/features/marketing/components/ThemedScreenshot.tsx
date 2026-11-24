@@ -16,8 +16,14 @@ import { useLocale } from '#/lib/i18n';
 export function ThemedScreenshot({
   name,
   priority = false,
+  bleed = false,
 }: {
   name: ScreenshotName;
+  /**
+   * Edge to edge below the `sm` breakpoint (JEF-675): no rounding and no side
+   * borders, so a hero screenshot on a phone uses the whole width.
+   */
+  bleed?: boolean;
   /**
    * An above-the-fold image (the likely LCP): high priority, and the light
    * image is eager. The dark image stays lazy, because a hidden eager image is
@@ -30,8 +36,8 @@ export function ThemedScreenshot({
   const light = getScreenshot(name, 'light');
   const dark = getScreenshot(name, 'dark');
   const alt = t(light.altKey);
-  const shared =
-    'mx-auto h-auto w-full rounded-2xl border border-stone-200 shadow-sm dark:border-stone-800';
+  const frame = bleed ? 'rounded-none border-x-0 sm:rounded-2xl sm:border-x' : 'rounded-2xl border';
+  const shared = `mx-auto h-auto w-full ${frame} border-stone-200 shadow-sm dark:border-stone-800`;
   // A small crop is shown at its own size at most, never stretched past its pixels.
   const style = { maxWidth: light.width / SCREENSHOT_SCALE };
   return (

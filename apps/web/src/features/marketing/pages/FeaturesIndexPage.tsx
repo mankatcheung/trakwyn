@@ -155,7 +155,7 @@ export function FeaturesIndexPage() {
 
       <main>
         {/* Hero */}
-        <section className="relative overflow-hidden py-20 text-center sm:py-24">
+        <section className="relative overflow-hidden pt-14 text-center sm:pt-16">
           <div className="absolute inset-0 -z-10 bg-linear-to-b from-blue-50 to-stone-50 dark:from-stone-900 dark:to-stone-900" />
           <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
             <h1 className="text-4xl font-medium tracking-tight text-stone-900 sm:text-5xl dark:text-stone-100">
@@ -164,6 +164,10 @@ export function FeaturesIndexPage() {
             <p className="mt-4 text-lg text-stone-600 dark:text-stone-400">
               {t('features.index.heroDescription')}
             </p>
+          </div>
+          {/* The product, cut off at the fold so the first screen shows it (JEF-675). */}
+          <div className="mx-auto mt-10 max-h-72 max-w-5xl overflow-hidden sm:max-h-96 sm:px-6 lg:px-8">
+            <ThemedScreenshot name="application-detail" priority bleed />
           </div>
         </section>
 
