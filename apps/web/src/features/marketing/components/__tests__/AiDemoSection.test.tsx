@@ -64,7 +64,7 @@ describe('AiDemoSection (JEF-517)', () => {
   it('links to the resume and cover letter feature page', () => {
     render(<AiDemoSection />);
 
-    expect(screen.getByRole('link', { name: /Learn more/ })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /See how cover letters are drafted/ })).toHaveAttribute(
       'href',
       '/features/resume-cover-letter',
     );

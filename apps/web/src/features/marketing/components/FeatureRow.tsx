@@ -12,6 +12,8 @@ export interface FeatureRowProps {
     | '/features/ai-assistant'
     | '/features/resume-cover-letter'
     | '/features/analytics';
+  /** Link text that names the destination; a bare "Learn more" repeats across rows. */
+  linkLabelKey: string;
   screenshot: ScreenshotName;
   /** Puts the screenshot on the left from `lg` up; the caller alternates it. */
   reversed?: boolean;
@@ -19,11 +21,12 @@ export interface FeatureRowProps {
   pro?: boolean;
 }
 
-/** One landing feature: copy and a "Learn more" link beside a real screenshot. */
+/** One landing feature: copy and a link named for the feature beside a real screenshot. */
 export function FeatureRow({
   titleKey,
   descriptionKey,
   to,
+  linkLabelKey,
   screenshot,
   reversed,
   pro,
@@ -45,7 +48,7 @@ export function FeatureRow({
           to={to}
           className="group mt-5 inline-flex items-center gap-1 text-sm font-medium text-blue-800 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
         >
-          {t('landing.learnMore')}
+          {t(linkLabelKey)}
           <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
         </Link>
       </div>

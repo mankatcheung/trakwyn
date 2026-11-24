@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import en from '#/i18n/en.json';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { CLIPPER_WEB_STORE_URL } from '#/constants';
 
@@ -22,7 +22,10 @@ vi.mock('#/lib/i18n', () => ({
     setLocale: vi.fn(),
     // Resolve against the real English bundle so assertions on rendered copy
     // keep working as keys are added (falls back to the key itself).
-    t: (key: string) => (en as Record<string, string>)[key] ?? key,
+    t: (key: string, values?: Record<string, string | number>) =>
+      ((en as Record<string, string>)[key] ?? key).replace(/\{\{(\w+)\}\}/g, (match, name) =>
+        values && name in values ? String(values[name]) : match,
+      ),
   }),
 }));
 
@@ -138,6 +141,30 @@ describe('FeaturesIndexPage', () => {
     expect(tile).toHaveAttribute('target', '_blank');
     expect(tile).toHaveAttribute('rel', 'noopener noreferrer');
     expect(tile).toHaveTextContent('LinkedIn, Indeed, Glassdoor, Greenhouse, Lever or Workday');
+  });
+
+  it('answers three questions with FAQPage JSON-LD built from the visible copy (JEF-680)', () => {
+    const { container } = render(<FeaturesIndexPage />);
+
+    const t = en as Record<string, string>;
+    const faq = screen.getByRole('region', { name: t['faq.title'] });
+    expect(faq.querySelectorAll('details')).toHaveLength(3);
+    ['features.faq.free.q', 'features.faq.aiKey.q', 'features.faq.boards.q'].forEach((key) => {
+      expect(within(faq).getByText(t[key])).toBeInTheDocument();
+    });
+    // The FAQ sits after the supporting list and before the closing CTA.
+    const cta = screen.getByRole('heading', { name: t['features.index.ctaTitle'] });
+    expect(faq.compareDocumentPosition(cta)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+
+    const script = container.querySelector('script[type="application/ld+json"]');
+    const data = JSON.parse(script?.textContent ?? '{}');
+    expect(data['@type']).toBe('FAQPage');
+    expect(data.mainEntity).toHaveLength(3);
+    data.mainEntity.forEach((q: { name: string; acceptedAnswer: { text: string } }) => {
+      expect(q.name).not.toMatch(/\{\{/);
+      expect(q.acceptedAnswer.text).not.toMatch(/\{\{/);
+    });
+    expect(data.mainEntity[2].acceptedAnswer.text).toContain('LinkedIn, Indeed');
   });
 
   it('links every "Start for free" CTA to /register', () => {

@@ -224,17 +224,39 @@ describe('LandingPage', () => {
     const rows = screen.getAllByTestId('feature-row');
     expect(rows).toHaveLength(4);
     const expected = [
-      ['Application tracking', '/features/tracking', 'screenshots.board.alt'],
-      ['AI assistant', '/features/ai-assistant', 'screenshots.assistant.alt'],
-      ['Resume & cover letters', '/features/resume-cover-letter', 'screenshots.resume.alt'],
-      ['Analytics & insights', '/features/analytics', 'screenshots.analytics.alt'],
+      ['Application tracking', '/features/tracking', 'screenshots.board.alt', 'tracking'],
+      ['AI assistant', '/features/ai-assistant', 'screenshots.assistant.alt', 'aiAssistant'],
+      [
+        'Resume & cover letters',
+        '/features/resume-cover-letter',
+        'screenshots.resume.alt',
+        'resumeCoverLetter',
+      ],
+      ['Analytics & insights', '/features/analytics', 'screenshots.analytics.alt', 'analytics'],
     ] as const;
-    expected.forEach(([title, href, alt], i) => {
+    expected.forEach(([title, href, alt, linkKey], i) => {
       const row = within(rows[i]);
       expect(row.getByRole('heading', { name: new RegExp(title) })).toBeInTheDocument();
-      expect(row.getByRole('link', { name: /landing\.learnMore/ })).toHaveAttribute('href', href);
+      expect(
+        row.getByRole('link', { name: new RegExp(`features\\.index\\.${linkKey}\\.linkLabel`) }),
+      ).toHaveAttribute('href', href);
       expect(row.getAllByAltText(alt)).toHaveLength(2);
     });
+  });
+
+  it('never gives two links the same text when they go to different places (JEF-680)', () => {
+    mockHasSessionCookie.mockReturnValue(false);
+
+    render(<LandingPage />);
+
+    const hrefsByName = new Map<string, Set<string | null>>();
+    screen.getAllByRole('link').forEach((link) => {
+      const name = (link.textContent ?? '').trim();
+      hrefsByName.set(name, (hrefsByName.get(name) ?? new Set()).add(link.getAttribute('href')));
+    });
+    const clashes = [...hrefsByName].filter(([, hrefs]) => hrefs.size > 1).map(([name]) => name);
+    expect(clashes).toEqual([]);
+    expect(screen.queryByRole('link', { name: 'landing.learnMore' })).toBeNull();
   });
 
   it('alternates the side of the screenshot and tags only analytics as Pro (JEF-529)', () => {
