@@ -1505,6 +1505,8 @@
   "pricing.pass6Price": "$49",
   "pricing.passNote": "One payment that ends on its own. It never renews.",
   "pricing.bestValue": "Best value",
+  "pricing.recommended": "Recommended",
+  "pricing.billingDetails": "Billing details",
   "pricing.perMonthEquivalent": "{{price}} a month",
   "pricing.savePercent": "Save {{percent}}%",
   "pricing.freeApplications": "50",

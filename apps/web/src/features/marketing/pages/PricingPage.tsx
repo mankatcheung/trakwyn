@@ -55,7 +55,7 @@ interface PriceOption {
   noteKey: string;
   /** How many months of Pro the payment covers. */
   months: number;
-  /** The best-value option: badge plus highlighted border. Exactly one. */
+  /** The best-value option, marked by quiet text. Exactly one. */
   featured?: boolean;
 }
 
@@ -106,6 +106,13 @@ const PRICING_FAQ: readonly FaqItem[] = [
   { id: 'ai-key', questionKey: 'faq.aiKey.q', answerKey: 'faq.aiKey.a' },
   { id: 'passes', questionKey: 'faq.passes.q', answerKey: 'faq.passes.a' },
 ];
+
+/** Whether a row tells Free and Pro apart; only those rows are highlighted. */
+function cellsDiffer(free: Cell, pro: Cell): boolean {
+  if ('text' in free && 'text' in pro) return free.text !== pro.text;
+  if ('included' in free && 'included' in pro) return free.included !== pro.included;
+  return true;
+}
 
 function CellValue({ cell }: { cell: Cell }) {
   const { t } = useLocale();
@@ -187,11 +194,17 @@ export function PricingPage() {
               {t('landing.startFree')}
             </Link>
           </div>
-          <div className="flex flex-col rounded-xl border-2 border-blue-600 p-6">
+          <div className="relative flex flex-col rounded-xl border-2 border-blue-600 bg-blue-50 p-6 dark:bg-blue-950/30">
+            <span
+              data-testid="recommended-badge"
+              className="absolute -top-3 left-6 rounded-full bg-blue-800 px-2.5 py-0.5 text-xs font-medium text-white"
+            >
+              {t('pricing.recommended')}
+            </span>
             <h2 className="text-lg font-medium text-stone-900 dark:text-stone-100">
               {t('plan.badgePro')}
             </h2>
-            <p className="mt-1 text-sm font-medium text-blue-600 dark:text-blue-400">
+            <p className="mt-1 text-sm font-medium text-blue-800 dark:text-blue-400">
               {t('pricing.proAudience')}
             </p>
             <p className="mt-4 text-4xl font-medium text-stone-900 dark:text-stone-100">
@@ -231,30 +244,23 @@ export function PricingPage() {
             {t('pricing.optionsTitle')}
           </h2>
           <p className="mt-2 text-stone-600 dark:text-stone-400">{t('pricing.optionsSubtitle')}</p>
-          <ul className="mt-6 grid gap-4 sm:grid-cols-3">
+          <ul className="mt-6 grid divide-y divide-stone-200 overflow-hidden rounded-lg border border-stone-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0 dark:divide-stone-800 dark:border-stone-800">
             {OPTIONS.map(({ nameKey, priceKey, noteKey, months, featured }) => {
               const monthly = priceAmount(t(MONTHLY_PRICE_KEY));
               const savings =
                 months > 1 ? derivePassPricing(priceAmount(t(priceKey)), months, monthly) : null;
               return (
-                <li
-                  key={nameKey}
-                  className={
-                    featured
-                      ? 'relative rounded-lg border-2 border-blue-600 p-4'
-                      : 'rounded-lg border border-stone-200 p-4 dark:border-stone-800'
-                  }
-                >
-                  {featured && (
-                    <span
-                      data-testid="best-value-badge"
-                      className="absolute -top-3 right-4 rounded-full bg-blue-800 px-2.5 py-0.5 text-xs font-medium text-white"
-                    >
-                      {t('pricing.bestValue')}
-                    </span>
-                  )}
+                <li key={nameKey} className="p-4">
                   <p className="text-sm font-medium text-stone-700 dark:text-stone-300">
                     {t(nameKey)}
+                    {featured && (
+                      <span
+                        data-testid="best-value-badge"
+                        className="ml-2 font-normal text-stone-500 dark:text-stone-400"
+                      >
+                        · {t('pricing.bestValue')}
+                      </span>
+                    )}
                   </p>
                   <p className="mt-2 text-2xl font-medium text-stone-900 dark:text-stone-100">
                     {t(priceKey)}
@@ -284,11 +290,21 @@ export function PricingPage() {
               );
             })}
           </ul>
-          <div className="mt-6 space-y-2 text-sm text-stone-500 dark:text-stone-400">
-            <p>{t('legal.terms.paymentsPrices')}</p>
-            <p>{t('plan.refundPolicy')}</p>
-            <p>{t('pricing.byok')}</p>
-          </div>
+          <p className="mt-6 text-sm text-stone-500 dark:text-stone-400">
+            {t('legal.terms.paymentsPrices')}
+          </p>
+          <details
+            data-testid="billing-details"
+            className="mt-3 text-sm text-stone-500 dark:text-stone-400"
+          >
+            <summary className="cursor-pointer font-medium text-stone-700 dark:text-stone-300">
+              {t('pricing.billingDetails')}
+            </summary>
+            <div className="mt-2 space-y-2">
+              <p>{t('plan.refundPolicy')}</p>
+              <p>{t('pricing.byok')}</p>
+            </div>
+          </details>
         </section>
 
         <section className="mx-auto max-w-4xl px-4 pb-24 sm:px-6 lg:px-8">
@@ -321,7 +337,15 @@ export function PricingPage() {
               </thead>
               <tbody>
                 {ROWS.map(({ labelKey, free, pro }) => (
-                  <tr key={labelKey} className="border-b border-stone-100 dark:border-stone-900">
+                  <tr
+                    key={labelKey}
+                    data-differs={cellsDiffer(free, pro) || undefined}
+                    className={
+                      cellsDiffer(free, pro)
+                        ? 'border-b border-stone-100 bg-blue-50/60 dark:border-stone-900 dark:bg-blue-950/20'
+                        : 'border-b border-stone-100 dark:border-stone-900'
+                    }
+                  >
                     <th
                       scope="row"
                       className="py-3 pr-4 font-normal text-stone-700 dark:text-stone-300"

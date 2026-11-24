@@ -190,6 +190,62 @@ describe('PricingPage', () => {
     });
   });
 
+  describe('one recommended option and folded fine print (JEF-679)', () => {
+    it('recommends Pro, and only Pro', () => {
+      render(<PricingPage />);
+      const badges = screen.getAllByTestId('recommended-badge');
+      expect(badges).toHaveLength(1);
+      expect(badges[0]).toHaveTextContent('Recommended');
+      expect(badges[0].parentElement).toHaveTextContent('Pro');
+      expect(badges[0].parentElement).not.toHaveTextContent('Start for free');
+    });
+
+    it('keeps the best-value mark as plain text, not a filled pill', () => {
+      render(<PricingPage />);
+      expect(screen.getByTestId('best-value-badge').className).not.toMatch(/bg-blue/);
+    });
+
+    it('folds the refund and own-key text into a closed disclosure that is still in the DOM', () => {
+      render(<PricingPage />);
+      const details = screen.getByTestId('billing-details');
+      expect(details.tagName).toBe('DETAILS');
+      expect(details).not.toHaveAttribute('open');
+      expect(within(details).getByText('Billing details')).toBeInTheDocument();
+      expect(details).toHaveTextContent(en['plan.refundPolicy']);
+      expect(details).toHaveTextContent(en['pricing.byok']);
+    });
+
+    it('keeps the VAT and price sentence visible, outside the disclosure', () => {
+      render(<PricingPage />);
+      const sentence = screen.getByText(en['legal.terms.paymentsPrices']);
+      expect(sentence.closest('details')).toBeNull();
+    });
+
+    it('still shows every price and saving', () => {
+      render(<PricingPage />);
+      for (const key of [
+        'pricing.freePrice',
+        'pricing.proPrice',
+        'pricing.monthlyPrice',
+        'pricing.pass3Price',
+        'pricing.pass6Price',
+      ]) {
+        expect(screen.getAllByText(en[key as keyof typeof en]).length).toBeGreaterThan(0);
+      }
+      expect(screen.getByText(/Save 19%/)).toBeInTheDocument();
+      expect(screen.getByText(/Save 32%/)).toBeInTheDocument();
+    });
+
+    it('highlights only the comparison rows where Free and Pro differ', () => {
+      render(<PricingPage />);
+      const row = (name: RegExp) => screen.getByRole('row', { name });
+      expect(row(/Applications/)).toHaveAttribute('data-differs', 'true');
+      expect(row(/Analytics/)).toHaveAttribute('data-differs', 'true');
+      expect(row(/MCP access/)).not.toHaveAttribute('data-differs');
+      expect(row(/AI with your own key/)).not.toHaveAttribute('data-differs');
+    });
+  });
+
   it('states the tax and refund terms', () => {
     render(<PricingPage />);
 

@@ -1483,6 +1483,8 @@
   "pricing.pass6Price": "$49",
   "pricing.passNote": "一次付款，到期自动结束，不会续订。",
   "pricing.bestValue": "最超值",
+  "pricing.recommended": "推荐",
+  "pricing.billingDetails": "付款详情",
   "pricing.perMonthEquivalent": "折合每月 {{price}}",
   "pricing.savePercent": "省 {{percent}}%",
   "pricing.freeApplications": "50",
