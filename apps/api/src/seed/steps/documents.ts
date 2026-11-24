@@ -11,8 +11,9 @@ import { hashResumeText } from '../../use-cases/shared/hashResumeText.js';
 import { proseToTiptapDoc } from '../../use-cases/shared/proseToTiptapDoc.js';
 import { scoreResumeText } from '../../use-cases/shared/scoreResumeText.js';
 import { resumeToTiptapDoc } from '../../use-cases/shared/resumeToTiptapDoc.js';
-import { coverLetters } from '../data/coverLetters.js';
-import { GENERATED_RESUME, resumes } from '../data/resumes.js';
+import { buildCoverLetters } from '../data/coverLetters.js';
+import { GENERATED_RESUME, buildResumes } from '../data/resumes.js';
+import { DEFAULT_PERSONA, type SeedPersona } from '../profile.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -22,7 +23,14 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * resume's text, so the resumes themselves are what vary: from complete to
  * thin, symbol-heavy, missing contact details, and empty.
  */
-export async function seedDocuments(db: DrizzleDb, userId: string, now: Date): Promise<void> {
+export async function seedDocuments(
+  db: DrizzleDb,
+  userId: string,
+  now: Date,
+  persona: SeedPersona = DEFAULT_PERSONA,
+): Promise<void> {
+  const resumes = buildResumes(persona);
+  const coverLetters = buildCoverLetters(persona);
   const findApplicationId = async (company: string): Promise<string> => {
     const [row] = await db
       .select({ id: jobApplication.id })

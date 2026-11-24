@@ -1,7 +1,6 @@
 import type { ResumeContent } from '#src/domain/resume/ResumeContent.js';
 import type { SeedResume } from '../types.js';
-
-export const DEMO_CONTACT = ['Demo User', 'demo@example.com', '+1 212 555 0142'];
+import { DEFAULT_PERSONA, personaContact, type SeedPersona } from '../profile.js';
 
 /** What the resume generator produces: structured, and with no contact lines. */
 export const GENERATED_RESUME: ResumeContent = {
@@ -41,7 +40,7 @@ export const GENERATED_RESUME: ResumeContent = {
   ],
 };
 
-const FULL_RESUME = `${DEMO_CONTACT.join('\n')}
+const fullResume = (contact: string): string => `${contact}
 
 Summary
 Senior frontend engineer with seven years of experience building fast, accessible web applications for B2B products. I enjoy turning ambiguous product problems into simple interfaces, and I mentor engineers through code review and pairing.
@@ -72,7 +71,7 @@ Languages: TypeScript, JavaScript, HTML, CSS
 Frameworks and tools: React, Next.js, GraphQL, Vite, Playwright, Storybook
 Practices: accessibility, performance budgets, code review, mentoring`;
 
-const MID_RESUME = `${DEMO_CONTACT.join('\n')}
+const midResume = (contact: string): string => `${contact}
 
 Professional Experience
 Full Stack Developer, Harbor Systems — 2019 – Present
@@ -86,7 +85,7 @@ Developer, Cedar Digital — 2016 – 2019
 Education
 BSc Information Systems, Lakeside College — 2012 – 2016`;
 
-const SYMBOL_RESUME = `${DEMO_CONTACT.join('\n')}
+const symbolResume = (contact: string): string => `${contact}
 
 ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★
 🚀 Staff Engineer 🚀 Platform & Commerce 💡 Open to relocate 🌍
@@ -108,82 +107,91 @@ MSc Software Engineering, Tech Institute — 2013 – 2015
 Skills
 Go, TypeScript, Kafka, PostgreSQL, Kubernetes`;
 
-const THIN_RESUME = `Jamie Rivers
-I am a developer who likes building products people enjoy using. I have worked on websites and a few mobile apps and I learn quickly. Please contact me by email at demo@example.com to discuss any opportunity.`;
+const thinResume = (email: string): string => `Jamie Rivers
+I am a developer who likes building products people enjoy using. I have worked on websites and a few mobile apps and I learn quickly. Please contact me by email at ${email} to discuss any opportunity.`;
 
-export const resumes: SeedResume[] = [
-  {
-    company: 'Acme Corp',
-    title: 'Frontend Resume (Acme)',
-    text: FULL_RESUME,
-    match: {
-      score: 86,
-      label: 'Good match',
-      matchedKeywords: ['React', 'TypeScript', 'GraphQL', 'Accessibility', 'Design systems'],
-      missingKeywords: ['Next.js SSR', 'Web performance monitoring'],
-      summary:
-        'Strong overlap on the core React and TypeScript stack, with leadership and accessibility experience that fits the role. The main gap is server-side rendering and production performance monitoring.',
+export const buildResumes = (persona: SeedPersona = DEFAULT_PERSONA): SeedResume[] => {
+  const contact = personaContact(persona);
+  return [
+    {
+      company: 'Acme Corp',
+      title: 'Frontend Resume (Acme)',
+      text: fullResume(contact),
+      match: {
+        score: 86,
+        label: 'Good match',
+        matchedKeywords: ['React', 'TypeScript', 'GraphQL', 'Accessibility', 'Design systems'],
+        missingKeywords: ['Next.js SSR', 'Web performance monitoring'],
+        summary:
+          'Strong overlap on the core React and TypeScript stack, with leadership and accessibility experience that fits the role. The main gap is server-side rendering and production performance monitoring.',
+      },
     },
-  },
-  {
-    company: 'Linear',
-    title: 'Resume (generated for Linear)',
-    ats: 'none',
-    // Filled in by the step from GENERATED_RESUME, so the draft opens in the editor with headings and bullets.
-    text: '',
-    match: {
-      score: 72,
-      label: 'Good match',
-      matchedKeywords: ['TypeScript', 'React', 'Performance'],
-      missingKeywords: ['Realtime sync', 'Desktop apps', 'Keyboard-first design'],
-      summary:
-        'Good frontend fundamentals and measurable performance work. Linear looks for realtime and keyboard-driven product experience, which this resume does not show yet.',
+    {
+      company: 'Linear',
+      title: 'Resume (generated for Linear)',
+      ats: 'none',
+      // Filled in by the step from GENERATED_RESUME, so the draft opens in the editor with headings and bullets.
+      text: '',
+      match: {
+        score: 72,
+        label: 'Good match',
+        matchedKeywords: ['TypeScript', 'React', 'Performance'],
+        missingKeywords: ['Realtime sync', 'Desktop apps', 'Keyboard-first design'],
+        summary:
+          'Good frontend fundamentals and measurable performance work. Linear looks for realtime and keyboard-driven product experience, which this resume does not show yet.',
+      },
     },
-  },
-  {
-    company: 'Notion',
-    title: 'Quick resume draft',
-    text: THIN_RESUME,
-    match: {
-      score: 31,
-      label: 'Needs work',
-      matchedKeywords: ['Products'],
-      missingKeywords: ['TypeScript', 'React', 'Collaboration', 'Product engineering', 'Realtime'],
-      summary:
-        'The resume says very little about the skills the role asks for. Add your stack, the products you shipped and what changed because of your work.',
+    {
+      company: 'Notion',
+      title: 'Quick resume draft',
+      text: thinResume(persona.email),
+      match: {
+        score: 31,
+        label: 'Needs work',
+        matchedKeywords: ['Products'],
+        missingKeywords: [
+          'TypeScript',
+          'React',
+          'Collaboration',
+          'Product engineering',
+          'Realtime',
+        ],
+        summary:
+          'The resume says very little about the skills the role asks for. Add your stack, the products you shipped and what changed because of your work.',
+      },
     },
-  },
-  {
-    company: 'TechCorp',
-    title: 'Full Stack Resume',
-    ats: 'stale',
-    text: MID_RESUME,
-    match: {
-      score: 58,
-      label: 'Some overlap',
-      matchedKeywords: ['React', 'Node'],
-      missingKeywords: ['PostgreSQL', 'SaaS', 'Testing'],
-      summary: 'Relevant stack, but few results and no testing or database experience listed.',
-      stale: true,
+    {
+      company: 'TechCorp',
+      title: 'Full Stack Resume',
+      ats: 'stale',
+      text: midResume(contact),
+      match: {
+        score: 58,
+        label: 'Some overlap',
+        matchedKeywords: ['React', 'Node'],
+        missingKeywords: ['PostgreSQL', 'SaaS', 'Testing'],
+        summary: 'Relevant stack, but few results and no testing or database experience listed.',
+        stale: true,
+      },
     },
-  },
-  {
-    company: 'Shopify',
-    title: 'Staff Engineer Resume',
-    text: SYMBOL_RESUME,
-    match: {
-      score: 91,
-      label: 'Excellent match',
-      matchedKeywords: ['Commerce', 'Checkout', 'Kubernetes', 'Go', 'Latency'],
-      missingKeywords: ['Ruby'],
-      summary:
-        'Checkout platform scale and a services migration line up closely with the role. Only Ruby is missing.',
+    {
+      company: 'Shopify',
+      title: 'Staff Engineer Resume',
+      text: symbolResume(contact),
+      match: {
+        score: 91,
+        label: 'Excellent match',
+        matchedKeywords: ['Commerce', 'Checkout', 'Kubernetes', 'Go', 'Latency'],
+        missingKeywords: ['Ruby'],
+        summary:
+          'Checkout platform scale and a services migration line up closely with the role. Only Ruby is missing.',
+      },
     },
-  },
-  {
-    // A draft with nothing in it: the ATS check reports it as not readable.
-    company: 'Cloudflare',
-    title: 'Resume (draft)',
-    text: '',
-  },
-];
+    {
+      // A draft with nothing in it: the ATS check reports it as not readable.
+      company: 'Cloudflare',
+      title: 'Resume (draft)',
+      text: '',
+    },
+  ];
+};

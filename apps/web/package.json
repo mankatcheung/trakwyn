@@ -20,7 +20,7 @@
     "test:e2e:ui": "playwright test --ui",
     "guides:verify": "e2e/guides/run.sh verify",
     "guides:capture": "e2e/guides/run.sh capture",
-    "screenshots": "pnpm --filter @trakwyn/api db:seed && playwright test --config playwright.screenshots.config.ts",
+    "screenshots": "SEED_PROFILE=marketing pnpm --filter @trakwyn/api db:seed && playwright test --config playwright.screenshots.config.ts",
     "typecheck": "tsc --noEmit",
     "check:chunks": "node scripts/check-chunks.ts",
     "test:integration": "vitest run --project integration --project integration-plans --no-file-parallelism"

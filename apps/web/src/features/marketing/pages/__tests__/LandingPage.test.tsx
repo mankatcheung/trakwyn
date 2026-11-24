@@ -160,7 +160,7 @@ describe('LandingPage', () => {
     render(<LandingPage />);
 
     const [light] = screen.getAllByAltText('screenshots.board.alt');
-    expect(light.parentElement).toHaveClass('max-w-6xl');
+    expect(light.closest('.max-w-6xl')).not.toBeNull();
     expect(light).toHaveClass('rounded-none', 'border-x-0', 'sm:rounded-2xl');
   });
 
@@ -225,15 +225,30 @@ describe('LandingPage', () => {
     const rows = screen.getAllByTestId('feature-row');
     expect(rows).toHaveLength(4);
     const expected = [
-      ['Application tracking', '/features/tracking', 'screenshots.board.alt', 'tracking'],
-      ['AI assistant', '/features/ai-assistant', 'screenshots.assistant.alt', 'aiAssistant'],
+      [
+        'Application tracking',
+        '/features/tracking',
+        'screenshots.cropBoardColumns.alt',
+        'tracking',
+      ],
+      [
+        'AI assistant',
+        '/features/ai-assistant',
+        'screenshots.cropAssistantReply.alt',
+        'aiAssistant',
+      ],
       [
         'Resume & cover letters',
         '/features/resume-cover-letter',
-        'screenshots.resume.alt',
+        'screenshots.cropResumeEditor.alt',
         'resumeCoverLetter',
       ],
-      ['Analytics & insights', '/features/analytics', 'screenshots.analytics.alt', 'analytics'],
+      [
+        'Analytics & insights',
+        '/features/analytics',
+        'screenshots.cropStageFunnel.alt',
+        'analytics',
+      ],
     ] as const;
     expected.forEach(([title, href, alt, linkKey], i) => {
       const row = within(rows[i]);
@@ -243,6 +258,18 @@ describe('LandingPage', () => {
       ).toHaveAttribute('href', href);
       expect(row.getAllByAltText(alt)).toHaveLength(2);
     });
+  });
+
+  it('shows the full app once, in the hero, and crops in the feature rows (JEF-684)', () => {
+    mockHasSessionCookie.mockReturnValue(false);
+
+    render(<LandingPage />);
+
+    // The hero's board is the only full-app screenshot: light and dark variants of one image.
+    expect(screen.getAllByAltText('screenshots.board.alt')).toHaveLength(2);
+    for (const full of ['assistant', 'resume', 'analytics', 'applicationDetail']) {
+      expect(screen.queryAllByAltText(`screenshots.${full}.alt`)).toHaveLength(0);
+    }
   });
 
   it('never gives two links the same text when they go to different places (JEF-680)', () => {

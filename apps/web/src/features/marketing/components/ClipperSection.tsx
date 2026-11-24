@@ -113,7 +113,7 @@ function ClipperPreview() {
 export function ClipperSection() {
   const { t } = useLocale();
   return (
-    <section aria-labelledby="clipper-heading" className="py-24 sm:py-32">
+    <section aria-labelledby="clipper-heading" className="py-18 sm:py-24">
       <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-14 px-4 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8">
         <div>
           <div className="flex items-center gap-2.5">

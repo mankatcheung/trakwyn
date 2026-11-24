@@ -1051,7 +1051,7 @@
   "board.dragEnd": "{{company}}已放入“{{column}}”栏。",
   "board.dragCancel": "已取消移动。{{company}}已回到原位。",
   "marketing.brandName": "Trakwyn",
-  "marketing.footer.tagline": "你的求职历程，井然有序，并由 AI 加持。提供免费方案。",
+  "marketing.footer.tagline": "你的求职历程，井然有序。提供免费方案。",
   "marketing.footer.productHeading": "产品",
   "marketing.footer.trackingLink": "求职申请追踪",
   "marketing.footer.aiAssistantLink": "AI 助手",

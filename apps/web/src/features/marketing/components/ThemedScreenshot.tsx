@@ -1,6 +1,9 @@
 import {
+  getPhoneScreenshot,
   getScreenshot,
+  PHONE_MEDIA_QUERY,
   SCREENSHOT_SCALE,
+  type Screenshot,
   type ScreenshotName,
 } from '#/features/marketing/lib/screenshots';
 import { useLocale } from '#/lib/i18n';
@@ -12,6 +15,12 @@ import { useLocale } from '#/lib/i18n';
  * `prefers-color-scheme`). Lazy images that are `display: none` are not
  * fetched, so only the visible theme downloads. Width and height come from
  * the manifest so the space is reserved and nothing shifts.
+ *
+ * A screenshot with a phone variant (JEF-684) is a `<picture>`: below the `sm`
+ * breakpoint the browser takes the phone capture, made in a 390 px viewport so
+ * its text is readable, instead of a desktop image shrunk to the same width.
+ * The `<source>` carries its own width and height, so the space it reserves
+ * has the phone image's shape and nothing shifts.
  */
 export function ThemedScreenshot({
   name,
@@ -41,30 +50,33 @@ export function ThemedScreenshot({
   const shared = `mx-auto h-auto w-full ${frame} border-stone-200 shadow-sm dark:border-stone-800`;
   // A small crop is shown at its own size at most, never stretched past its pixels.
   const style = { maxWidth: light.width / SCREENSHOT_SCALE };
+  const image = (shot: Screenshot, phone: Screenshot | undefined, className: string) => (
+    <picture className="contents">
+      {phone && (
+        <source
+          media={PHONE_MEDIA_QUERY}
+          srcSet={phone.src}
+          width={phone.width}
+          height={phone.height}
+        />
+      )}
+      <img
+        src={shot.src}
+        width={shot.width}
+        height={shot.height}
+        alt={alt}
+        loading="lazy"
+        fetchPriority={priority ? 'high' : undefined}
+        decoding="async"
+        style={style}
+        className={className}
+      />
+    </picture>
+  );
   return (
     <>
-      <img
-        src={light.src}
-        width={light.width}
-        height={light.height}
-        alt={alt}
-        loading="lazy"
-        fetchPriority={priority ? 'high' : undefined}
-        decoding="async"
-        style={style}
-        className={`${shared} dark:hidden`}
-      />
-      <img
-        src={dark.src}
-        width={dark.width}
-        height={dark.height}
-        alt={alt}
-        loading="lazy"
-        fetchPriority={priority ? 'high' : undefined}
-        decoding="async"
-        style={style}
-        className={`${shared} hidden dark:block`}
-      />
+      {image(light, getPhoneScreenshot(name, 'light'), `${shared} dark:hidden`)}
+      {image(dark, getPhoneScreenshot(name, 'dark'), `${shared} hidden dark:block`)}
     </>
   );
 }

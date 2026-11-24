@@ -246,6 +246,25 @@ describe('PricingPage', () => {
     });
   });
 
+  it('uses the ink-blue accent on the Pro card, with no blue-600 and no tinted rows (JEF-684)', () => {
+    const { container } = render(<PricingPage />);
+
+    expect(container.innerHTML).not.toContain('blue-600');
+    const badge = screen.getAllByTestId('recommended-badge')[0];
+    expect(badge.parentElement).toHaveClass('border-blue-800', 'dark:border-blue-400');
+    for (const row of container.querySelectorAll('tr[data-differs]')) {
+      expect(row.className).not.toMatch(/bg-blue/);
+    }
+  });
+
+  it('marks a row where Pro differs by its Pro value being medium weight', () => {
+    render(<PricingPage />);
+
+    const proCell = (name: RegExp) => screen.getByRole('row', { name }).querySelectorAll('td')[1];
+    expect(proCell(/Applications/)).toHaveClass('font-medium');
+    expect(proCell(/MCP access/)).not.toHaveClass('font-medium');
+  });
+
   it('states the tax and refund terms', () => {
     render(<PricingPage />);
 

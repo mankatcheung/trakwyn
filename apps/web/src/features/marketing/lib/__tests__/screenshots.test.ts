@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import en from '#/i18n/en.json';
 import {
+  getPhoneScreenshot,
   getScreenshot,
   SCREENSHOT_MAX_BYTES,
   SCREENSHOT_SCALE,
@@ -80,6 +81,52 @@ describe('screenshot manifest', () => {
         (source.includes(`'${target}'`) && source.includes('data-screenshot={')) ||
         (target.startsWith('board-column-') && source.includes('data-screenshot={`board-column-'));
       expect(found, `no data-screenshot="${target}" in src`).toBe(true);
+    });
+  });
+
+  describe('phone variants (JEF-684)', () => {
+    const phoneScreens = SCREENSHOT_SCREENS.filter((screen) => 'phoneOf' in screen);
+
+    it('each stands in for a real desktop screen of the same scene and target', () => {
+      expect(phoneScreens.length).toBeGreaterThan(0);
+      for (const phone of phoneScreens) {
+        const desktop = SCREENSHOT_SCREENS.find((s) => s.name === phone.phoneOf);
+        expect(desktop, `${phone.name} stands in for ${phone.phoneOf}`).toBeTruthy();
+        expect(phone.name).toBe(`${phone.phoneOf}-phone`);
+        expect(phone.scene).toBe('scene' in desktop! ? desktop.scene : desktop!.name);
+        expect('target' in phone ? phone.target : undefined).toBe(
+          'target' in desktop! ? desktop.target : undefined,
+        );
+        expect(phone.altKey).toBe(desktop!.altKey);
+      }
+    });
+
+    it('is captured at phone width, and a crop fits inside it', () => {
+      for (const phone of phoneScreens) {
+        expect(phone.viewport.width).toBeLessThanOrEqual(390);
+        expect(screenshotSize(phone).width).toBeLessThanOrEqual(phone.viewport.width);
+      }
+    });
+
+    it('is found from the desktop name, and only where one exists', () => {
+      expect(getPhoneScreenshot('board', 'light')?.src).toBe('/screenshots/board-phone-light.webp');
+      expect(getPhoneScreenshot('crop-board-header', 'dark')).toBeUndefined();
+    });
+
+    it('covers the heroes and the landing feature crops', () => {
+      for (const name of [
+        'board',
+        'application-detail',
+        'assistant',
+        'resume',
+        'analytics',
+        'crop-board-columns',
+        'crop-assistant-reply',
+        'crop-resume-editor',
+        'crop-stage-funnel',
+      ] as const) {
+        expect(getPhoneScreenshot(name, 'light'), name).toBeDefined();
+      }
     });
   });
 

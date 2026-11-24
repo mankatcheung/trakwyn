@@ -259,7 +259,7 @@ export function FeaturesIndexPage() {
             return (
               <section
                 key={feature.to}
-                className={`py-16 sm:py-20 ${i === 0 ? '' : 'border-t border-stone-200 dark:border-stone-800'}`}
+                className={`py-12 sm:py-16 ${i === 0 ? '' : 'border-t border-stone-200 dark:border-stone-800'}`}
               >
                 {i === 0 ? (
                   <div className="flex flex-col gap-10">
@@ -282,7 +282,7 @@ export function FeaturesIndexPage() {
         </div>
 
         {/* Everything else: a supporting list, not eight more features. */}
-        <section className="mx-auto max-w-6xl border-t border-stone-200 px-4 py-16 sm:px-6 sm:py-20 lg:px-8 dark:border-stone-800">
+        <section className="mx-auto max-w-6xl border-t border-stone-200 px-4 py-12 sm:px-6 sm:py-16 lg:px-8 dark:border-stone-800">
           <h2 className="max-w-2xl text-2xl font-medium text-stone-900 sm:text-3xl dark:text-stone-100">
             {t('features.index.everythingElseTitle')}
           </h2>

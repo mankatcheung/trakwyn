@@ -29,6 +29,8 @@ const COVER_LETTER_COMPANY = 'Acme Corp';
 
 const OUT_DIR = join(import.meta.dirname, '..', 'public', 'screenshots');
 const WEBP_QUALITY = 80;
+/** CSS pixels of the phone layout's sticky app bar, plus a little air below it. */
+const PHONE_APP_BAR_PX = 72;
 
 /**
  * The TanStack devtools in the dev server: the floating toggle button
@@ -85,7 +87,12 @@ async function settle(page: Page): Promise<void> {
   await expect(page.locator(DEVTOOLS_SELECTOR).locator('visible=true')).toHaveCount(0);
 }
 
-async function open(page: Page, scene: ScreenshotScene): Promise<void> {
+/**
+ * `phone` is a phone-width capture (JEF-684). Below `md` the section nav is
+ * hidden and a section is a screen of its own, opened by `?section=` in the
+ * URL, so a phone capture reaches a section by URL instead of by the nav.
+ */
+async function open(page: Page, scene: ScreenshotScene, phone = false): Promise<void> {
   switch (scene) {
     case 'board':
       await page.goto('/applications/board');
@@ -96,6 +103,8 @@ async function open(page: Page, scene: ScreenshotScene): Promise<void> {
       await page.goto('/applications/board');
       await page.getByText(DETAIL_COMPANY).first().click();
       await expect(page).toHaveURL(/\/applications\/[^/]+$/);
+      // A phone shows the application's own screen, which is its top.
+      if (phone) break;
       await page
         .getByRole('navigation', { name: 'Section navigation' })
         .getByRole('button', { name: /^notes/i })
@@ -107,7 +116,8 @@ async function open(page: Page, scene: ScreenshotScene): Promise<void> {
       break;
     case 'assistant-conversation':
       // The seeded "Help me prepare for my Stripe interview" thread has replies.
-      await page.goto('/assistant');
+      // The sidebar's history is hidden on a phone, which has a page for it.
+      await page.goto(phone ? '/assistant/history' : '/assistant');
       await page
         .getByRole('link', { name: /^help me prepare/i })
         .first()
@@ -139,10 +149,15 @@ async function open(page: Page, scene: ScreenshotScene): Promise<void> {
     case 'resume':
       await page.goto('/applications/board');
       await page.getByText(DETAIL_COMPANY).first().click();
-      await page
-        .getByRole('navigation', { name: 'Section navigation' })
-        .getByRole('button', { name: /^resumes/i })
-        .click();
+      if (phone) {
+        await expect(page).toHaveURL(/\/applications\/[^/?]+$/);
+        await page.goto(`${page.url()}?section=resumes`);
+      } else {
+        await page
+          .getByRole('navigation', { name: 'Section navigation' })
+          .getByRole('button', { name: /^resumes/i })
+          .click();
+      }
       await page
         .getByRole('link', { name: /resume/i })
         .first()
@@ -152,10 +167,15 @@ async function open(page: Page, scene: ScreenshotScene): Promise<void> {
     case 'cover-letter':
       await page.goto('/applications/board');
       await page.getByText(COVER_LETTER_COMPANY).first().click();
-      await page
-        .getByRole('navigation', { name: 'Section navigation' })
-        .getByRole('button', { name: /^cover letters/i })
-        .click();
+      if (phone) {
+        await expect(page).toHaveURL(/\/applications\/[^/?]+$/);
+        await page.goto(`${page.url()}?section=cover-letters`);
+      } else {
+        await page
+          .getByRole('navigation', { name: 'Section navigation' })
+          .getByRole('button', { name: /^cover letters/i })
+          .click();
+      }
       await page
         .getByRole('link', { name: /cover letter/i })
         .first()
@@ -189,6 +209,15 @@ async function shootCrop(page: Page, screen: ScreenshotScreen, path: string): Pr
   const element = page.locator(hook(target)).first();
   await expect(element).toBeVisible();
   await element.evaluate((el) => el.scrollIntoView({ block: 'start' }));
+  // A phone's app bar is sticky and would cover the top of the crop (JEF-684).
+  if (screen.phoneOf) {
+    await element.evaluate((el, px) => {
+      // The app scrolls inside its own container, not the window.
+      let node: HTMLElement | null = el.parentElement;
+      while (node && node.scrollHeight <= node.clientHeight) node = node.parentElement;
+      (node ?? document.scrollingElement)?.scrollBy(0, -px);
+    }, PHONE_APP_BAR_PX);
+  }
   await page.waitForTimeout(200);
   const box = await element.boundingBox();
   if (!box) throw new Error(`${screen.name}: ${target} has no box`);
@@ -255,7 +284,7 @@ test.describe('marketing screenshots', () => {
         try {
           const page = await context.newPage();
           await signIn(page);
-          await open(page, 'scene' in screen ? screen.scene : screen.name);
+          await open(page, 'scene' in screen ? screen.scene : screen.name, 'phoneOf' in screen);
           await settle(page);
           expect(
             await page.evaluate(() => document.documentElement.classList.contains('dark')),
