@@ -41,6 +41,8 @@ describe('LegalFooterLinks', () => {
   it('is centred and small by default, and takes a class from the page when given one', () => {
     const { container, rerender } = render(<LegalFooterLinks />);
     expect(container.firstChild).toHaveClass('justify-center', 'text-xs');
+    // One row that wraps whole links, never a link broken across narrow columns (JEF-686).
+    expect(container.firstChild).toHaveClass('flex-wrap', 'gap-x-4');
 
     rerender(<LegalFooterLinks className="flex-col" />);
     expect(container.firstChild).toHaveClass('flex-col');

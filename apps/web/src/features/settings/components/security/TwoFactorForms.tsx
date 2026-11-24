@@ -130,7 +130,7 @@ export function TotpDisableForm({ onDisabled }: { onDisabled: () => void }) {
 
   return (
     <form {...formProps} className="space-y-3">
-      <p className="text-sm text-green-600">{t('security.twoFactorEnabled')}</p>
+      <p className="text-sm text-green-700 dark:text-green-400">{t('security.twoFactorEnabled')}</p>
       <div>
         <FormLabel>{t('security.confirmPasswordToDisableLabel')}</FormLabel>
         <Input

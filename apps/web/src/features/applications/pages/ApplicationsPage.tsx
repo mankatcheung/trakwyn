@@ -109,7 +109,7 @@ function ApplicationsPage() {
           <Link
             to="/applications/new"
             aria-label={t('applications.newApplicationAria')}
-            className="flex items-center gap-1.5 rounded-lg border border-transparent bg-blue-800 dark:bg-blue-700 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-600"
+            className="flex items-center gap-1.5 rounded-lg border border-transparent bg-blue-800 dark:bg-blue-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-700"
           >
             <PlusIcon size={15} />
             <span className="hidden sm:inline">{t('applications.new')}</span>

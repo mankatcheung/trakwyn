@@ -276,7 +276,7 @@ export function ChatConversationView({
                   <div
                     className={`max-w-[80%] rounded-xl px-4 py-2 text-sm ${
                       m.role === 'user'
-                        ? 'bg-blue-800 dark:bg-blue-700 wrap-break-word whitespace-pre-wrap text-white'
+                        ? 'bg-blue-800 dark:bg-blue-600 wrap-break-word whitespace-pre-wrap text-white'
                         : 'border border-stone-200 bg-white text-stone-800 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200'
                     }`}
                   >

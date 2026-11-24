@@ -17,7 +17,7 @@ function formatResetDate(iso: string, locale: string): string {
 }
 
 const BAR_COLOUR = {
-  ok: 'bg-blue-800 dark:bg-blue-700',
+  ok: 'bg-blue-800 dark:bg-blue-600',
   warning: 'bg-amber-500',
   empty: 'bg-red-500',
 } as const;

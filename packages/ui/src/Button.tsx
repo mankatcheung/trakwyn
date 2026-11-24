@@ -5,7 +5,7 @@ export type ButtonSize = 'sm' | 'md';
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
-    'bg-blue-800 dark:bg-blue-700 hover:bg-blue-900 dark:hover:bg-blue-600 disabled:opacity-60 text-white font-medium transition-colors',
+    'bg-blue-800 dark:bg-blue-600 hover:bg-blue-900 dark:hover:bg-blue-700 disabled:opacity-60 text-white font-medium transition-colors',
   destructive:
     'bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-medium transition-colors',
   secondary:

@@ -85,7 +85,9 @@ export function AddBackupEmailForm({ needsPassword, withStepUp }: BackupEmailFor
       )}
       {state.error && <Alert>{state.error}</Alert>}
       {sent && !state.error && (
-        <p className="text-sm text-green-600">{t('security.backupEmailVerificationSent')}</p>
+        <p className="text-sm text-green-700 dark:text-green-400">
+          {t('security.backupEmailVerificationSent')}
+        </p>
       )}
       <SubmitButton pendingLabel={t('security.sending')}>
         {t('security.addBackupEmail')}

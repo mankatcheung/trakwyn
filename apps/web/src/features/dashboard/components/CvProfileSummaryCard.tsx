@@ -59,7 +59,7 @@ export function CvProfileSummaryCard() {
           </p>
           <Link
             to="/profile"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-800 dark:bg-blue-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-600"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-800 dark:bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-700"
           >
             {t('dashboard.cvProfileFillIn')}
           </Link>

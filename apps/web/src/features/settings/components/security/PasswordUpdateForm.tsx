@@ -75,7 +75,9 @@ export function PasswordUpdateForm({ withStepUp }: { withStepUp: WithStepUp }) {
       </div>
       {state.error && <Alert>{state.error}</Alert>}
       {updated && !state.error && (
-        <p className="text-sm text-green-600">{t('security.passwordUpdated')}</p>
+        <p className="text-sm text-green-700 dark:text-green-400">
+          {t('security.passwordUpdated')}
+        </p>
       )}
       <SubmitButton pendingLabel={t('applicationForm.saving')}>
         {t('security.updatePassword')}

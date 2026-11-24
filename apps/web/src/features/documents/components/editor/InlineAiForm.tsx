@@ -58,7 +58,7 @@ export function InlineAiForm({
         <p className="text-xs text-stone-700 dark:text-stone-300">{t('aiHelper.setupHelp')}</p>
         <Link
           to="/settings/ai"
-          className="inline-flex items-center rounded-lg bg-blue-800 dark:bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-900 dark:hover:bg-blue-600"
+          className="inline-flex items-center rounded-lg bg-blue-800 dark:bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-900 dark:hover:bg-blue-700"
         >
           {t('aiHelper.setupAction')}
         </Link>

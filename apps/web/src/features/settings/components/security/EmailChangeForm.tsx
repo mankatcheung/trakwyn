@@ -76,7 +76,9 @@ export function EmailChangeForm({
       </div>
       {state.error && <Alert>{state.error}</Alert>}
       {sent && !state.error && (
-        <p className="text-sm text-green-600">{t('security.emailConfirmationSent')}</p>
+        <p className="text-sm text-green-700 dark:text-green-400">
+          {t('security.emailConfirmationSent')}
+        </p>
       )}
       <SubmitButton pendingLabel={t('security.sending')}>{t('security.updateEmail')}</SubmitButton>
     </form>

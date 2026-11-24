@@ -21,6 +21,7 @@ import { gqlClient } from '#/graphql/client';
 import type { ApplicationStatus } from '#/graphql/generated/graphql';
 import { BoardCard } from '../components/board/BoardCard';
 import { BoardColumn } from '../components/board/BoardColumn';
+import { BoardScroller } from '../components/board/BoardScroller';
 import { ErrorState } from '#/components/ErrorState';
 import { ListIcon, PlusIcon } from 'lucide-react';
 import { useLocale } from '#/lib/i18n';
@@ -239,7 +240,7 @@ export function KanbanBoard() {
           <Link
             to="/applications/new"
             aria-label={t('applications.newApplicationAria')}
-            className="flex items-center gap-1.5 rounded-lg border border-transparent bg-blue-800 dark:bg-blue-700 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-600"
+            className="flex items-center gap-1.5 rounded-lg border border-transparent bg-blue-800 dark:bg-blue-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-700"
           >
             <PlusIcon size={15} />
             <span className="hidden sm:inline">{t('applications.newShort')}</span>
@@ -256,7 +257,7 @@ export function KanbanBoard() {
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-4">
+        <BoardScroller>
           {STATUSES.map((status) => (
             <BoardColumn
               key={status}
@@ -266,7 +267,7 @@ export function KanbanBoard() {
               displayFields={displayFields}
             />
           ))}
-        </div>
+        </BoardScroller>
 
         <DragOverlay>
           {activeApp && <BoardCard app={activeApp} isOverlay displayFields={displayFields} />}

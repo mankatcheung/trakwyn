@@ -179,7 +179,8 @@ export function LoginPage() {
             </SubmitButton>
           </form>
         </div>
-        <LegalFooterLinks />
+        {/* Wider than the card on sm+, so the four links sit on one row (JEF-686). */}
+        <LegalFooterLinks className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-stone-500 sm:-mx-10 dark:text-stone-400 [&>*]:whitespace-nowrap" />
       </div>
     </main>
   );

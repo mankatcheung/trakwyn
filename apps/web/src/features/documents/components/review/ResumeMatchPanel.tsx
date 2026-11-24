@@ -239,7 +239,7 @@ function MatchDetails({ match, compute }: { match: ResumeMatch | undefined; comp
             <ComputeButton
               compute={compute}
               label={t('resumeMatch.regenerate')}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-800 dark:bg-blue-700 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-600"
+              className="flex items-center gap-1.5 rounded-lg bg-blue-800 dark:bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-700"
             />
           </div>
 

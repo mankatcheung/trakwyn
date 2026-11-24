@@ -112,6 +112,21 @@ test.describe('Accessibility scans – authenticated pages', () => {
     await expect(page.getByRole('heading', { name: 'Applications' })).toBeVisible();
     await scan(page, '/applications');
   });
+
+  // JEF-686: the board (with its scroll region) and the settings pages.
+  test('board page passes axe', async ({ page }) => {
+    await page.goto('/applications/board');
+    await expect(page.getByRole('heading', { name: 'Board' })).toBeVisible();
+    await scan(page, '/applications/board');
+  });
+
+  for (const path of ['profile', 'security'] as const) {
+    test(`settings ${path} page passes axe`, async ({ page }) => {
+      await page.goto(`/settings/${path}`);
+      await expect(page.getByRole('heading', { level: 2 }).first()).toBeVisible();
+      await scan(page, `/settings/${path}`);
+    });
+  }
 });
 
 test.describe('Accessibility scans – first-run welcome flow (JEF-460)', () => {

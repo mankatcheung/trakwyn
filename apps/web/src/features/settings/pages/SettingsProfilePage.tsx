@@ -3,13 +3,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { UserIcon, Trash2Icon, MonitorIcon, MoonIcon, SunIcon } from 'lucide-react';
 import { put as putBlob } from '@vercel/blob/client';
 import { gqlClient } from '#/graphql/client';
-import { Card, FormLabel, Skeleton } from '@trakwyn/ui';
+import { Card } from '@trakwyn/ui';
 import { useTheme, type Theme } from '#/lib/theme';
 import { LOCALE_OPTIONS, useLocale } from '#/lib/i18n';
-import { useStepUpReauth } from '../hooks/useStepUpReauth';
 import { ProfileDetailsForm } from '../components/account/ProfileDetailsForm';
-import { EmailChangeForm } from '../components/security/EmailChangeForm';
-import { AddBackupEmailForm, RemoveBackupEmailForm } from '../components/security/BackupEmailForms';
 import {
   ME_QUERY,
   REQUEST_AVATAR_UPLOAD_URL,
@@ -21,7 +18,6 @@ import { extractGqlError } from '../lib/gqlErrors';
 
 export function SettingsProfilePage() {
   const qc = useQueryClient();
-  const { withStepUp, dialog: stepUpDialog } = useStepUpReauth();
   const { theme, setTheme } = useTheme();
   const { locale, setLocale, t } = useLocale();
   const THEME_OPTIONS: { value: Theme; label: string; icon: React.ReactNode }[] = [
@@ -30,7 +26,7 @@ export function SettingsProfilePage() {
     { value: 'system', label: t('profile.themeSystem'), icon: <MonitorIcon size={16} /> },
   ];
 
-  const { data: meData, isLoading: meLoading } = useQuery({
+  const { data: meData } = useQuery({
     queryKey: ['me'],
     queryFn: () => gqlClient.request(ME_QUERY) as Promise<{ me: Me | null }>,
   });
@@ -84,15 +80,6 @@ export function SettingsProfilePage() {
       setAvatarUploading(false);
     }
   };
-
-  // An account made through Google or GitHub has no password to type; it
-  // steps up instead when the API asks (JEF-463). Unknown while loading,
-  // which shows the field, as before.
-  const needsPassword = me?.hasPassword !== false;
-
-  // Backup email recovery, read off the same ME_QUERY (JEF-204).
-  const backupEmail = me?.backupEmail ?? null;
-  const backupEmailVerified = Boolean(me?.backupEmailVerifiedAt);
 
   return (
     <div className="space-y-8">
@@ -157,54 +144,6 @@ export function SettingsProfilePage() {
         <ProfileDetailsForm key={me?.id ?? 'loading'} me={me} />
       </Card>
 
-      {/* ── Email ── */}
-      <Card className="space-y-4 p-5">
-        <div>
-          <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
-            {t('security.emailTitle')}
-          </h2>
-          <p className="text-sm text-stone-500 dark:text-stone-400">
-            {t('security.emailDescription')}
-          </p>
-        </div>
-        <div>
-          <FormLabel>{t('security.currentEmailLabel')}</FormLabel>
-          {meLoading ? (
-            <Skeleton className="h-5 w-48 rounded-sm" data-testid="current-email-loading" />
-          ) : (
-            <p className="text-sm text-stone-900 dark:text-stone-100">{me?.email}</p>
-          )}
-        </div>
-        <EmailChangeForm needsPassword={needsPassword} withStepUp={withStepUp} />
-      </Card>
-
-      {/* ── Backup email ── */}
-      <Card className="space-y-4 p-5">
-        <div>
-          <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
-            {t('security.backupEmailTitle')}
-          </h2>
-          <p className="text-sm text-stone-500 dark:text-stone-400">
-            {t('security.backupEmailDescription')}
-          </p>
-        </div>
-        {meLoading ? (
-          <Skeleton className="h-10 rounded-lg" />
-        ) : backupEmail ? (
-          <div className="space-y-3">
-            <p className="text-sm text-stone-900 dark:text-stone-100">
-              {backupEmail}{' '}
-              <span className={backupEmailVerified ? 'text-green-600' : 'text-amber-600'}>
-                {backupEmailVerified ? t('security.verified') : t('security.verificationPending')}
-              </span>
-            </p>
-            <RemoveBackupEmailForm needsPassword={needsPassword} withStepUp={withStepUp} />
-          </div>
-        ) : (
-          <AddBackupEmailForm needsPassword={needsPassword} withStepUp={withStepUp} />
-        )}
-      </Card>
-
       {/* ── Appearance ── */}
       <Card className="space-y-4 p-5">
         <div>
@@ -225,7 +164,7 @@ export function SettingsProfilePage() {
               aria-label={t('profile.themeAria', { theme: option.label })}
               className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                 theme === option.value
-                  ? 'bg-blue-800 dark:bg-blue-700 text-white'
+                  ? 'bg-blue-800 dark:bg-blue-600 text-white'
                   : 'text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700'
               }`}
             >
@@ -259,7 +198,6 @@ export function SettingsProfilePage() {
           </select>
         </div>
       </Card>
-      {stepUpDialog}
     </div>
   );
 }

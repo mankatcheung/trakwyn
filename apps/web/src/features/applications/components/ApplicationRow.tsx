@@ -48,7 +48,7 @@ export function ApplicationRow({ app, displayFields, selected, onToggle }: Appli
               {app.tags.slice(0, 3).map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center rounded-sm bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                  className="inline-flex items-center rounded-sm bg-stone-100 px-1.5 py-0.5 text-xs font-medium text-stone-600 dark:bg-stone-700/60 dark:text-stone-300"
                 >
                   {tag}
                 </span>
