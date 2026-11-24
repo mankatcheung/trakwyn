@@ -50,9 +50,20 @@ describe('buildWeeklyDigestHtml', () => {
     };
 
     expect(buildWeeklyDigestHtml(withOverdue, 'label')).toContain('Overdue follow-ups');
-    expect(buildWeeklyDigestHtml(emptyData, 'label')).not.toContain(
-      'style="padding:24px 32px;border-bottom:1px solid #f3f4f6;background:#fff5f5;"',
-    );
+    expect(buildWeeklyDigestHtml(emptyData, 'label')).not.toContain('Overdue follow-ups');
+  });
+
+  it('escapes company and role names', () => {
+    const data: WeeklyDigestData = {
+      ...emptyData,
+      newThisWeek: [{ company: '<script>alert(1)</script>', role: 'R&D "Lead"' }],
+    };
+
+    const html = buildWeeklyDigestHtml(data, 'label');
+
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('&lt;script&gt;');
+    expect(html).toContain('R&amp;D &quot;Lead&quot;');
   });
 
   it('maps a known status to its human-readable label', () => {

@@ -102,7 +102,38 @@ describe('DashboardScreen', () => {
     expect(getByTestId('stat-card-Total')).toBeTruthy();
   });
 
-  it('shows a greeting with the user name and avatar initials', async () => {
+  it('heads the screen with its title, not a greeting, and keeps the name as a quiet line (JEF-687)', async () => {
+    mockedUseApplications.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+    } as never);
+
+    const { findByText, queryByText } = await renderScreen();
+
+    await findByText('Dashboard');
+    expect(queryByText('Welcome back')).toBeNull();
+  });
+
+  it('omits the name line when the profile has neither name nor email', async () => {
+    mockedUseProfile.mockReturnValue({ data: { name: null, email: null } } as never);
+    mockedUseApplications.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn(),
+    } as never);
+
+    const { findByText, queryByTestId } = await renderScreen();
+
+    await findByText('Dashboard');
+    expect(queryByTestId('dashboard-greeting-name')).toBeNull();
+  });
+
+  it('shows the user name and avatar initials', async () => {
     mockedUseApplications.mockReturnValue({
       data: [],
       isLoading: false,
