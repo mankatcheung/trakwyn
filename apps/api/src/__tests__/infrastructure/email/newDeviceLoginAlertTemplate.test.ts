@@ -30,6 +30,19 @@ describe('buildNewDeviceLoginAlertHtml', () => {
     expect(html).toContain('203.0.113.4');
   });
 
+  it('escapes the device label, location and IP', () => {
+    const html = buildNewDeviceLoginAlertHtml(
+      '<img src=x onerror=alert(1)>',
+      '<b>Paris</b>',
+      '1.2.3.4"><script>',
+      loginTime,
+    );
+
+    expect(html).not.toContain('<img');
+    expect(html).not.toContain('<b>Paris');
+    expect(html).not.toContain('<script>');
+  });
+
   it.each([undefined, '', '   '])('refuses to build the email when the origin is %j', (value) => {
     if (value === undefined) delete process.env[ENV.WEB_APP_ORIGIN];
     else process.env[ENV.WEB_APP_ORIGIN] = value;

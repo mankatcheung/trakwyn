@@ -420,8 +420,19 @@ export const EXTENSION_OAUTH_DONE_PAGE = {
   HTML:
     '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">' +
-    '<title>Trakwyn Clipper</title></head>' +
-    '<body style="font-family: system-ui, sans-serif; text-align: center; padding: 3rem 1rem">' +
+    '<title>Trakwyn Clipper</title>' +
+    '<style>' +
+    'body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;box-sizing:border-box;background:#fafaf9;color:#1c1917;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center}' +
+    'p{margin:0;font-size:16px;line-height:1.5;color:#57534e}' +
+    '@media(prefers-color-scheme:dark){body{background:#1c1917;color:#fafaf9}p{color:#d6d3d1}}' +
+    '</style></head>' +
+    '<body>' +
+    // The favicon, inline: the CSP allows no images, and nothing is fetched.
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="Trakwyn">' +
+    '<rect width="48" height="48" rx="10" fill="#1D4ED8"/>' +
+    '<path d="M11.5 13 L23.5 24 L11.5 35" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>' +
+    '<path d="M24.5 13 L36.5 24 L24.5 35" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '</svg>' +
     '<p>You can close this tab and return to the Trakwyn Clipper.</p></body></html>',
   HEADERS: {
     'content-type': 'text/html; charset=utf-8',
