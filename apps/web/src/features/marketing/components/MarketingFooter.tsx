@@ -78,6 +78,12 @@ export function MarketingFooter() {
               >
                 {t('marketing.footer.guidesLink')}
               </Link>
+              <Link
+                to="/ai-mcp-setup"
+                className="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              >
+                {t('marketing.footer.setupGuideLink')}
+              </Link>
               <a
                 href={CLIPPER_WEB_STORE_URL}
                 target="_blank"

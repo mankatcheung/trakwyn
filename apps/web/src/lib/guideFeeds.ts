@@ -49,6 +49,7 @@ export const STATIC_SITEMAP_PAGES: readonly SitemapPage[] = [
   { path: '/features', changefreq: 'monthly', priority: 0.9 },
   { path: '/pricing', changefreq: 'monthly', priority: 0.8 },
   { path: '/guides', changefreq: 'monthly', priority: 0.8 },
+  { path: '/ai-mcp-setup', changefreq: 'monthly', priority: 0.6 },
   { path: '/features/tracking', changefreq: 'monthly', priority: 0.7 },
   { path: '/features/ai-assistant', changefreq: 'monthly', priority: 0.7 },
   { path: '/features/resume-cover-letter', changefreq: 'monthly', priority: 0.7 },

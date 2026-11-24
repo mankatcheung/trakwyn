@@ -81,21 +81,18 @@ describe('MarketingHeader', () => {
     expect(screen.getByRole('link', { name: 'Features' }).className).not.toContain('font-semibold');
   });
 
-  it('links the setup guide to /ai-mcp-setup (JEF-231)', () => {
+  it('no longer links the setup guide from the header (JEF-678)', () => {
     mockHasSessionCookie.mockReturnValue(false);
     render(<MarketingHeader />);
 
-    expect(screen.getByRole('link', { name: 'Setup guide' })).toHaveAttribute(
-      'href',
-      '/ai-mcp-setup',
-    );
+    expect(screen.queryByRole('link', { name: 'Setup guide' })).not.toBeInTheDocument();
   });
 
-  it('bolds the setup guide link when activeGuide is set', () => {
+  it('bolds the Guides link when activeGuides is set', () => {
     mockHasSessionCookie.mockReturnValue(false);
-    render(<MarketingHeader activeGuide />);
+    render(<MarketingHeader activeGuides />);
 
-    expect(screen.getByRole('link', { name: 'Setup guide' }).className).toContain('font-semibold');
+    expect(screen.getByRole('link', { name: 'Guides' }).className).toContain('font-semibold');
   });
 
   it('shows "Sign in" pointing at /login for a logged-out visitor', () => {

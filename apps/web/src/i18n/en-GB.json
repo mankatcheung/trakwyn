@@ -1755,6 +1755,7 @@
   "screenshots.analytics.alt": "The analytics page with application totals, a weekly chart and a stage funnel",
   "marketing.nav.guides": "Guides",
   "marketing.footer.guidesLink": "Guides",
+  "marketing.footer.setupGuideLink": "Setup guide",
   "guides.index.title": "Guides",
   "guides.index.subtitle": "Step-by-step how-tos for getting more out of Trakwyn.",
   "guides.index.filterLabel": "Filter by topic",

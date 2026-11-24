@@ -1733,6 +1733,7 @@
   "screenshots.analytics.alt": "分析页面，包含申请总数、每周图表和阶段漏斗",
   "marketing.nav.guides": "指南",
   "marketing.footer.guidesLink": "指南",
+  "marketing.footer.setupGuideLink": "设置指南",
   "guides.index.title": "指南",
   "guides.index.subtitle": "循序渐进的教程，帮你更好地使用 Trakwyn。",
   "guides.index.filterLabel": "按主题筛选",

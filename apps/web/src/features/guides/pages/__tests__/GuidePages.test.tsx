@@ -64,6 +64,13 @@ describe('GuidesIndexPage', () => {
     }
   });
 
+  it('features the setup guide above the article list (JEF-678)', () => {
+    render(<GuidesIndexPage />);
+    expect(
+      screen.getByRole('link', { name: /Connect your own AI key and an MCP client/ }),
+    ).toHaveAttribute('href', '/ai-mcp-setup');
+  });
+
   it('filters by tag and marks the active filter', () => {
     render(<GuidesIndexPage tag="ai" />);
     expect(screen.getByRole('link', { name: /Tailor a cover letter/ })).toBeInTheDocument();

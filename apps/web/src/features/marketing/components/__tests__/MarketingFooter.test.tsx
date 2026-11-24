@@ -71,6 +71,16 @@ describe('MarketingFooter', () => {
     expect(screen.getByRole('link', { name: 'Guides' })).toHaveAttribute('href', '/guides');
   });
 
+  it('links the Product column to the setup guide (JEF-678)', () => {
+    mockHasSessionCookie.mockReturnValue(false);
+    render(<MarketingFooter />);
+
+    expect(screen.getByRole('link', { name: 'Setup guide' })).toHaveAttribute(
+      'href',
+      '/ai-mcp-setup',
+    );
+  });
+
   it('links the Product column to the Clipper on the Chrome Web Store (JEF-424)', () => {
     mockHasSessionCookie.mockReturnValue(false);
     render(<MarketingFooter />);
