@@ -55,10 +55,25 @@ export function GuidesIndexPage({ tag }: { tag?: string }) {
           </nav>
         )}
 
+        <Link
+          to="/ai-mcp-setup"
+          className="mt-10 block rounded-2xl border border-stone-300 bg-stone-100 p-6 transition-shadow hover:shadow-md dark:border-stone-700 dark:bg-stone-800"
+        >
+          <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
+            {t('guides.aiMcpSetup.eyebrow')}
+          </p>
+          <h2 className="mt-1 text-xl font-medium text-stone-900 dark:text-stone-100">
+            {t('guides.aiMcpSetup.title')}
+          </h2>
+          <p className="mt-2 text-stone-600 dark:text-stone-400">
+            {t('guides.aiMcpSetup.description')}
+          </p>
+        </Link>
+
         {shown.length === 0 ? (
           <p className="mt-12 text-stone-600 dark:text-stone-400">{t('guides.index.empty')}</p>
         ) : (
-          <ul className="mt-10 space-y-5">
+          <ul className="mt-5 space-y-5">
             {shown.map((guide) => (
               <li key={guide.slug}>
                 <Link

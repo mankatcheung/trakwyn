@@ -1745,6 +1745,7 @@
   "screenshots.cropChannels.alt": "Reply rates by source and by tag on the analytics page",
   "marketing.nav.guides": "Guides",
   "marketing.footer.guidesLink": "Guides",
+  "marketing.footer.setupGuideLink": "Setup guide",
   "guides.index.title": "Guides",
   "guides.index.subtitle": "Step-by-step how-tos for getting more out of Trakwyn.",
   "guides.index.filterLabel": "Filter by topic",

@@ -10,9 +10,7 @@ import { MarketingLocalePicker } from './MarketingLocalePicker';
 interface MarketingHeaderProps {
   /** Bolds the Features nav item — set on `/features` and every `/features/*` page. */
   activeFeatures?: boolean;
-  /** Bolds the setup guide nav item — set on `/ai-mcp-setup`. */
-  activeGuide?: boolean;
-  /** Bolds the Guides nav item — set on `/guides` and every `/guides/*` page. */
+  /** Bolds the Guides nav item — set on `/guides`, every `/guides/*` page and `/ai-mcp-setup`. */
   activeGuides?: boolean;
   /** Bolds the Pricing nav item — set on `/pricing`. */
   activePricing?: boolean;
@@ -27,7 +25,6 @@ interface MarketingHeaderProps {
  */
 export function MarketingHeader({
   activeFeatures = false,
-  activeGuide = false,
   activeGuides = false,
   activePricing = false,
 }: MarketingHeaderProps) {
@@ -94,16 +91,6 @@ export function MarketingHeader({
               }
             >
               {t('marketing.nav.guides')}
-            </Link>
-            <Link
-              to="/ai-mcp-setup"
-              className={
-                activeGuide
-                  ? 'text-sm font-medium text-stone-900 underline decoration-stone-400 decoration-1 underline-offset-8 dark:text-stone-100 dark:decoration-stone-500'
-                  : 'text-sm font-medium text-stone-700 transition-colors hover:text-stone-900 dark:text-stone-300 dark:hover:text-stone-100'
-              }
-            >
-              {t('guides.aiMcpSetup.eyebrow')}
             </Link>
             <Link
               to={authLink}
@@ -173,17 +160,6 @@ export function MarketingHeader({
               onClick={() => setMobileMenuOpen(false)}
             >
               {t('marketing.nav.guides')}
-            </Link>
-            <Link
-              to="/ai-mcp-setup"
-              className={
-                activeGuide
-                  ? 'block rounded-lg bg-stone-100 px-3 py-2 text-sm font-medium text-stone-900 dark:bg-stone-800 dark:text-stone-100'
-                  : 'block rounded-lg px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800'
-              }
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {t('guides.aiMcpSetup.eyebrow')}
             </Link>
             <Link
               to={authLink}

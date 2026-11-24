@@ -1723,6 +1723,7 @@
   "screenshots.cropChannels.alt": "分析頁面上依來源與標籤統計的回覆率",
   "marketing.nav.guides": "指南",
   "marketing.footer.guidesLink": "指南",
+  "marketing.footer.setupGuideLink": "設定指南",
   "guides.index.title": "指南",
   "guides.index.subtitle": "循序漸進的教學，幫你更善用 Trakwyn。",
   "guides.index.filterLabel": "依主題篩選",

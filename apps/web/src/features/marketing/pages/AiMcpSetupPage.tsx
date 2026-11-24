@@ -74,7 +74,7 @@ export function AiMcpSetupPage() {
 
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-900">
-      <MarketingHeader activeGuide />
+      <MarketingHeader activeGuides />
 
       <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="max-w-2xl">
