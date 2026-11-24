@@ -53,7 +53,7 @@ export function FaqSection({ items, structuredData = false }: FaqSectionProps) {
   };
 
   return (
-    <section aria-labelledby="faq-heading" className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+    <section aria-labelledby="faq-heading" className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
       {structuredData && (
         <script
           type="application/ld+json"
@@ -70,7 +70,7 @@ export function FaqSection({ items, structuredData = false }: FaqSectionProps) {
       <div className="mt-6 divide-y divide-stone-200 border-y border-stone-200 dark:divide-stone-800 dark:border-stone-800">
         {entries.map(({ id, question, answer }) => (
           <details key={id} data-testid={`faq-${id}`} className="group py-4">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-md text-left text-base font-medium text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600 dark:text-stone-100 [&::-webkit-details-marker]:hidden">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-md text-left text-base font-medium text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-800 dark:focus-visible:outline-blue-400 dark:text-stone-100 [&::-webkit-details-marker]:hidden">
               {question}
               <ChevronDown
                 aria-hidden="true"

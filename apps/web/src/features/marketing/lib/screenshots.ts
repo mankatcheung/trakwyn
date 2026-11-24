@@ -42,7 +42,25 @@ export interface ScreenshotScreen {
   target?: string;
   /** CSS pixels of a cropped image; the image is this times the scale. */
   crop?: { width: number; height: number };
+  /**
+   * A phone variant (JEF-684): the name of the desktop screen this one stands
+   * in for below the `sm` breakpoint. It is captured in a phone-width viewport,
+   * so the app shows its own phone layout and the text stays readable instead
+   * of being a desktop image shrunk to 390 pixels.
+   */
+  phoneOf?: string;
 }
+
+/**
+ * Below Tailwind's `sm` (640px) the pages serve the phone variant; the
+ * `<picture>` source and the hero preload share this query so they agree.
+ */
+export const PHONE_MEDIA_QUERY = '(max-width: 639px)';
+/** The same boundary, for the preload of the desktop image. */
+export const DESKTOP_MEDIA_QUERY = '(min-width: 640px)';
+
+/** A phone: the app's own narrow layout, at the width the marketing pages target. */
+const PHONE_VIEWPORT = { width: 390, height: 760 } as const;
 
 /** Crops are photographed in a viewport tall enough for the region they start at. */
 const CROP_VIEWPORT = { width: 1100, height: 900 } as const;
@@ -61,11 +79,6 @@ export const SCREENSHOT_SCREENS = [
     altKey: 'screenshots.assistant.alt',
   },
   { name: 'resume', viewport: { width: 1100, height: 760 }, altKey: 'screenshots.resume.alt' },
-  {
-    name: 'cover-letter',
-    viewport: { width: 1100, height: 760 },
-    altKey: 'screenshots.coverLetter.alt',
-  },
   {
     name: 'analytics',
     viewport: { width: 1100, height: 760 },
@@ -104,6 +117,14 @@ export const SCREENSHOT_SCREENS = [
     viewport: CROP_VIEWPORT,
     crop: { width: 796, height: 290 },
     altKey: 'screenshots.cropStageFunnel.alt',
+  },
+  {
+    name: 'crop-cover-letter',
+    scene: 'cover-letter',
+    target: 'draft-editor',
+    viewport: CROP_VIEWPORT,
+    crop: { width: 484, height: 360 },
+    altKey: 'screenshots.coverLetter.alt',
   },
   {
     name: 'crop-new-application-import',
@@ -177,6 +198,89 @@ export const SCREENSHOT_SCREENS = [
     crop: { width: 796, height: 300 },
     altKey: 'screenshots.cropChannels.alt',
   },
+  // Phone variants (JEF-684): the same scenes in a 390 px viewport, served
+  // below the `sm` breakpoint in place of the desktop image they stand in for.
+  // Heroes first, then the crops the landing page's feature rows show.
+  {
+    name: 'board-phone',
+    scene: 'board',
+    phoneOf: 'board',
+    viewport: PHONE_VIEWPORT,
+    altKey: 'screenshots.board.alt',
+  },
+  {
+    name: 'application-detail-phone',
+    scene: 'application-detail',
+    phoneOf: 'application-detail',
+    viewport: PHONE_VIEWPORT,
+    altKey: 'screenshots.applicationDetail.alt',
+  },
+  {
+    name: 'assistant-phone',
+    scene: 'assistant',
+    phoneOf: 'assistant',
+    viewport: PHONE_VIEWPORT,
+    altKey: 'screenshots.assistant.alt',
+  },
+  {
+    name: 'resume-phone',
+    scene: 'resume',
+    phoneOf: 'resume',
+    viewport: PHONE_VIEWPORT,
+    altKey: 'screenshots.resume.alt',
+  },
+  {
+    name: 'analytics-phone',
+    scene: 'analytics',
+    phoneOf: 'analytics',
+    viewport: PHONE_VIEWPORT,
+    altKey: 'screenshots.analytics.alt',
+  },
+  {
+    name: 'crop-board-columns-phone',
+    scene: 'board',
+    target: 'board-column-draft',
+    phoneOf: 'crop-board-columns',
+    viewport: PHONE_VIEWPORT,
+    crop: { width: 358, height: 330 },
+    altKey: 'screenshots.cropBoardColumns.alt',
+  },
+  {
+    name: 'crop-assistant-reply-phone',
+    scene: 'assistant-conversation',
+    target: 'assistant-reply',
+    phoneOf: 'crop-assistant-reply',
+    viewport: PHONE_VIEWPORT,
+    crop: { width: 290, height: 300 },
+    altKey: 'screenshots.cropAssistantReply.alt',
+  },
+  {
+    name: 'crop-resume-editor-phone',
+    scene: 'resume',
+    target: 'draft-editor',
+    phoneOf: 'crop-resume-editor',
+    viewport: PHONE_VIEWPORT,
+    crop: { width: 358, height: 300 },
+    altKey: 'screenshots.cropResumeEditor.alt',
+  },
+  {
+    name: 'crop-stage-funnel-phone',
+    scene: 'analytics',
+    target: 'stage-funnel',
+    phoneOf: 'crop-stage-funnel',
+    viewport: PHONE_VIEWPORT,
+    crop: { width: 358, height: 290 },
+    altKey: 'screenshots.cropStageFunnel.alt',
+  },
+  {
+    name: 'crop-cover-letter-phone',
+    scene: 'cover-letter',
+    target: 'draft-editor',
+    phoneOf: 'crop-cover-letter',
+    viewport: PHONE_VIEWPORT,
+    crop: { width: 358, height: 340 },
+    altKey: 'screenshots.coverLetter.alt',
+  },
 ] as const satisfies readonly ScreenshotScreen[];
 
 export type ScreenshotName = (typeof SCREENSHOT_SCREENS)[number]['name'];
@@ -210,6 +314,18 @@ export const SCREENSHOTS: readonly Screenshot[] = SCREENSHOT_SCREENS.flatMap((sc
     altKey: screen.altKey,
   })),
 );
+
+/**
+ * The phone variant of a screenshot, or `undefined` when it has none
+ * (JEF-684). Matching on `phoneOf` keeps the desktop name the one pages use.
+ */
+export function getPhoneScreenshot(
+  name: ScreenshotName,
+  theme: ScreenshotTheme,
+): Screenshot | undefined {
+  const phone = SCREENSHOT_SCREENS.find((screen) => 'phoneOf' in screen && screen.phoneOf === name);
+  return phone ? getScreenshot(phone.name, theme) : undefined;
+}
 
 export function getScreenshot(name: ScreenshotName, theme: ScreenshotTheme): Screenshot {
   const found = SCREENSHOTS.find((s) => s.name === name && s.theme === theme);

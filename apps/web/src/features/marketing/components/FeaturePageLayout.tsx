@@ -50,7 +50,7 @@ export function FeaturePageLayout({
 
       <main>
         {/* Hero */}
-        <section className="relative overflow-hidden py-20 sm:py-24">
+        <section className="relative overflow-hidden py-16 sm:py-20">
           <div className="absolute inset-0 -z-10 bg-linear-to-b from-blue-50 to-stone-50 dark:from-stone-900 dark:to-stone-900" />
           <div className="mx-auto max-w-2xl px-4 text-center sm:px-6 lg:px-8">
             <div className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-600 dark:text-stone-400">
@@ -83,7 +83,7 @@ export function FeaturePageLayout({
             return (
               <section
                 key={benefit.title}
-                className={`py-16 sm:py-20 border-t border-stone-200 dark:border-stone-800`}
+                className={`py-12 sm:py-16 border-t border-stone-200 dark:border-stone-800`}
               >
                 <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
                   <div className={reversed ? 'lg:order-2' : ''}>

@@ -63,7 +63,7 @@ function LetterPanel() {
   return (
     <div className="flex flex-col gap-3">
       <PanelLabel>{t('landing.aiDemo.letterLabel')}</PanelLabel>
-      <ThemedScreenshot name="cover-letter" />
+      <ThemedScreenshot name="crop-cover-letter" />
       <div className="flex items-start gap-2 text-xs/relaxed text-green-800 dark:text-green-500">
         <Shield className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
         <p>
@@ -86,7 +86,7 @@ function LetterPanel() {
 export function AiDemoSection() {
   const { t } = useLocale();
   return (
-    <section aria-labelledby="ai-demo-heading" className="py-24 sm:py-32">
+    <section aria-labelledby="ai-demo-heading" className="py-18 sm:py-24">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <div className="text-sm font-medium text-stone-600 dark:text-stone-300">

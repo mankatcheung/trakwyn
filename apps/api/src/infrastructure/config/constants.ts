@@ -26,6 +26,7 @@ export const ENV = {
   DATABASE_URL: 'DATABASE_URL',
   /** Pins the instant the demo seed's dates are relative to (JEF-532); unset means now. */
   SEED_NOW: 'SEED_NOW',
+  SEED_PROFILE: 'SEED_PROFILE',
   STORAGE_PROVIDER: 'STORAGE_PROVIDER',
   BLOB_READ_WRITE_TOKEN: 'BLOB_READ_WRITE_TOKEN',
   BLOB_PUBLIC_READ_WRITE_TOKEN: 'BLOB_PUBLIC_READ_WRITE_TOKEN',

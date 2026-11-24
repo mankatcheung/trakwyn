@@ -11,9 +11,16 @@ import {
   interviewRound,
   offer,
 } from '../../infrastructure/db/schema.js';
-import { applications } from '../data/applications/index.js';
+import { SEED_PROFILES, type SeedProfile } from '../profile.js';
+import { buildApplications } from '../data/applications/index.js';
 
-export async function seedApplications(db: DrizzleDb, userId: string, now: Date): Promise<void> {
+export async function seedApplications(
+  db: DrizzleDb,
+  userId: string,
+  now: Date,
+  { includeQuotaDemo }: Pick<SeedProfile, 'includeQuotaDemo'> = SEED_PROFILES.default,
+): Promise<void> {
+  const applications = buildApplications(includeQuotaDemo);
   for (const [index, app] of applications.entries()) {
     // Not random: lists sort ties on `id`, and rows seeded in one instant tie,
     // so random ids would reorder them on every seed and change the guides'

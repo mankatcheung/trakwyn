@@ -6,7 +6,12 @@ vi.mock('#/lib/i18n', () => ({
 }));
 
 import { ThemedScreenshot } from '#/features/marketing/components/ThemedScreenshot';
-import { getScreenshot, SCREENSHOT_SCALE } from '#/features/marketing/lib/screenshots';
+import {
+  getPhoneScreenshot,
+  getScreenshot,
+  PHONE_MEDIA_QUERY,
+  SCREENSHOT_SCALE,
+} from '#/features/marketing/lib/screenshots';
 
 describe('ThemedScreenshot', () => {
   it('keeps both images lazy and at high priority when priority is set', () => {
@@ -69,5 +74,34 @@ describe('ThemedScreenshot', () => {
     const shot = getScreenshot('crop-chat-history', 'light');
     expect(light).toHaveStyle({ maxWidth: `${shot.width / SCREENSHOT_SCALE}px` });
     expect(light).toHaveAttribute('width', String(shot.width));
+  });
+
+  describe('phone variants (JEF-684)', () => {
+    it('offers the phone capture below sm, with its own size so nothing shifts', () => {
+      const { container } = render(<ThemedScreenshot name="board" />);
+
+      const sources = container.querySelectorAll('source');
+      expect(sources).toHaveLength(2);
+      (['light', 'dark'] as const).forEach((theme, i) => {
+        const phone = getPhoneScreenshot('board', theme)!;
+        expect(sources[i]).toHaveAttribute('media', PHONE_MEDIA_QUERY);
+        expect(sources[i]).toHaveAttribute('srcset', phone.src);
+        expect(sources[i]).toHaveAttribute('width', String(phone.width));
+        expect(sources[i]).toHaveAttribute('height', String(phone.height));
+      });
+    });
+
+    it('keeps the desktop image as the img the source falls back to', () => {
+      render(<ThemedScreenshot name="board" />);
+
+      const [light] = screen.getAllByAltText('t:screenshots.board.alt');
+      expect(light).toHaveAttribute('src', getScreenshot('board', 'light').src);
+    });
+
+    it('adds no source to a screenshot without a phone variant', () => {
+      const { container } = render(<ThemedScreenshot name="crop-board-header" />);
+
+      expect(container.querySelectorAll('source')).toHaveLength(0);
+    });
   });
 });

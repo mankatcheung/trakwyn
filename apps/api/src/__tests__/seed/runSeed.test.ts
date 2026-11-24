@@ -9,6 +9,7 @@ import {
   interviewRound,
   offer,
   applicationTag,
+  documentDraft,
 } from '#src/infrastructure/db/schema.js';
 import { CONTENT_LIMITS } from '#src/use-cases/constants.js';
 import { runSeed, DEMO_EMAIL } from '#src/seed/index.js';
@@ -89,5 +90,42 @@ describe('runSeed', () => {
       .sort();
 
     expect(second).toEqual(first);
+  });
+  describe('profiles (JEF-684)', () => {
+    const everything = async () => {
+      const apps = await db.db.select().from(jobApplication);
+      const [demo] = await db.db.select().from(user);
+      const drafts = await db.db.select().from(documentDraft);
+      return JSON.stringify({ apps, demo: demo.name, drafts: drafts.map((d) => d.plainText) });
+    };
+
+    it('keeps the quota demo applications and "Demo User" in the default profile', async () => {
+      await runSeed(db.db);
+
+      const text = await everything();
+      expect(text).toContain('Quota Demo — At the limit');
+      expect(text).toContain('Quota Demo — Nearly full');
+      expect(text).toContain('Demo User');
+      expect(text).toContain('demo@example.com');
+    });
+
+    it('leaves out the quota demo and "Demo User" in the marketing profile', async () => {
+      await runSeed(db.db, new Date(), 'marketing');
+
+      const text = await everything();
+      expect(text).not.toContain('Quota Demo');
+      expect(text).not.toContain('Demo User');
+      expect(text).not.toContain('demo@example.com');
+      expect(text).toContain('Maya Chen');
+      expect(text).toContain('maya.chen@example.com');
+      expect(await db.db.select().from(jobApplication)).toHaveLength(13);
+    });
+
+    it('keeps the demo login in the marketing profile', async () => {
+      await runSeed(db.db, new Date(), 'marketing');
+
+      const [demo] = await db.db.select().from(user);
+      expect(demo.email).toBe(DEMO_EMAIL);
+    });
   });
 });

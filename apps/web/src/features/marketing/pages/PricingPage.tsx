@@ -194,7 +194,7 @@ export function PricingPage() {
               {t('landing.startFree')}
             </Link>
           </div>
-          <div className="relative flex flex-col rounded-xl border-2 border-blue-600 bg-blue-50 p-6 dark:bg-blue-950/30">
+          <div className="relative flex flex-col rounded-xl border-2 border-blue-800 bg-blue-50 p-6 dark:border-blue-400 dark:bg-blue-950/30">
             <span
               data-testid="recommended-badge"
               className="absolute -top-3 left-6 rounded-full bg-blue-800 px-2.5 py-0.5 text-xs font-medium text-white"
@@ -239,7 +239,7 @@ export function PricingPage() {
           </p>
         </section>
 
-        <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+        <section className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
             {t('pricing.optionsTitle')}
           </h2>
@@ -340,11 +340,7 @@ export function PricingPage() {
                   <tr
                     key={labelKey}
                     data-differs={cellsDiffer(free, pro) || undefined}
-                    className={
-                      cellsDiffer(free, pro)
-                        ? 'border-b border-stone-100 bg-blue-50/60 dark:border-stone-900 dark:bg-blue-950/20'
-                        : 'border-b border-stone-100 dark:border-stone-900'
-                    }
+                    className="border-b border-stone-100 dark:border-stone-900"
                   >
                     <th
                       scope="row"
@@ -355,7 +351,14 @@ export function PricingPage() {
                     <td className="py-3 text-center text-stone-700 dark:text-stone-300">
                       <CellValue cell={free} />
                     </td>
-                    <td className="py-3 text-center text-stone-700 dark:text-stone-300">
+                    {/* A row where Pro differs is marked by a medium-weight, darker Pro value, not a tinted band. */}
+                    <td
+                      className={`py-3 text-center ${
+                        cellsDiffer(free, pro)
+                          ? 'font-medium text-stone-900 dark:text-stone-100'
+                          : 'text-stone-700 dark:text-stone-300'
+                      }`}
+                    >
                       <CellValue cell={pro} />
                     </td>
                   </tr>

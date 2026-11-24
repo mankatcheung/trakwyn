@@ -29,7 +29,7 @@ export function MarketingClosingCta({
   return (
     <section
       aria-labelledby={headingId}
-      className="border-t border-stone-200 bg-stone-100 px-4 py-16 text-center sm:px-6 sm:py-20 lg:px-8 dark:border-stone-800 dark:bg-stone-800/40"
+      className="border-t border-stone-200 bg-stone-100 px-4 py-12 text-center sm:px-6 sm:py-16 lg:px-8 dark:border-stone-800 dark:bg-stone-800/40"
     >
       <h2
         id={headingId}

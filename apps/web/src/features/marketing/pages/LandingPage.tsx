@@ -49,28 +49,28 @@ const highlightedFeatures: readonly FeatureRowProps[] = [
     descriptionKey: 'landing.trackingDescription',
     to: '/features/tracking',
     linkLabelKey: 'features.index.tracking.linkLabel',
-    screenshot: 'board',
+    screenshot: 'crop-board-columns',
   },
   {
     titleKey: 'landing.assistant',
     descriptionKey: 'landing.assistantDescription',
     to: '/features/ai-assistant',
     linkLabelKey: 'features.index.aiAssistant.linkLabel',
-    screenshot: 'assistant',
+    screenshot: 'crop-assistant-reply',
   },
   {
     titleKey: 'landing.resumeCoverLetters',
     descriptionKey: 'landing.resumeCoverLettersDescription',
     to: '/features/resume-cover-letter',
     linkLabelKey: 'features.index.resumeCoverLetter.linkLabel',
-    screenshot: 'resume',
+    screenshot: 'crop-resume-editor',
   },
   {
     titleKey: 'landing.analytics',
     descriptionKey: 'landing.analyticsDescription',
     to: '/features/analytics',
     linkLabelKey: 'features.index.analytics.linkLabel',
-    screenshot: 'analytics',
+    screenshot: 'crop-stage-funnel',
     pro: true,
   },
 ];
@@ -155,7 +155,7 @@ export function LandingPage() {
         <AiDemoSection />
 
         {/* How it works: what to do first, right after the demo (JEF-677) */}
-        <section className="bg-stone-100 py-16 sm:py-20 dark:bg-stone-800/30">
+        <section className="bg-stone-100 py-12 sm:py-16 dark:bg-stone-800/30">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <h2 className="text-center text-3xl font-medium tracking-tight text-stone-900 sm:text-4xl dark:text-stone-100">
               {t('landing.getStartedMinutes')}
@@ -176,7 +176,7 @@ export function LandingPage() {
         </section>
 
         {/* Features */}
-        <section className="py-24 sm:py-32">
+        <section className="py-18 sm:py-24">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <h2 className="text-3xl font-medium tracking-tight text-stone-900 sm:text-4xl dark:text-stone-100">
@@ -216,7 +216,7 @@ export function LandingPage() {
         />
 
         {/* Closing call to action: the page's one sign-up band at the end */}
-        <section className="bg-stone-100 py-24 sm:py-32 dark:bg-stone-800/30">
+        <section className="bg-stone-100 py-18 sm:py-24 dark:bg-stone-800/30">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
             <p className="text-center text-base text-stone-600 dark:text-stone-400">
               {t('landing.planFraming')}{' '}

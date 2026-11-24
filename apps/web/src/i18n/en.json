@@ -1076,7 +1076,7 @@
   "board.dragEnd": "{{company}} dropped in the {{column}} column.",
   "board.dragCancel": "Move cancelled. {{company}} returned to where it was.",
   "marketing.brandName": "Trakwyn",
-  "marketing.footer.tagline": "Your job search, organized and powered by AI. Free plan available.",
+  "marketing.footer.tagline": "Your job search, organized. Free plan available.",
   "marketing.footer.productHeading": "Product",
   "marketing.footer.trackingLink": "Application tracking",
   "marketing.footer.aiAssistantLink": "AI assistant",
