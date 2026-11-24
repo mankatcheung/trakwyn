@@ -175,7 +175,7 @@ function createStyles(colors: ThemeColors) {
     content: { padding: 16, gap: 12, paddingBottom: 40 },
     hintRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     hint: { fontSize: 14, color: colors.textSubtle },
-    selectAllText: { fontSize: 13, fontWeight: '600', color: colors.primary },
+    selectAllText: { fontSize: 13, fontWeight: '500', color: colors.primary },
     emptyText: { fontSize: 13, color: colors.textFaint, textAlign: 'center', paddingVertical: 24 },
     optionsGrid: { gap: 10 },
     option: {
@@ -192,7 +192,7 @@ function createStyles(colors: ThemeColors) {
     optionSelected: { borderColor: colors.primary, backgroundColor: colors.primarySurface },
     optionBody: { flex: 1 },
     optionCompany: { fontSize: 13, color: colors.textSubtle, marginBottom: 2 },
-    optionSalary: { fontSize: 17, fontWeight: '700', color: colors.text },
+    optionSalary: { fontSize: 17, fontWeight: '500', color: colors.text },
     optionMeta: { fontSize: 13, color: colors.textSubtle, marginTop: 2 },
     radio: {
       width: 22,
@@ -212,7 +212,7 @@ function createStyles(colors: ThemeColors) {
       justifyContent: 'center',
     },
     compareButtonDisabled: { opacity: 0.6 },
-    compareButtonText: { color: colors.onPrimary, fontSize: 15, fontWeight: '600' },
+    compareButtonText: { color: colors.onPrimary, fontSize: 15, fontWeight: '500' },
     error: {
       color: colors.danger,
       backgroundColor: colors.dangerSurface,
@@ -231,18 +231,18 @@ function createStyles(colors: ThemeColors) {
     resultCardBest: { borderColor: colors.successBorder, backgroundColor: colors.successSurface },
     resultHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     resultHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    resultCompany: { fontSize: 16, fontWeight: '700', color: colors.text },
+    resultCompany: { fontSize: 16, fontWeight: '500', color: colors.text },
     bestBadge: {
       backgroundColor: colors.success,
       borderRadius: 9999,
       paddingHorizontal: 8,
       paddingVertical: 2,
     },
-    bestBadgeText: { fontSize: 11, fontWeight: '700', color: colors.onSuccess },
-    resultTotal: { fontSize: 20, fontWeight: '800', color: colors.text },
+    bestBadgeText: { fontSize: 12, fontWeight: '500', color: colors.onSuccess },
+    resultTotal: { fontSize: 20, fontWeight: '500', color: colors.text },
     resultRole: { fontSize: 13, color: colors.textSubtle, marginBottom: 4 },
     resultRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
     resultRowLabel: { fontSize: 13, color: colors.textSubtle },
-    resultRowValue: { fontSize: 13, color: colors.text, fontWeight: '600' },
+    resultRowValue: { fontSize: 13, color: colors.text, fontWeight: '500' },
   });
 }

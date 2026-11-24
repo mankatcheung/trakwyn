@@ -173,7 +173,7 @@ function createStyles(colors: ThemeColors) {
       padding: 16,
       gap: 10,
     },
-    title: { fontSize: 16, fontWeight: '700', color: colors.text },
+    title: { fontSize: 16, fontWeight: '500', color: colors.text },
     description: { fontSize: 13, color: colors.textSubtle },
     button: {
       minHeight: 44,
@@ -184,7 +184,7 @@ function createStyles(colors: ThemeColors) {
       paddingHorizontal: 14,
       marginTop: 4,
     },
-    buttonText: { color: colors.text, fontSize: 14, fontWeight: '600' },
+    buttonText: { color: colors.text, fontSize: 14, fontWeight: '500' },
     error: {
       color: colors.danger,
       backgroundColor: colors.dangerSurface,

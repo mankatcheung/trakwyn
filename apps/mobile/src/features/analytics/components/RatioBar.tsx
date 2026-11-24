@@ -60,7 +60,7 @@ function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 },
     label: { width: 84, fontSize: 12, color: colors.text },
-    meta: { width: 56, fontSize: 11, color: colors.textSubtle },
+    meta: { width: 56, fontSize: 12, color: colors.textSubtle },
     track: {
       flex: 1,
       height: 6,
@@ -72,10 +72,10 @@ function createStyles(colors: ThemeColors) {
     percent: {
       width: 40,
       textAlign: 'right',
-      fontSize: 11,
-      fontWeight: '600',
+      fontSize: 12,
+      fontWeight: '500',
       color: colors.textMuted,
     },
-    smallSample: { fontSize: 9, color: colors.textFaint },
+    smallSample: { fontSize: 12, color: colors.textFaint },
   });
 }

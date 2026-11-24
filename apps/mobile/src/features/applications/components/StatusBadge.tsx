@@ -35,6 +35,6 @@ function createStyles(_colors: ThemeColors) {
       paddingHorizontal: 12,
       paddingVertical: 5,
     },
-    text: { fontSize: 13, fontWeight: '700' },
+    text: { fontSize: 13, fontWeight: '500' },
   });
 }

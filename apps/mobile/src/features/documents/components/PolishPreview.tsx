@@ -63,7 +63,7 @@ function createStyles(colors: ThemeColors) {
       borderColor: colors.border,
       backgroundColor: colors.background,
     },
-    title: { fontSize: 12, fontWeight: '600', color: colors.textFaint },
+    title: { fontSize: 12, fontWeight: '500', color: colors.textFaint },
     body: { maxHeight: 240 },
     stale: { fontSize: 12, color: colors.warning },
     actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -73,7 +73,7 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 8,
       paddingHorizontal: 12,
     },
-    primaryText: { color: colors.onPrimary, fontWeight: '600', fontSize: 14 },
+    primaryText: { color: colors.onPrimary, fontWeight: '500', fontSize: 14 },
     secondary: {
       borderRadius: 8,
       borderWidth: 1,
@@ -81,6 +81,6 @@ function createStyles(colors: ThemeColors) {
       paddingVertical: 8,
       paddingHorizontal: 12,
     },
-    secondaryText: { color: colors.text, fontWeight: '600', fontSize: 14 },
+    secondaryText: { color: colors.text, fontWeight: '500', fontSize: 14 },
   });
 }

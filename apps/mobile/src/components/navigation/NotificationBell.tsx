@@ -44,6 +44,6 @@ function createStyles(colors: ThemeColors) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    badgeText: { fontSize: 9, fontWeight: '700', color: colors.onDanger },
+    badgeText: { fontSize: 12, fontWeight: '500', color: colors.onDanger },
   });
 }

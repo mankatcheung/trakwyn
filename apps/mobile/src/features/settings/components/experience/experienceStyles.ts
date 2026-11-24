@@ -14,9 +14,9 @@ export function createExperienceStyles(colors: ThemeColors) {
       gap: 12,
     },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    title: { fontSize: 15, fontWeight: '700', color: colors.text },
-    link: { color: colors.primary, fontSize: 13, fontWeight: '600' },
-    linkDanger: { color: colors.danger, fontSize: 13, fontWeight: '600' },
+    title: { fontSize: 15, fontWeight: '500', color: colors.text },
+    link: { color: colors.primary, fontSize: 13, fontWeight: '500' },
+    linkDanger: { color: colors.danger, fontSize: 13, fontWeight: '500' },
     emptyText: { fontSize: 13, color: colors.textFaint },
     row: {
       flexDirection: 'row',
@@ -28,8 +28,8 @@ export function createExperienceStyles(colors: ThemeColors) {
       gap: 8,
     },
     rowText: { flex: 1, gap: 2 },
-    rowTitle: { fontSize: 13, fontWeight: '600', color: colors.text },
-    rowMeta: { fontSize: 11, color: colors.textFaint },
+    rowTitle: { fontSize: 13, fontWeight: '500', color: colors.text },
+    rowMeta: { fontSize: 12, color: colors.textFaint },
     rowActions: { flexDirection: 'row', gap: 4 },
     input: {
       borderWidth: 1,
@@ -72,8 +72,8 @@ export function createExperienceStyles(colors: ThemeColors) {
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
-    modalTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+    modalTitle: { fontSize: 16, fontWeight: '500', color: colors.text },
     modalBody: { padding: 16, gap: 10 },
-    linkMuted: { color: colors.textSubtle, fontSize: 15, fontWeight: '600' },
+    linkMuted: { color: colors.textSubtle, fontSize: 15, fontWeight: '500' },
   });
 }

@@ -56,7 +56,7 @@ export function AiPromptInput({
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     wrap: { gap: 6 },
-    label: { fontSize: 13, fontWeight: '700', color: colors.text },
+    label: { fontSize: 13, fontWeight: '500', color: colors.text },
     optional: { fontWeight: '400', color: colors.textFaint },
     input: {
       minHeight: 84,

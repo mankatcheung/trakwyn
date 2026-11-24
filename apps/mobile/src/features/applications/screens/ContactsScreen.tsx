@@ -318,20 +318,20 @@ function createStyles(colors: ThemeColors) {
       gap: 6,
     },
     contactHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-    contactName: { fontSize: 15, fontWeight: '700', color: colors.text },
+    contactName: { fontSize: 15, fontWeight: '500', color: colors.text },
     roleBadge: {
       backgroundColor: colors.primarySurface,
       borderRadius: 999,
       paddingHorizontal: 8,
       paddingVertical: 2,
     },
-    roleBadgeText: { fontSize: 11, fontWeight: '600', color: colors.primary },
+    roleBadgeText: { fontSize: 12, fontWeight: '500', color: colors.primary },
     contactMeta: { fontSize: 13, color: colors.textSubtle },
     contactNotes: { fontSize: 13, color: colors.textMuted, marginTop: 4 },
     contactActions: { flexDirection: 'row', gap: 4, marginTop: 6 },
-    link: { color: colors.primary, fontSize: 15, fontWeight: '600' },
+    link: { color: colors.primary, fontSize: 15, fontWeight: '500' },
     linkDisabled: { color: colors.textFaint },
-    linkMuted: { color: colors.textSubtle, fontSize: 15, fontWeight: '600' },
+    linkMuted: { color: colors.textSubtle, fontSize: 15, fontWeight: '500' },
     modalContainer: { flex: 1, backgroundColor: colors.background },
     modalHeader: {
       flexDirection: 'row',
@@ -342,7 +342,7 @@ function createStyles(colors: ThemeColors) {
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
-    modalTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+    modalTitle: { fontSize: 16, fontWeight: '500', color: colors.text },
     modalContent: { padding: 16, gap: 10 },
   });
 }

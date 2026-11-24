@@ -90,8 +90,8 @@ function createStyles(colors: ThemeColors) {
     },
     headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    cardLabel: { fontSize: 14, fontWeight: '700', color: colors.text },
-    healthScoreValue: { fontSize: 16, fontWeight: '700' },
+    cardLabel: { fontSize: 14, fontWeight: '500', color: colors.text },
+    healthScoreValue: { fontSize: 16, fontWeight: '500' },
     chevron: { fontSize: 13, color: colors.textFaint },
     progressTrack: {
       height: 8,
@@ -107,7 +107,7 @@ function createStyles(colors: ThemeColors) {
     criterionDotUnmet: { backgroundColor: colors.borderStrong },
     criterionLabel: { fontSize: 13, color: colors.textMuted, flexShrink: 1 },
     criterionLabelUnmet: { color: colors.textFaint },
-    criterionPoints: { fontSize: 13, fontWeight: '600', color: colors.textMuted },
+    criterionPoints: { fontSize: 13, fontWeight: '500', color: colors.textMuted },
     criterionPointsUnmet: { color: colors.textFaint },
   });
 }
