@@ -19,7 +19,7 @@ export function LegalFooterLinks({ className }: LegalFooterLinksProps) {
     <div
       className={
         className ??
-        'flex items-center justify-center gap-4 text-xs text-stone-500 dark:text-stone-400'
+        'flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-stone-500 dark:text-stone-400 [&>*]:whitespace-nowrap'
       }
     >
       <Link to="/privacy" className="hover:text-stone-600 dark:hover:text-stone-300">

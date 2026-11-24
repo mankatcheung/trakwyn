@@ -82,7 +82,7 @@ export function TrashedApplicationView({ app }: { app: Application }) {
               type="button"
               onClick={() => restore.mutate()}
               disabled={restore.isPending || purge.isPending}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-800 dark:bg-blue-700 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-600 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-lg bg-blue-800 dark:bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-700 disabled:opacity-50"
             >
               <RotateCcwIcon size={14} />
               {t('trash.restore')}

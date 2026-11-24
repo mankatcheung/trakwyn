@@ -104,7 +104,7 @@ export function GuidePage({ guide }: { guide: Guide }) {
           <Link
             to="/register"
             onClick={() => trackCta('start_free', 'guide')}
-            className="mt-5 inline-block rounded-lg bg-blue-800 dark:bg-blue-700 px-6 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-900 dark:hover:bg-blue-600"
+            className="mt-5 inline-block rounded-lg bg-blue-800 dark:bg-blue-600 px-6 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-900 dark:hover:bg-blue-700"
           >
             {t('landing.startFree')}
           </Link>

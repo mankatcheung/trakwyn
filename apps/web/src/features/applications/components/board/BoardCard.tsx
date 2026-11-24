@@ -1,10 +1,8 @@
 import { Link } from '@tanstack/react-router';
 import { StarIcon } from 'lucide-react';
-import type { ApplicationStatus } from '#/graphql/generated/graphql';
 import { useLocale } from '#/lib/i18n';
 import type { ApplicationDisplayFields } from '#/features/applications/lib/applicationDisplayFields';
 import type { BoardApplication } from '../../graphql/boardQueries';
-import { StatusBadge } from '../StatusBadge';
 
 export function BoardCard({
   app,
@@ -19,7 +17,6 @@ export function BoardCard({
   const showMetaRow =
     (displayFields.starred && app.starred) ||
     displayFields.date ||
-    displayFields.status ||
     (displayFields.ghosted && app.likelyGhosted);
   return (
     <Link
@@ -44,7 +41,7 @@ export function BoardCard({
           {app.tags.slice(0, 2).map((tag) => (
             <span
               key={tag}
-              className="inline-flex max-w-full items-center truncate rounded-sm bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+              className="inline-flex max-w-full items-center truncate rounded-sm bg-stone-100 px-1.5 py-0.5 text-xs font-medium text-stone-600 dark:bg-stone-700/60 dark:text-stone-300"
             >
               {tag}
             </span>
@@ -54,7 +51,8 @@ export function BoardCard({
           )}
         </div>
       )}
-      {/* Date rides inline in the meta row rather than as its own stacked
+      {/* No status chip: the column the card sits in already states it (JEF-686).
+          Date rides inline in the meta row rather than as its own stacked
           line: a taller card shifts the drag geometry the board's pointer
           tests are tuned against (JEF-230 e2e regression). */}
       {showMetaRow && (
@@ -70,7 +68,6 @@ export function BoardCard({
             )}
           </span>
           <span className="flex shrink-0 items-center gap-1">
-            {displayFields.status && <StatusBadge status={app.status as ApplicationStatus} />}
             {displayFields.ghosted && app.likelyGhosted && (
               <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
                 {t('applications.likelyGhosted')}

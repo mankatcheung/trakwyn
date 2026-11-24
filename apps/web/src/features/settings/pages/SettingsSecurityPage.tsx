@@ -27,6 +27,7 @@ import {
 } from '../lib/security/securityTypes';
 import { useStepUpReauth } from '../hooks/useStepUpReauth';
 import { PasswordUpdateForm } from '../components/security/PasswordUpdateForm';
+import { AccountEmailSections } from '../components/security/AccountEmailSections';
 import {
   TotpBeginForm,
   TotpConfirmForm,
@@ -131,6 +132,8 @@ export function SettingsSecurityPage() {
         </div>
         <PasswordUpdateForm withStepUp={withStepUp} />
       </Card>
+
+      <AccountEmailSections withStepUp={withStepUp} />
 
       {/* ── Linked accounts ── */}
       <Card className="space-y-4 p-5">

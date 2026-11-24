@@ -54,7 +54,8 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         content: 'width=device-width, initial-scale=1, viewport-fit=cover',
       },
       { title: 'Trakwyn' },
-      { name: 'theme-color', content: '#1d4ed8' },
+      { name: 'theme-color', content: '#fafaf9', media: '(prefers-color-scheme: light)' },
+      { name: 'theme-color', content: '#1c1917', media: '(prefers-color-scheme: dark)' },
     ],
     links: [
       { rel: 'stylesheet', href: appCss },

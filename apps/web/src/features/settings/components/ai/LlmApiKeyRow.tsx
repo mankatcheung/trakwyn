@@ -135,7 +135,7 @@ export function LlmApiKeyRow({
                         ? 'bg-red-600'
                         : nearing
                           ? 'bg-amber-500'
-                          : 'bg-blue-800 dark:bg-blue-700'
+                          : 'bg-blue-800 dark:bg-blue-600'
                     }`}
                     style={{ width: `${ratio * 100}%` }}
                   />

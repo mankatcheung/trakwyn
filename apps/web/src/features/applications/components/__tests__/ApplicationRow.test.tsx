@@ -36,6 +36,13 @@ describe('ApplicationRow', () => {
     expect(screen.getByText('+1')).toBeInTheDocument();
   });
 
+  it('renders tags as neutral chips, so the status is the one coloured element', () => {
+    render(<ApplicationRow app={app} displayFields={fields} selected={false} onToggle={vi.fn()} />);
+    const chip = screen.getByText('a');
+    expect(chip.className).toContain('bg-stone-100');
+    expect(chip.className).not.toContain('blue');
+  });
+
   it('reports its id when the checkbox is toggled', () => {
     const onToggle = vi.fn();
     render(

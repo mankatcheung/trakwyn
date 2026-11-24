@@ -44,6 +44,12 @@ describe('BoardCard', () => {
     expect(screen.getByText('+1')).toBeInTheDocument();
   });
 
+  it('shows no status chip and neutral tags (the column states the status)', () => {
+    render(<BoardCard app={app} displayFields={{ ...allOn, status: true }} />);
+    expect(screen.queryByText(/applied/i)).not.toBeInTheDocument();
+    expect(screen.getByText('a').className).not.toContain('blue');
+  });
+
   it('hides fields that are switched off', () => {
     render(
       <BoardCard

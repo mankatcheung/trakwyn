@@ -68,7 +68,7 @@ export function DocumentEditorLinkForm({
       />
       <button
         type="submit"
-        className="cursor-pointer rounded-sm bg-blue-800 dark:bg-blue-700 px-2 py-1 text-sm text-white hover:bg-blue-900 dark:hover:bg-blue-600"
+        className="cursor-pointer rounded-sm bg-blue-800 dark:bg-blue-600 px-2 py-1 text-sm text-white hover:bg-blue-900 dark:hover:bg-blue-700"
       >
         {t('documents.editor.linkApply')}
       </button>

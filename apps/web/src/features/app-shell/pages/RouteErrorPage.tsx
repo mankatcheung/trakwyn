@@ -31,7 +31,7 @@ export function RouteErrorPage({ error }: RouteErrorPageProps) {
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={() => window.location.reload()}
-            className="rounded-lg bg-blue-800 dark:bg-blue-700 px-4 py-2 text-sm text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-600"
+            className="rounded-lg bg-blue-800 dark:bg-blue-600 px-4 py-2 text-sm text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-700"
           >
             {t('errors.reload')}
           </button>

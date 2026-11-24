@@ -156,7 +156,7 @@ export function ApplicationOffersPage() {
           <button
             onClick={openCreate}
             disabled={offersFull}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-800 dark:bg-blue-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-900 dark:hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-800 dark:bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-900 dark:hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <PlusIcon className="size-4" />
             {t('offers.addOffer')}

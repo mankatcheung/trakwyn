@@ -123,7 +123,7 @@ export function NotesTab({ applicationId, enabled }: NotesTabProps) {
             }}
             disabled={!noteContent.trim() || createNote.isPending || notesFull}
             aria-label={t('applicationDetail.addNote')}
-            className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-800 dark:bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-900 dark:hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-800 dark:bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-900 dark:hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <PlusIcon size={14} />{' '}
             <span className="hidden sm:inline">{t('applicationDetail.addNote')}</span>
@@ -153,7 +153,7 @@ export function NotesTab({ applicationId, enabled }: NotesTabProps) {
                   disabled={!editingNote.content.trim() || updateNote.isPending}
                   aria-label={updateNote.isPending ? t('applicationForm.saving') : t('common.save')}
                   aria-busy={updateNote.isPending}
-                  className="flex cursor-pointer items-center gap-1 rounded-lg bg-blue-800 dark:bg-blue-700 px-3 py-1.5 text-xs text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex cursor-pointer items-center gap-1 rounded-lg bg-blue-800 dark:bg-blue-600 px-3 py-1.5 text-xs text-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <CheckIcon size={14} />{' '}
                   <span className="hidden sm:inline">

@@ -5,7 +5,7 @@ import { useLocale } from '#/lib/i18n';
 import { allGuideTags, GUIDES } from '#/lib/guides';
 
 const CHIP = 'rounded-full border px-3 py-1 text-sm font-medium transition-colors';
-const CHIP_ON = 'border-blue-600 bg-blue-800 dark:bg-blue-700 text-white';
+const CHIP_ON = 'border-blue-600 bg-blue-800 dark:bg-blue-600 text-white';
 const CHIP_OFF =
   'border-stone-300 text-stone-700 hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800';
 

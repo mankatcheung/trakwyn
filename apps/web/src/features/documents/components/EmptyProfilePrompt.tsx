@@ -31,7 +31,7 @@ export function EmptyProfilePrompt({ onGenerateAnyway }: EmptyProfilePromptProps
         <Link
           to="/profile"
           search={{ returnTo: here }}
-          className="inline-flex items-center rounded-lg bg-blue-800 dark:bg-blue-700 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-600"
+          className="inline-flex items-center rounded-lg bg-blue-800 dark:bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-700"
         >
           {t('emptyProfilePrompt.fillIn')}
         </Link>

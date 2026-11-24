@@ -146,6 +146,7 @@
   "applications.newShort": "New",
   "applications.switchToBoardView": "Switch to board view",
   "applications.switchToListView": "Switch to list view",
+  "applications.boardColumns": "Board columns",
   "applications.newApplicationAria": "New application",
   "applications.searchPlaceholder": "Search company, role, location…",
   "applications.filterByStatus": "Filter by status",
