@@ -14,7 +14,7 @@ export function FeatureResumeCoverLetterPage() {
       eyebrowLabel={t('features.resumeCoverLetter.eyebrow')}
       title={t('features.resumeCoverLetter.title')}
       description={t('features.resumeCoverLetter.description')}
-      heroVisual={<ThemedScreenshot name="resume" />}
+      heroVisual={<ThemedScreenshot name="resume" priority />}
       heroVisualMaxWidth="max-w-3xl"
       benefits={[
         {

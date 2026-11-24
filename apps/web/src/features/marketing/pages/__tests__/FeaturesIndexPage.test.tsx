@@ -55,7 +55,8 @@ describe('FeaturesIndexPage', () => {
     const [light, dark] = screen.getAllByAltText(
       (en as Record<string, string>)['screenshots.applicationDetail.alt'],
     );
-    expect(light).toHaveAttribute('loading', 'eager');
+    // Lazy, so the hidden variant is never fetched; the route head preloads the visible one (JEF-682).
+    expect(light).toHaveAttribute('loading', 'lazy');
     expect(light).toHaveAttribute('fetchpriority', 'high');
     expect(dark).toHaveAttribute('src', '/screenshots/application-detail-dark.webp');
     const heading = screen.getByRole('heading', { level: 1 });

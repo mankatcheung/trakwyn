@@ -11,7 +11,7 @@ export function FeatureAiAssistantPage() {
       eyebrowLabel={t('features.aiAssistant.eyebrow')}
       title={t('features.aiAssistant.title')}
       description={t('features.aiAssistant.description')}
-      heroVisual={<ThemedScreenshot name="assistant" />}
+      heroVisual={<ThemedScreenshot name="assistant" priority />}
       heroVisualMaxWidth="max-w-2xl"
       benefits={[
         {

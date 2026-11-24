@@ -11,7 +11,7 @@ export function FeatureTrackingPage() {
       eyebrowLabel={t('features.tracking.eyebrow')}
       title={t('features.tracking.title')}
       description={t('features.tracking.description')}
-      heroVisual={<ThemedScreenshot name="board" />}
+      heroVisual={<ThemedScreenshot name="board" priority />}
       benefits={[
         {
           title: t('features.tracking.benefit1.title'),

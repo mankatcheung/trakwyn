@@ -62,6 +62,11 @@ export interface LinkTag {
   href: string;
   /** React's spelling: it renders the `hreflang` attribute, and warns about the lowercase prop. */
   hrefLang?: string;
+  /** A `rel="preload"` link: what the resource is, so the browser fetches it with the right priority. */
+  as?: string;
+  /** Limits a preload to a colour scheme, so a hidden variant is never fetched. */
+  media?: string;
+  fetchPriority?: 'high' | 'low' | 'auto';
 }
 
 /** The absolute URL of a marketing page, without a trailing slash on `/`. */
@@ -142,11 +147,18 @@ export function marketingMeta(page: MarketingPage, locale: IndexedLocale = 'en')
   ];
 }
 
-/** `head()` for a marketing route: its meta tags plus the canonical and hreflang links. */
-export function marketingHead(page: MarketingPage, locale: IndexedLocale = 'en') {
+/**
+ * `head()` for a marketing route: its meta tags plus the canonical and hreflang
+ * links. `extraLinks` follow them (a hero image preload, JEF-682).
+ */
+export function marketingHead(
+  page: MarketingPage,
+  locale: IndexedLocale = 'en',
+  extraLinks: readonly LinkTag[] = [],
+) {
   return {
     meta: marketingMeta(page, locale),
-    links: pageLinks(page.path, locale),
+    links: [...pageLinks(page.path, locale), ...extraLinks],
   };
 }
 

@@ -11,7 +11,7 @@ export function FeatureAnalyticsPage() {
       eyebrowLabel={t('features.analytics.eyebrow')}
       title={t('features.analytics.title')}
       description={t('features.analytics.description')}
-      heroVisual={<ThemedScreenshot name="analytics" />}
+      heroVisual={<ThemedScreenshot name="analytics" priority />}
       benefits={[
         {
           title: t('features.analytics.benefit1.title'),
