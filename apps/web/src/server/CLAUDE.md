@@ -12,3 +12,11 @@ The app is not static: nitro's `vercel` preset prerenders the marketing pages, b
 - **A report holds the method, the path, Vercel's request id, and the scrubbed error.** It never holds the query string (this app's reset, verification and share tokens live there), cookies, `Authorization`, or a server function's input. Messages and stacks pass `scrubString` from `lib/analytics/scrub.ts`, the same redaction PostHog events get.
 - **No person, no consent gate.** Server reports are operational error data sent without the browser's consent gate, so they identify no one: `$process_person_profile: false`, a `distinct_id` that is Vercel's request id (or random), `$geoip_disable`, and the project's `anonymize_ips`. The reasoning is in `infra/posthog/README.md` ("Server-side errors").
 - **The key and host come from `import.meta.env`**, the values the browser bundle was built with, so server and client errors land in the same project. The `phc_` key is public; there is no server-only secret. The alert is set up by hand in PostHog (new and reopened issues, `infra/posthog/README.md`); `SERVER_LOG_EVENTS` reach it as `web_event`, so renaming one changes what a filtered alert matches.
+
+## Response headers (JEF-685)
+
+`securityHeaders.ts` returns the headers as nitro `routeRules` (`vite.config.ts`), so they cover prerendered and function-rendered routes alike. `/**` gets `nosniff`, a strict `Referrer-Policy`, a `Permissions-Policy` with camera, microphone and geolocation off, `X-Frame-Options: DENY` and an **enforced** `Content-Security-Policy: frame-ancestors 'none'`. The rest of the CSP is **`Content-Security-Policy-Report-Only`**; move its directives into the enforced header once a week of real traffic shows no violation. `/share` sends `no-referrer` (its token is in the query string).
+
+- **The two inline head scripts are hashed**, from `lib/initScripts.ts` (no imports, so the config can read it). Edit one and the hash follows; `securityHeaders.test.ts` holds that the policy hashes exactly those two.
+- **Turnstile** needs its script and frame origin; Vercel Blob its image and connect origin; the API origin comes from `VITE_API_URL` (empty when it is the dev proxy).
+- A new third-party script, frame, font or API host needs its origin added here, or it shows as a report-only violation and breaks the day the policy is enforced.

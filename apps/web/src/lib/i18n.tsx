@@ -4,8 +4,8 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import { initReactI18next, I18nextProvider, useTranslation } from 'react-i18next';
 import { createContext, use, useEffect, useMemo, useState } from 'react';
 import en from '#/i18n/en.json';
+import { LOCALE_INIT_SCRIPT, LOCALE_STORAGE_KEY } from '#/lib/initScripts';
 import {
-  LOCALE_PATH_PREFIX,
   LOCALE_QUERY_KEY,
   isLocalizedPath,
   localeFromPathname,
@@ -14,7 +14,7 @@ import {
 
 export const SUPPORTED_LOCALES = ['en', 'en-GB', 'zh-HK', 'zh-TW', 'zh-CN'] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
-export const LOCALE_STORAGE_KEY = 'locale';
+export { LOCALE_STORAGE_KEY };
 export { LOCALE_QUERY_KEY };
 
 export const LOCALE_OPTIONS: Array<{ value: Locale; label: string }> = [
@@ -360,13 +360,4 @@ export function useLocale(): LocaleContextValue {
   return context ?? fallback;
 }
 
-/**
- * Sets `<html lang>` before hydration. The path prefix is checked first, so a
- * `/zh-hk/…` page is not relabelled with the visitor's stored or browser
- * language while it waits for JavaScript.
- *
- * It still reads `?locale=`, though the app no longer writes one (JEF-654): it
- * runs before `adoptLocaleFromQuery` has moved an old link's language into
- * storage, so the first paint of such a link is labelled correctly.
- */
-export const LOCALE_INIT_SCRIPT = `(function(){try{var m=${JSON.stringify(LOCALE_PATH_PREFIX)};var s=location.pathname.split('/')[1];var f=null;for(var k in m){if(m[k]===s){f=k}}var p=new URLSearchParams(location.search).get('${LOCALE_QUERY_KEY}');var l=f||p||localStorage.getItem('${LOCALE_STORAGE_KEY}')||((navigator.languages||[])[0])||'en';document.documentElement.lang=l;}catch(e){}})();`;
+export { LOCALE_INIT_SCRIPT };

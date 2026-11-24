@@ -2,6 +2,8 @@ import { defineConfig, searchForWorkspaceRoot } from 'vite';
 import { apiOrigin, webPort } from './devPorts.ts';
 import { guideRouteRules } from '../../content/src/node.ts';
 import { localizedRouteRules } from './src/lib/localePaths.ts';
+import { DEFAULT_API_URL, POSTHOG_EU_HOST } from './src/constants.ts';
+import { securityHeaders } from './src/server/securityHeaders.ts';
 import { devtools } from '@tanstack/devtools-vite';
 
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
@@ -19,6 +21,13 @@ import { visualizer } from 'rollup-plugin-visualizer';
 // `undefined` to process.env stores the string "undefined".
 if (!process.env.VITE_APP_RELEASE && process.env.VERCEL_GIT_COMMIT_SHA) {
   process.env.VITE_APP_RELEASE = process.env.VERCEL_GIT_COMMIT_SHA;
+}
+
+// The API origin for the CSP's connect-src. A relative VITE_API_URL (the dev
+// proxy) means the API shares the web origin and needs no entry (JEF-685).
+function cspApiOrigin(): string {
+  const url = process.env.VITE_API_URL ?? DEFAULT_API_URL;
+  return /^https?:\/\//.test(url) ? new URL(url).origin : '';
 }
 
 const config = defineConfig(({ command }) => ({
@@ -71,6 +80,15 @@ const config = defineConfig(({ command }) => ({
             // route below ever gains an auth gate or client-only cookie
             // check, remove it from this list in the same change.
             routeRules: {
+              // Response headers for every route, prerendered or not (JEF-685).
+              ...Object.fromEntries(
+                Object.entries(
+                  securityHeaders({
+                    apiOrigin: cspApiOrigin(),
+                    posthogHost: process.env.VITE_POSTHOG_HOST || POSTHOG_EU_HOST,
+                  }),
+                ).map(([route, headers]) => [route, { headers }]),
+              ),
               '/': { prerender: true },
               '/features': { prerender: true },
               '/features/tracking': { prerender: true },

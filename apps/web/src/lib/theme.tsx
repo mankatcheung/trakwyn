@@ -1,9 +1,10 @@
 /* eslint-disable react-refresh/only-export-components -- ThemeProvider and useTheme share one context; keeping them together keeps the context private. */
 import { createContext, use, useEffect, useState } from 'react';
+import { THEME_INIT_SCRIPT, THEME_STORAGE_KEY } from './initScripts';
 
 export type Theme = 'light' | 'dark' | 'system';
 
-export const THEME_STORAGE_KEY = 'theme';
+export { THEME_INIT_SCRIPT, THEME_STORAGE_KEY };
 
 function isTheme(value: string | null): value is Theme {
   return value === 'light' || value === 'dark' || value === 'system';
@@ -17,10 +18,6 @@ function applyResolvedTheme(theme: Theme): void {
   const resolved = theme === 'system' ? getSystemTheme() : theme;
   document.documentElement.classList.toggle('dark', resolved === 'dark');
 }
-
-// Inlined into the document head so the theme is applied before hydration
-// and before first paint, avoiding a flash of the wrong theme.
-export const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('${THEME_STORAGE_KEY}');var d=t==='dark'||((t==='system'||!t)&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark');}catch(e){}})();`;
 
 interface ThemeContextValue {
   theme: Theme;
