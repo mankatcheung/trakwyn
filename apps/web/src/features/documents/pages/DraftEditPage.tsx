@@ -135,7 +135,7 @@ export function DraftEditPage() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="min-w-0">
+        <div className="min-w-0" data-screenshot="draft-editor">
           <DocumentDraftEditor
             contentJson={draft.contentJson}
             onUpdate={handleUpdate}

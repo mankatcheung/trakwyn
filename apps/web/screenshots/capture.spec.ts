@@ -9,7 +9,8 @@ import {
   SCREENSHOT_SCREENS,
   SCREENSHOT_THEMES,
   screenshotFile,
-  type ScreenshotName,
+  type ScreenshotScene,
+  type ScreenshotScreen,
   type ScreenshotTheme,
 } from '../src/features/marketing/lib/screenshots';
 
@@ -84,8 +85,8 @@ async function settle(page: Page): Promise<void> {
   await expect(page.locator(DEVTOOLS_SELECTOR).locator('visible=true')).toHaveCount(0);
 }
 
-async function open(page: Page, name: ScreenshotName): Promise<void> {
-  switch (name) {
+async function open(page: Page, scene: ScreenshotScene): Promise<void> {
+  switch (scene) {
     case 'board':
       await page.goto('/applications/board');
       // The first page load on a cold dev server compiles routes: allow for it.
@@ -103,6 +104,37 @@ async function open(page: Page, name: ScreenshotName): Promise<void> {
     case 'assistant':
       await page.goto('/assistant');
       await expect(page.getByRole('textbox').first()).toBeVisible();
+      break;
+    case 'assistant-conversation':
+      // The seeded "Help me prepare for my Stripe interview" thread has replies.
+      await page.goto('/assistant');
+      await page
+        .getByRole('link', { name: /^help me prepare/i })
+        .first()
+        .click();
+      await expect(page.locator(hook('assistant-reply')).first()).toBeVisible({ timeout: 30_000 });
+      break;
+    case 'new-application':
+      await page.goto('/applications/new');
+      await page.getByRole('button', { name: /auto-fill from job posting/i }).click();
+      await expect(page.locator(hook('jd-import'))).toContainText(/job posting|url/i);
+      break;
+    case 'notifications':
+      await page.goto('/dashboard');
+      await page
+        .getByRole('button', { name: /notification/i })
+        .first()
+        .click();
+      await expect(page.locator(hook('notification-popover'))).toBeVisible();
+      await expect(page.getByText(/follow up with/i).first()).toBeVisible();
+      break;
+    case 'applications':
+      await page.goto('/applications');
+      await expect(page.locator(hook('application-filters'))).toBeVisible({ timeout: 30_000 });
+      break;
+    case 'settings-ai':
+      await page.goto('/settings/ai');
+      await expect(page.locator(hook('add-llm-key'))).toBeVisible({ timeout: 30_000 });
       break;
     case 'resume':
       await page.goto('/applications/board');
@@ -132,12 +164,41 @@ async function open(page: Page, name: ScreenshotName): Promise<void> {
       break;
     case 'analytics':
       await page.goto('/analytics');
-      await expect(page.getByRole('heading', { name: 'Analytics' })).toBeVisible();
+      // A cold dev server compiles this route on first load: allow for it.
+      await expect(page.getByRole('heading', { name: 'Analytics' })).toBeVisible({
+        timeout: 30_000,
+      });
       // The locked preview means plans are enforced; refuse to photograph it.
       await expect(page.getByText(/available on pro/i)).toHaveCount(0);
       await expect(page.getByText('Stage funnel')).toBeVisible();
       break;
   }
+}
+
+const hook = (name: string): string => `[data-screenshot="${name}"]`;
+
+/**
+ * Photographs a `data-screenshot` element (JEF-674): the image starts at its
+ * top-left corner and is the manifest's `crop` size, so it can take in what
+ * follows (a crop wider than a column takes in its neighbours). Throws when
+ * the crop leaves the viewport.
+ */
+async function shootCrop(page: Page, screen: ScreenshotScreen, path: string): Promise<void> {
+  const { target, crop, viewport } = screen;
+  if (!target || !crop) throw new Error(`${screen.name}: a crop needs a target and a size`);
+  const element = page.locator(hook(target)).first();
+  await expect(element).toBeVisible();
+  await element.evaluate((el) => el.scrollIntoView({ block: 'start' }));
+  await page.waitForTimeout(200);
+  const box = await element.boundingBox();
+  if (!box) throw new Error(`${screen.name}: ${target} has no box`);
+  const clip = { x: Math.round(box.x), y: Math.round(box.y), ...crop };
+  if (clip.x + clip.width > viewport.width || clip.y + clip.height > viewport.height) {
+    throw new Error(
+      `${screen.name}: the crop at ${clip.x},${clip.y} (${crop.width}x${crop.height}) leaves the ${viewport.width}x${viewport.height} viewport.`,
+    );
+  }
+  await page.screenshot({ path, clip });
 }
 
 async function newThemedContext(
@@ -194,13 +255,14 @@ test.describe('marketing screenshots', () => {
         try {
           const page = await context.newPage();
           await signIn(page);
-          await open(page, screen.name);
+          await open(page, 'scene' in screen ? screen.scene : screen.name);
           await settle(page);
           expect(
             await page.evaluate(() => document.documentElement.classList.contains('dark')),
           ).toBe(theme === 'dark');
           const png = join(tmp, 'shot.png');
-          await page.screenshot({ path: png });
+          if ('target' in screen) await shootCrop(page, screen, png);
+          else await page.screenshot({ path: png });
           await sharp(png)
             .webp({ quality: WEBP_QUALITY, effort: 6 })
             .toFile(join(OUT_DIR, screenshotFile(screen.name, theme)));

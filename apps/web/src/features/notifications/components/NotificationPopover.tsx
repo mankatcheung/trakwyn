@@ -111,6 +111,7 @@ export function NotificationPopover({
       ref={panelRef}
       role="dialog"
       aria-label={t('notificationInbox.title')}
+      data-screenshot="notification-popover"
       style={{ top: position.top, left: position.left }}
       className="fixed z-50 flex max-h-[70vh] w-80 flex-col overflow-hidden rounded-xl border border-stone-200 bg-white shadow-lg sm:w-96 dark:border-stone-700 dark:bg-stone-800"
     >

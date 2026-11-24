@@ -245,7 +245,7 @@ export function ChatConversationView({
         ) : (
           <>
             {messages.length === 0 && (
-              <div className="space-y-3">
+              <div className="space-y-3" data-screenshot="assistant-suggestions">
                 <p className="text-sm text-stone-500 dark:text-stone-400">
                   {t('chat.emptyPrompt')}
                 </p>
@@ -267,7 +267,11 @@ export function ChatConversationView({
             )}
 
             {messages.map((m) => (
-              <div key={m.id} className="space-y-2">
+              <div
+                key={m.id}
+                className="space-y-2"
+                data-screenshot={m.role === 'assistant' ? 'assistant-reply' : undefined}
+              >
                 <div className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div
                     className={`max-w-[80%] rounded-xl px-4 py-2 text-sm ${

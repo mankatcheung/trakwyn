@@ -19,6 +19,8 @@ import {
 import { CLIPPER_WEB_STORE_URL } from '#/constants';
 import { MarketingHeader } from '#/features/marketing/components/MarketingHeader';
 import { MarketingFooter } from '#/features/marketing/components/MarketingFooter';
+import { ThemedScreenshot } from '#/features/marketing/components/ThemedScreenshot';
+import type { ScreenshotName } from '#/features/marketing/lib/screenshots';
 import { useLocale } from '#/lib/i18n';
 
 interface DeepDive {
@@ -32,72 +34,7 @@ interface DeepDive {
     | '/features/resume-cover-letter'
     | '/features/analytics';
   linkLabelKey: string;
-  thumbnail: React.ReactNode;
-}
-
-function KanbanThumb() {
-  const { t } = useLocale();
-  return (
-    <div className="flex gap-2 rounded-lg bg-stone-50 p-3 dark:bg-stone-900/40">
-      {(['applied', 'interviewing', 'accepted'] as const).map((status) => {
-        const colors = {
-          applied: 'border-t-blue-500 text-blue-700 dark:text-blue-400',
-          interviewing: 'border-t-amber-600 text-amber-800 dark:text-amber-500',
-          accepted: 'border-t-green-500 text-green-700 dark:text-green-400',
-        }[status];
-        return (
-          <div
-            key={status}
-            className={`flex-1 rounded-md border border-t-[3px] border-stone-200 bg-white p-2 dark:border-stone-700 dark:bg-stone-800 ${colors}`}
-          >
-            <div className="text-xs font-medium">{t(`status.${status}`)}</div>
-            <div className="mt-1.5 h-4 rounded-sm border border-stone-200 dark:border-stone-700" />
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function ChatThumb() {
-  const { t } = useLocale();
-  return (
-    <div className="flex flex-col gap-1.5 rounded-lg bg-stone-50 p-3 dark:bg-stone-900/40">
-      <div className="max-w-[75%] self-end rounded-lg bg-blue-800 px-2.5 py-1.5 text-xs text-white">
-        {t('features.index.thumbChatQuestion')}
-      </div>
-      <div className="max-w-[82%] self-start rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs text-stone-700 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300">
-        {t('features.index.thumbChatAnswer')}
-      </div>
-    </div>
-  );
-}
-
-function ResumeThumb() {
-  return (
-    <div className="rounded-lg bg-stone-50 p-3 dark:bg-stone-900/40">
-      <div className="text-xs font-medium text-stone-900 dark:text-stone-100">{'Priya Anand'}</div>
-      <div className="mt-1.5 space-y-1">
-        <div className="h-1 w-3/4 rounded-sm bg-stone-300 dark:bg-stone-600" />
-        <div className="h-1 w-11/12 rounded-sm bg-stone-300 dark:bg-stone-600" />
-        <div className="h-1 w-2/3 rounded-sm bg-blue-300 dark:bg-blue-700" />
-      </div>
-    </div>
-  );
-}
-
-function AnalyticsThumb() {
-  return (
-    <div className="flex h-16 items-end gap-1.5 rounded-lg bg-stone-50 p-3 dark:bg-stone-900/40">
-      {[90, 70, 42, 18, 10].map((h, i) => (
-        <div
-          key={i}
-          className="flex-1 rounded-t bg-blue-500"
-          style={{ height: `${h}%`, opacity: 1 - i * 0.12 }}
-        />
-      ))}
-    </div>
-  );
+  thumbnail: ScreenshotName;
 }
 
 const DEEP_DIVES: DeepDive[] = [
@@ -112,7 +49,7 @@ const DEEP_DIVES: DeepDive[] = [
     ],
     to: '/features/tracking',
     linkLabelKey: 'features.index.tracking.linkLabel',
-    thumbnail: <KanbanThumb />,
+    thumbnail: 'crop-board-columns',
   },
   {
     icon: MessageSquareText,
@@ -125,7 +62,7 @@ const DEEP_DIVES: DeepDive[] = [
     ],
     to: '/features/ai-assistant',
     linkLabelKey: 'features.index.aiAssistant.linkLabel',
-    thumbnail: <ChatThumb />,
+    thumbnail: 'crop-assistant-reply',
   },
   {
     icon: FileText,
@@ -138,7 +75,7 @@ const DEEP_DIVES: DeepDive[] = [
     ],
     to: '/features/resume-cover-letter',
     linkLabelKey: 'features.index.resumeCoverLetter.linkLabel',
-    thumbnail: <ResumeThumb />,
+    thumbnail: 'crop-resume-editor',
   },
   {
     icon: BarChart3,
@@ -151,7 +88,7 @@ const DEEP_DIVES: DeepDive[] = [
     ],
     to: '/features/analytics',
     linkLabelKey: 'features.index.analytics.linkLabel',
-    thumbnail: <AnalyticsThumb />,
+    thumbnail: 'crop-stage-funnel',
   },
 ];
 
@@ -266,10 +203,8 @@ export function FeaturesIndexPage() {
                       <ArrowRight className="size-3.5" aria-hidden="true" />
                     </Link>
                   </div>
-                  <div
-                    className={`rounded-2xl border border-stone-200 bg-white p-3 shadow-sm dark:border-stone-800 dark:bg-stone-800/50 ${reversed ? 'lg:order-1' : ''}`}
-                  >
-                    {feature.thumbnail}
+                  <div className={reversed ? 'lg:order-1' : ''}>
+                    <ThemedScreenshot name={feature.thumbnail} />
                   </div>
                 </div>
               </div>

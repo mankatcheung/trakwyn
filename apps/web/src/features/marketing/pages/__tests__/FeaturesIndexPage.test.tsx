@@ -29,6 +29,23 @@ vi.mock('#/lib/i18n', () => ({
 import { FeaturesIndexPage } from '#/features/marketing/pages/FeaturesIndexPage';
 
 describe('FeaturesIndexPage', () => {
+  it('shows a real screenshot, in both themes, beside each deep dive (JEF-674)', () => {
+    render(<FeaturesIndexPage />);
+
+    [
+      'screenshots.cropBoardColumns.alt',
+      'screenshots.cropAssistantReply.alt',
+      'screenshots.cropResumeEditor.alt',
+      'screenshots.cropStageFunnel.alt',
+    ].forEach((key) => {
+      expect(screen.getAllByAltText((en as Record<string, string>)[key])).toHaveLength(2);
+    });
+    // Every image on the page is a real capture, never a drawn placeholder.
+    screen.getAllByRole('img').forEach((img) => {
+      expect(img.getAttribute('src')).toMatch(/^\/screenshots\/crop-.+-(light|dark)\.webp$/);
+    });
+  });
+
   it('links each deep-dive card to its feature page', () => {
     render(<FeaturesIndexPage />);
 

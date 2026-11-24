@@ -222,7 +222,7 @@ export function KanbanBoard() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col p-4 sm:p-6">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between" data-screenshot="board-header">
         <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
           {t('applications.board')}
         </h1>

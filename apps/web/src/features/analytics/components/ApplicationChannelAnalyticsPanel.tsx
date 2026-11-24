@@ -71,7 +71,7 @@ export function ApplicationChannelAnalyticsPanel() {
   if (!analytics) return null;
 
   return (
-    <Card className="p-6">
+    <Card className="p-6" data-screenshot="channel-analytics">
       <h2 className="mb-1 text-sm font-medium text-stone-700 dark:text-stone-300">
         {t('channelAnalytics.title')}
       </h2>
