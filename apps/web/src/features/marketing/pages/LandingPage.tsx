@@ -150,6 +150,27 @@ export function LandingPage() {
         {/* Static posting → cover letter sample (JEF-517) */}
         <AiDemoSection />
 
+        {/* How it works: what to do first, right after the demo (JEF-677) */}
+        <section className="bg-stone-100 py-16 sm:py-20 dark:bg-stone-800/30">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <h2 className="text-center text-3xl font-medium tracking-tight text-stone-900 sm:text-4xl dark:text-stone-100">
+              {t('landing.getStartedMinutes')}
+            </h2>
+            <ol className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+              {stepKeys.map((stepKey, i) => (
+                <li key={stepKey} className="flex items-start gap-4 lg:flex-col lg:gap-3">
+                  <div className="w-8 shrink-0 border-t-2 border-blue-800 pt-1.5 font-mono text-sm text-stone-500 tabular-nums dark:border-blue-400 dark:text-stone-400">
+                    {String(i + 1).padStart(2, '0')}
+                  </div>
+                  <p className="pt-0.5 text-lg text-stone-700 lg:pt-0 dark:text-stone-300">
+                    {t(stepKey)}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
         {/* Features */}
         <section className="py-24 sm:py-32">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -190,25 +211,10 @@ export function LandingPage() {
           structuredData
         />
 
-        {/* How it works */}
+        {/* Closing call to action: the page's one sign-up band at the end */}
         <section className="bg-stone-100 py-24 sm:py-32 dark:bg-stone-800/30">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <h2 className="text-3xl font-medium tracking-tight text-stone-900 sm:text-4xl dark:text-stone-100">
-                {t('landing.getStartedMinutes')}
-              </h2>
-            </div>
-            <div className="mt-12 space-y-6">
-              {stepKeys.map((stepKey, i) => (
-                <div key={stepKey} className="flex items-start gap-4">
-                  <div className="w-8 shrink-0 border-t-2 border-blue-800 pt-1.5 font-mono text-sm text-stone-500 tabular-nums dark:border-blue-400 dark:text-stone-400">
-                    {String(i + 1).padStart(2, '0')}
-                  </div>
-                  <p className="pt-0.5 text-lg text-stone-700 dark:text-stone-300">{t(stepKey)}</p>
-                </div>
-              ))}
-            </div>
-            <p className="mt-10 text-center text-base text-stone-600 dark:text-stone-400">
+            <p className="text-center text-base text-stone-600 dark:text-stone-400">
               {t('landing.planFraming')}{' '}
               <Link
                 to="/pricing"
