@@ -15,7 +15,7 @@
 
    Fix: added a **declaration-only** build (`packages/ui/tsconfig.build.json`, `emitDeclarationOnly: true` → `dist/*.d.ts`) plus `"publishConfig": {"types": "./dist/index.d.ts"}` in `package.json`. `findTypesRoot()` in the converter's `lib/dts.mjs` checks `publishConfig.types` _before_ `types` — exactly for this workspace-package pattern (dev `types` points at src, publishConfig carries the built one). `main`/`types` themselves were left untouched, so `apps/web`'s live-source dev experience is unaffected. `buildCmd` in config.json runs `pnpm --filter @trakwyn/ui build`, which also now compiles `dist/styles.css` (next point).
 
-2. **No compiled CSS at all.** The whole package styles via bare Tailwind utility classes (`bg-blue-600`, `dark:bg-gray-700`, etc.) with zero design tokens or CSS-in-JS — nothing for `cfg.cssEntry` to point at out of the box. Without a real stylesheet, every preview (and every future design built with these components in claude.ai/design) would render completely unstyled.
+2. **No compiled CSS at all.** The whole package styles via bare Tailwind utility classes (`bg-blue-800`, `dark:bg-stone-700`, etc.) with zero design tokens or CSS-in-JS — nothing for `cfg.cssEntry` to point at out of the box. Without a real stylesheet, every preview (and every future design built with these components in claude.ai/design) would render completely unstyled.
 
    Fix: added `@tailwindcss/cli` + `tailwindcss` as devDependencies, a `packages/ui/src/styles.css` entry (`@import 'tailwindcss'; @source './';`), and a build step compiling it to `dist/styles.css`. `cfg.cssEntry` points there.
 

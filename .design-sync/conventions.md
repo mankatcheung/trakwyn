@@ -12,10 +12,10 @@ There is no design-token layer, no CSS-in-JS, and no `styled-components` — eve
 
 | Purpose                  | Classes actually used in this DS                                                                                                    |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Primary action surface   | `bg-blue-600 hover:bg-blue-700`, white text                                                                                         |
+| Primary action surface   | `bg-blue-800 hover:bg-blue-900 dark:bg-blue-600 dark:hover:bg-blue-700`, white text                                                 |
 | Destructive action       | `bg-red-600 hover:bg-red-700`                                                                                                       |
-| Neutral/bordered surface | `border border-gray-300 dark:border-gray-600`, `bg-white dark:bg-gray-700` (inputs) or `dark:bg-gray-800` (the Modal panel)         |
-| Body/label text          | `text-gray-700 dark:text-gray-200` (Secondary button text), `text-gray-600 dark:text-gray-400` (Ghost button / muted text)          |
+| Neutral/bordered surface | `border border-stone-300 dark:border-stone-600`, `bg-white dark:bg-stone-700` (inputs) or `dark:bg-stone-800` (the Modal panel)     |
+| Body/label text          | `text-stone-700 dark:text-stone-200` (Secondary button text), `text-stone-600 dark:text-stone-400` (Ghost button / muted text)      |
 | Corners                  | `rounded-lg` (buttons, inputs, select, textarea, alert), `rounded-xl` (Modal panel, Card), `rounded-full` (Badge)                   |
 | Type size                | `text-sm` (14px, the base size everywhere) and `text-xs` for Badge / small-button text — nothing larger is used anywhere in this DS |
 | Padding                  | Button (md) `px-4 py-2`, Button (sm) `px-3 py-1.5`, Input `px-3 py-2`, Badge `px-2 py-0.5`, IconButton `p-1.5` (md) / `p-1` (sm)    |
@@ -48,4 +48,4 @@ function LoginForm() {
 }
 ```
 
-`FormLabel` renders a `<label>` and takes a `size` prop: `'sm'` (default — `text-sm font-medium text-gray-700 dark:text-gray-300`, the standard full-page form label) or `'xs'` (`text-xs font-medium text-gray-500`, no dark-mode variant — the compact label used in denser panel forms). Pass `htmlFor` like any native `<label>` to associate it with a field.
+`FormLabel` renders a `<label>` and takes a `size` prop: `'sm'` (default — `text-sm font-medium text-stone-700 dark:text-stone-300`, the standard full-page form label) or `'xs'` (`text-xs font-medium text-stone-500`, no dark-mode variant — the compact label used in denser panel forms). Pass `htmlFor` like any native `<label>` to associate it with a field.

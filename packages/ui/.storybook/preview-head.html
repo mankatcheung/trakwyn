@@ -1,0 +1,15 @@
+<!--
+  The canvas follows the theme the way the app's page does. `withThemeByClassName`
+  (preview.ts) only puts `.dark` on <html>; without a background here a dark story
+  sits on Storybook's white canvas and its light text disappears.
+  These are the two values of the `body` rules in apps/web/src/styles.css
+  (stone-50 and stone-900).
+-->
+<style>
+  body {
+    background-color: #fafaf9;
+  }
+  html.dark body {
+    background-color: #1c1917;
+  }
+</style>
