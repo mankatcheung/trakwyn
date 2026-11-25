@@ -1,6 +1,6 @@
-import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { appSourceFiles, matchingLines } from '../helpers/sourceFiles';
 
 /**
  * The app's neutrals are the warm `stone` ramp, never the cool `gray` one
@@ -9,28 +9,12 @@ import { describe, expect, it } from 'vitest';
  * Draft status stayed cool next to stone surfaces. This test reads every source
  * file of `apps/web` and `packages/ui`, whatever its extension, so the next
  * sweep cannot miss a file type.
- *
- * Tests, stories and generated code are exempt: they describe or mock classes
- * rather than render them.
  */
-const WEB_ROOT = join(import.meta.dirname, '..', '..', '..');
-const SOURCE_ROOTS = [join(WEB_ROOT, 'src'), join(WEB_ROOT, '..', '..', 'packages', 'ui', 'src')];
-
-const SOURCE_FILE = /\.(ts|tsx|css)$/;
-const EXEMPT = /(__tests__|graphql[\\/]generated|\.test\.|\.stories\.|routeTree\.gen)/;
 /** `bg-gray-400`, `dark:text-gray-300`, `border-t-gray-400`, and the typography plugin's `prose-gray`. */
 const GRAY_CLASS = /\bgray-\d{2,3}\b|\bprose-gray\b/;
 
-function sourceFiles(): string[] {
-  return SOURCE_ROOTS.flatMap((root) =>
-    readdirSync(root, { recursive: true, encoding: 'utf8' })
-      .filter((path) => SOURCE_FILE.test(path) && !EXEMPT.test(path))
-      .map((path) => join(root, path)),
-  );
-}
-
 describe('no gray classes (JEF-693)', () => {
-  const files = sourceFiles();
+  const files = appSourceFiles();
 
   it('reads the source of both packages', () => {
     // A wrong root would read nothing and pass for the wrong reason.
@@ -40,14 +24,6 @@ describe('no gray classes (JEF-693)', () => {
   });
 
   it('uses stone, never gray, for neutrals in every source file', () => {
-    const found = files.flatMap((file) =>
-      readFileSync(file, 'utf8')
-        .split('\n')
-        .flatMap((line, index) =>
-          GRAY_CLASS.test(line) ? [`${relative(WEB_ROOT, file)}:${index + 1}  ${line.trim()}`] : [],
-        ),
-    );
-
-    expect(found).toEqual([]);
+    expect(matchingLines(files, GRAY_CLASS)).toEqual([]);
   });
 });

@@ -3,7 +3,7 @@ import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { SparklesIcon } from 'lucide-react';
+import { ListChecksIcon } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
 import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
 import { getErrorMessage } from '#/lib/errors';
@@ -224,7 +224,7 @@ export function ResumeGapsPanel({ applicationId }: ResumeGapsPanelProps) {
         id="resume-gaps-title"
         className="flex items-center gap-1.5 text-sm font-medium text-stone-900 dark:text-stone-100"
       >
-        <SparklesIcon size={16} aria-hidden="true" />
+        <ListChecksIcon size={16} aria-hidden="true" />
         {t('resumeGaps.title')}
       </h2>
       <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{t('resumeGaps.intro')}</p>

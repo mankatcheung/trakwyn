@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { SparklesIcon } from 'lucide-react';
+import { ListIcon } from 'lucide-react';
 import { Button } from '@trakwyn/ui';
 import { AiActionBar } from '#/features/ai/components/AiActionBar';
 import { AiPromptInput } from '#/features/ai/components/AiPromptInput';
@@ -158,7 +158,7 @@ export function MockTalkingPoints({
           }}
         >
           <span className="flex items-center gap-1.5">
-            <SparklesIcon size={13} aria-hidden="true" />
+            <ListIcon size={13} aria-hidden="true" />
             {bullets.length > 0
               ? t('interviews.regenerateTalkingPoints')
               : t('interviews.talkingPoints')}

@@ -9,7 +9,7 @@ import {
   ListOrderedIcon,
   MinusIcon,
   QuoteIcon,
-  SparklesIcon,
+  PenLineIcon,
   TableIcon,
   type LucideIcon,
 } from 'lucide-react';
@@ -101,7 +101,7 @@ export const SLASH_COMMANDS: readonly SlashCommandItem[] = [
     id: 'askAi',
     labelKey: 'documents.editor.ai.askAi',
     keywords: ['ai', 'ask', 'assistant', 'rewrite', 'improve'],
-    Icon: SparklesIcon,
+    Icon: PenLineIcon,
     run: (editor, range) => {
       editor.chain().focus().deleteRange(range).run();
       requestAskAi(editor);

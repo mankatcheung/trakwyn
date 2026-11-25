@@ -90,7 +90,7 @@ export function CompanyBriefingTab({ applicationId }: { applicationId: string })
         <AiActionBar
           feature="companyBriefing"
           onRun={handleGenerate}
-          label={`✨ ${briefing ? t('companyBriefing.regenerate') : t('companyBriefing.generateBriefing')}`}
+          label={briefing ? t('companyBriefing.regenerate') : t('companyBriefing.generateBriefing')}
           loadingLabel={t('companyBriefing.researching')}
           loading={generate.isPending}
           disabled={isLoading}

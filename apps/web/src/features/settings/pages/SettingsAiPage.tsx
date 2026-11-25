@@ -1,9 +1,10 @@
-import { PlusIcon, SparklesIcon } from 'lucide-react';
+import { BookOpenIcon, PlusIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
+import { SetupGuideBanner } from '../components/SetupGuideBanner';
 import { LlmApiKeyRow } from '../components/ai/LlmApiKeyRow';
 import { AddLlmApiKeyForm } from '../components/ai/AddLlmApiKeyForm';
 import { AiProviderOrderCard } from '../components/ai/AiProviderOrderCard';
@@ -148,20 +149,7 @@ export function SettingsAiPage() {
 
   return (
     <div className="space-y-10">
-      <div className="flex items-center justify-between gap-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-900 dark:bg-blue-900/20">
-        <div className="flex items-center gap-3">
-          <SparklesIcon className="size-4.5 shrink-0 text-blue-700 dark:text-blue-400" />
-          <p className="text-sm text-blue-900 dark:text-blue-300">
-            {t('guides.aiMcpSetup.bannerAiText')}
-          </p>
-        </div>
-        <Link
-          to="/ai-mcp-setup"
-          className="shrink-0 text-sm font-medium text-blue-700 hover:underline dark:text-blue-400"
-        >
-          {t('guides.aiMcpSetup.bannerLink')}
-        </Link>
-      </div>
+      <SetupGuideBanner icon={BookOpenIcon} textKey="guides.aiMcpSetup.bannerAiText" />
 
       {/* ── Which AI answers, in order; Trakwyn AI is Pro only for now (JEF-451, JEF-503) ── */}
       {llmKeysLoading ? (

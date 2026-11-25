@@ -136,6 +136,14 @@ describe('AiHelperPanel — empty draft', () => {
     api();
   });
 
+  it('is a standard white panel with a pen icon, not a blue-tinted one with a sparkle (JEF-693)', () => {
+    setup();
+    const panel = screen.getByRole('complementary', { name: 'AI helper' });
+    expect(panel.className).toContain('bg-white');
+    expect(panel.className).not.toMatch(/blue/);
+    expect(panel.querySelector('svg.lucide-pen-line')).not.toBeNull();
+  });
+
   it('offers Generate, not Polish, and no regenerate', () => {
     setup();
     expect(screen.getByRole('button', { name: 'Generate' })).toBeInTheDocument();

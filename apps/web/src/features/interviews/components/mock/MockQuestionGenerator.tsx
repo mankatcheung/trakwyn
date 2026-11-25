@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { SparklesIcon } from 'lucide-react';
+import { MessagesSquareIcon } from 'lucide-react';
 import { Button } from '@trakwyn/ui';
 import { AiActionBar } from '#/features/ai/components/AiActionBar';
 import { AiPromptInput } from '#/features/ai/components/AiPromptInput';
@@ -106,7 +106,7 @@ export function MockQuestionGenerator({
   return (
     <div className="space-y-3 rounded-lg border-2 border-violet-500 bg-violet-50/40 p-3 dark:bg-violet-900/10">
       <h4 className="flex items-center gap-1.5 text-sm font-medium text-stone-900 dark:text-stone-100">
-        <SparklesIcon size={14} aria-hidden="true" />
+        <MessagesSquareIcon size={14} aria-hidden="true" />
         {t('interviews.generateTitle')}
       </h4>
       <MockBackgroundPicker

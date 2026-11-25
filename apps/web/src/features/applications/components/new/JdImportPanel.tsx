@@ -7,7 +7,7 @@ import { useLocale } from '#/lib/i18n';
 import { AiCreditCost } from '#/features/ai/components/AiCreditCost';
 import { useAiCredits } from '#/features/ai/hooks/useAiCredits';
 import { AiCreditsMeter } from '#/features/ai/components/AiCreditsMeter';
-import { SparklesIcon } from 'lucide-react';
+import { ChevronDownIcon, ClipboardPasteIcon } from 'lucide-react';
 import { Button, Input, Textarea } from '@trakwyn/ui';
 import { PARSE_JOB_DESCRIPTION } from '../../graphql/applicationMutations';
 
@@ -65,24 +65,33 @@ export function JdImportPanel({ onFill }: Props) {
 
   return (
     <div
-      className="overflow-hidden rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30"
+      className="overflow-hidden rounded-xl border border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-800"
       data-screenshot="jd-import"
     >
       <button
         type="button"
+        aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center gap-2 px-4 py-3 text-left"
       >
-        <SparklesIcon size={15} className="shrink-0 text-blue-500" />
-        <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+        <ClipboardPasteIcon
+          size={15}
+          className="shrink-0 text-stone-500 dark:text-stone-400"
+          aria-hidden="true"
+        />
+        <span className="text-sm font-medium text-stone-900 dark:text-stone-100">
           {t('jdImport.autoFillTitle')}
         </span>
-        <span className="ml-auto text-xs text-blue-400">{open ? '▲' : '▼'}</span>
+        <ChevronDownIcon
+          size={14}
+          aria-hidden="true"
+          className={`ml-auto shrink-0 text-stone-400 transition-transform dark:text-stone-500 ${open ? 'rotate-180' : ''}`}
+        />
       </button>
 
       {open && (
-        <div className="space-y-3 border-t border-blue-200 px-4 pt-3 pb-4 dark:border-blue-800">
-          <div className="flex w-fit gap-1 rounded-lg bg-blue-100 p-1 dark:bg-blue-900/40">
+        <div className="space-y-3 border-t border-stone-200 px-4 pt-3 pb-4 dark:border-stone-700">
+          <div className="flex w-fit gap-1 rounded-lg bg-stone-100 p-1 dark:bg-stone-900/60">
             <button
               type="button"
               className={tabClass(mode === 'text')}
@@ -130,18 +139,17 @@ export function JdImportPanel({ onFill }: Props) {
             onClick={handleAutoFill}
             disabled={loading || (mode === 'text' ? !text.trim() : !url.trim())}
           >
-            <span className="flex items-center gap-2">
-              <SparklesIcon size={13} />
-              {loading
-                ? t('jdImport.parsing')
-                : filled
-                  ? t('jdImport.filled')
-                  : t('jdImport.autoFillFields')}
-            </span>
+            {loading
+              ? t('jdImport.parsing')
+              : filled
+                ? t('jdImport.filled')
+                : t('jdImport.autoFillFields')}
           </Button>
           <AiCreditCost feature="parseJobDescription" />
           {onTrakwynAi && <AiCreditsMeter variant="inline" />}
-          <p className="text-xs text-blue-500 dark:text-blue-400">{t('jdImport.prefilledNote')}</p>
+          <p className="text-xs text-stone-500 dark:text-stone-400">
+            {t('jdImport.prefilledNote')}
+          </p>
         </div>
       )}
     </div>

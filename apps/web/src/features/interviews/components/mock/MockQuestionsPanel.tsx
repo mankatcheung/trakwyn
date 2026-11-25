@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronDownIcon, ChevronUpIcon, PlusIcon, SparklesIcon } from 'lucide-react';
+import { ChevronDownIcon, ChevronUpIcon, PlusIcon, MessagesSquareIcon } from 'lucide-react';
 import { Button, Skeleton } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { getErrorMessage } from '#/lib/errors';
@@ -213,14 +213,10 @@ export function MockQuestionsPanel({
         aria-expanded={expanded}
         aria-controls={panelId}
         onClick={() => setExpanded((open) => !open)}
-        className={`flex min-h-11 w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm font-medium sm:inline-flex sm:min-h-9 sm:w-auto ${
-          shownCount > 0
-            ? 'border-violet-200 bg-violet-50 text-violet-800 dark:border-violet-800 dark:bg-violet-900/20 dark:text-violet-200'
-            : 'border-stone-300 text-stone-600 dark:border-stone-600 dark:text-stone-300'
-        }`}
+        className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 -ml-2 text-sm font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 sm:min-h-9 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
       >
         <span className="flex items-center gap-2">
-          <SparklesIcon size={15} aria-hidden="true" />
+          <MessagesSquareIcon size={15} aria-hidden="true" />
           {countLabel}
         </span>
         {expanded ? (
@@ -345,7 +341,8 @@ export function MockQuestionsPanel({
                 }}
               >
                 <span className="flex items-center justify-center gap-1.5">
-                  <SparklesIcon size={14} aria-hidden="true" /> {t('interviews.generateQuestions')}
+                  <MessagesSquareIcon size={14} aria-hidden="true" />{' '}
+                  {t('interviews.generateQuestions')}
                 </span>
               </Button>
             </div>

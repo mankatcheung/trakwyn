@@ -17,10 +17,13 @@ describe('AiGeneratedBadge', () => {
     expect(screen.queryByText('AI generated')).not.toBeInTheDocument();
   });
 
-  it('hides its decorative icon from assistive tech', () => {
+  it('is a plain neutral label: no icon, no violet tint (JEF-693)', () => {
     const { container } = render(<AiGeneratedBadge />);
 
-    expect(container.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    expect(container.querySelector('svg')).toBeNull();
+    const badge = screen.getByText('AI generated');
+    expect(badge.className).toContain('stone');
+    expect(badge.className).not.toMatch(/violet|purple|blue/);
   });
 
   it('rewords the default label when the language changes', async () => {

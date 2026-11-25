@@ -11,14 +11,14 @@ import {
   MessageCircleIcon,
   PlugIcon,
   ShieldIcon,
-  SparklesIcon,
+  KeyRoundIcon,
   UserIcon,
 } from 'lucide-react';
 
 export const SETTINGS_NAV = [
   { to: '/settings/profile', labelKey: 'settings.profile', icon: UserIcon },
   { to: '/settings/security', labelKey: 'settings.security', icon: ShieldIcon },
-  { to: '/settings/ai', labelKey: 'settings.ai', icon: SparklesIcon },
+  { to: '/settings/ai', labelKey: 'settings.ai', icon: KeyRoundIcon },
   { to: '/settings/integrations', labelKey: 'settings.integrations', icon: PlugIcon },
   { to: '/settings/notifications', labelKey: 'settings.notifications', icon: BellIcon },
   { to: '/settings/data', labelKey: 'settings.data', icon: DatabaseIcon },

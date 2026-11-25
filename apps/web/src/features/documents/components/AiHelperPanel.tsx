@@ -1,5 +1,5 @@
 import { useState, type RefObject } from 'react';
-import { SparklesIcon } from 'lucide-react';
+import { PenLineIcon } from 'lucide-react';
 import { Button } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { AiErrorMessage } from '#/features/ai/components/AiErrorMessage';
@@ -195,11 +195,11 @@ export function AiHelperPanel({
   return (
     <aside
       aria-label={t('aiHelper.title')}
-      className="space-y-4 rounded-lg border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-800 dark:bg-blue-900/20"
+      className="space-y-4 rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-800"
     >
       <div>
         <h2 className="flex items-center gap-2 text-sm font-medium text-stone-900 dark:text-stone-100">
-          <SparklesIcon className="size-4 text-blue-800 dark:text-blue-400" aria-hidden />
+          <PenLineIcon className="size-4 text-stone-500 dark:text-stone-400" aria-hidden />
           {t('aiHelper.title')}
         </h2>
         <p className="mt-0.5 text-xs text-stone-600 dark:text-stone-400">
