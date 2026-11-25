@@ -8,6 +8,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import type { Application } from '../../graphql/applicationQuery';
 
 /**
@@ -42,6 +43,7 @@ function Chip({
 
 export function ApplicationInfoChips({ app }: { app: Application }) {
   const { t } = useLocale();
+  const dates = useDates();
   const followUpDue = app.followUpAt ? new Date(app.followUpAt) <= new Date() : false;
 
   return (
@@ -50,12 +52,12 @@ export function ApplicationInfoChips({ app }: { app: Application }) {
       {app.salaryRange && <Chip icon={BanknoteIcon}>{app.salaryRange}</Chip>}
       {app.appliedAt && (
         <Chip icon={CalendarIcon}>
-          {t('applicationDetail.appliedLabel')} {new Date(app.appliedAt).toLocaleDateString()}
+          {t('applicationDetail.appliedLabel')} {dates.day(app.appliedAt)}
         </Chip>
       )}
       {app.followUpAt && (
         <Chip icon={ClockIcon} tone={followUpDue ? 'warning' : 'neutral'}>
-          {t('applicationDetail.followUpLabel')} {new Date(app.followUpAt).toLocaleDateString()}
+          {t('applicationDetail.followUpLabel')} {dates.day(app.followUpAt)}
         </Chip>
       )}
       {app.source && <Chip icon={LinkIcon}>{app.source}</Chip>}

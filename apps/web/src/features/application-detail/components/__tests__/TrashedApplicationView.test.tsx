@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { formatDay } from '#/lib/dates';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
@@ -93,9 +94,7 @@ describe('TrashedApplicationView', () => {
     expect(screen.getByText('Berlin')).toBeInTheDocument();
     expect(screen.getByText('€80k')).toBeInTheDocument();
     expect(screen.getByText('LinkedIn')).toBeInTheDocument();
-    expect(
-      screen.getByText(new Date('2026-03-04T12:00:00.000Z').toLocaleDateString()),
-    ).toBeInTheDocument();
+    expect(screen.getByText(formatDay('2026-03-04T12:00:00.000Z', 'en'))).toBeInTheDocument();
     expect(screen.getByText('Build things')).toBeInTheDocument();
   });
 

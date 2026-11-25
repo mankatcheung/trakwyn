@@ -5,6 +5,7 @@ import { gqlClient } from '#/graphql/client';
 import { showUndoToast } from '#/lib/undoToast';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import { Card, Textarea } from '@trakwyn/ui';
 import { QuotaHint } from '#/features/quota/components/QuotaHint';
 import { useQuotaState } from '#/features/quota/lib/contentQuota';
@@ -38,6 +39,7 @@ interface NotesTabProps {
  */
 export function NotesTab({ applicationId, enabled }: NotesTabProps) {
   const { t } = useLocale();
+  const dates = useDates();
   const qc = useQueryClient();
   const [noteContent, setNoteContent] = useState('');
   const [editingNote, setEditingNote] = useState<Note | null>(null);
@@ -204,7 +206,7 @@ export function NotesTab({ applicationId, enabled }: NotesTabProps) {
               </div>
             </div>
           )}
-          <p className="mt-2 text-xs text-stone-400">{new Date(note.createdAt).toLocaleString()}</p>
+          <p className="mt-2 text-xs text-stone-400">{dates.dateTime(note.createdAt)}</p>
         </Card>
       ))}
     </div>

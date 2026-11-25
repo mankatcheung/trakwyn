@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import { useBillingStatus } from '#/features/plans/lib/billingStatus';
 import { Alert, Badge, Button, Card, FormLabel, Input, Select } from '@trakwyn/ui';
 import { QuotaHint } from '#/features/quota/components/QuotaHint';
@@ -21,6 +22,7 @@ import type {
 
 export function ApiTokensCard() {
   const { t } = useLocale();
+  const dates = useDates();
   const qc = useQueryClient();
 
   const billingStatus = useBillingStatus();
@@ -216,10 +218,10 @@ export function ApiTokensCard() {
                 </p>
                 <p className="text-xs text-stone-500 dark:text-stone-400">
                   {t('integrations.createdOn', {
-                    date: new Date(token.createdAt).toLocaleDateString(),
+                    date: dates.day(token.createdAt),
                   })}
                   {token.lastUsedAt &&
-                    ` · ${t('integrations.lastUsedSuffix', { date: new Date(token.lastUsedAt).toLocaleDateString() })}`}
+                    ` · ${t('integrations.lastUsedSuffix', { date: dates.day(token.lastUsedAt) })}`}
                 </p>
               </div>
               <button

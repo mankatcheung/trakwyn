@@ -8,6 +8,8 @@ vi.mock('#/features/plans/lib/billingStatus', () => ({ useBillingStatus: () => b
 vi.mock('#/lib/i18n', () => ({
   useLocale: () => ({
     locale: 'en',
+    formatDate: (value: string, options: Intl.DateTimeFormatOptions) =>
+      new Intl.DateTimeFormat('en', options).format(new Date(value)),
     t: (key: string, o?: Record<string, unknown>) =>
       Object.entries(o ?? {}).reduce(
         (text, [k, v]) => text.replace(`{{${k}}}`, String(v)),
@@ -38,7 +40,7 @@ describe('AiCreditsMeter', () => {
     withCredits(18);
     render(<AiCreditsMeter />);
     expect(screen.getByText('12 of 30 AI credits left')).toBeInTheDocument();
-    expect(screen.getByText('Resets December 1')).toBeInTheDocument();
+    expect(screen.getByText('Resets Dec 1')).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '18');
     expect(screen.queryByText(/used most/)).not.toBeInTheDocument();
   });

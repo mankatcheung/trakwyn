@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { formatDay } from '#/lib/dates';
 import { render, screen } from '@testing-library/react';
 import { ApplicationInfoChips } from '#/features/application-detail/components/header/ApplicationInfoChips';
 import type { Application } from '#/features/application-detail/graphql/applicationQuery';
@@ -14,7 +15,7 @@ const baseApp: Application = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
 
-const dateText = (iso: string) => new RegExp(new Date(iso).toLocaleDateString());
+const dateText = (iso: string) => new RegExp(formatDay(iso, 'en'));
 
 afterEach(() => {
   vi.useRealTimers();

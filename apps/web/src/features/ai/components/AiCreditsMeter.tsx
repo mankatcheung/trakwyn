@@ -8,14 +8,6 @@ interface AiCreditsMeterProps {
   className?: string;
 }
 
-function formatResetDate(iso: string, locale: string): string {
-  return new Date(iso).toLocaleDateString(locale, {
-    timeZone: 'UTC',
-    month: 'long',
-    day: 'numeric',
-  });
-}
-
 const BAR_COLOUR = {
   ok: 'bg-blue-800 dark:bg-blue-600',
   warning: 'bg-amber-500',
@@ -28,14 +20,16 @@ const BAR_COLOUR = {
  * only below 30%. Renders nothing while loading or when the API sent none.
  */
 export function AiCreditsMeter({ variant = 'full', className }: AiCreditsMeterProps) {
-  const { t, locale } = useLocale();
+  const { t, formatDate } = useLocale();
   const status = useBillingStatus();
   const view = aiCreditsView(status?.aiCredits);
   if (!view) return null;
   if (variant === 'hint' && !isLowOnCredits(view)) return null;
 
   const text = t('aiCredits.left', { left: view.left, total: view.total });
-  const resets = t('aiCredits.resets', { date: formatResetDate(view.resetsAt, locale) });
+  const resets = t('aiCredits.resets', {
+    date: formatDate(view.resetsAt, { timeZone: 'UTC', month: 'short', day: 'numeric' }),
+  });
 
   // A compact, always-visible line next to an AI action (JEF-506).
   if (variant === 'inline') {

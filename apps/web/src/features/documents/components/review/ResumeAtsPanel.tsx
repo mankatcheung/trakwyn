@@ -4,6 +4,7 @@ import { AlertTriangleIcon, CheckCircle2Icon, ScanSearchIcon, XCircleIcon } from
 import { gqlClient } from '#/graphql/client';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import { Modal, Spinner } from '@trakwyn/ui';
 import { SCORE_COLORS, scoreColor } from './HealthScorePanel';
 import type { ResumeRef } from '../../graphql/resumeMatchQueries';
@@ -174,7 +175,8 @@ function CheckGroup({ title, checks }: { title: string; checks: AtsCheck[] }) {
 }
 
 function AtsDetails({ ats, compute }: { ats: AtsScore | undefined; compute: Compute }) {
-  const { t, formatDate } = useLocale();
+  const { t } = useLocale();
+  const dates = useDates();
   const color = ats ? SCORE_COLORS[ats.readable ? scoreColor(ats.score) : 'red'] : null;
   const failed = ats?.checks.filter((c) => !c.passed) ?? [];
   const passed = ats?.checks.filter((c) => c.passed) ?? [];
@@ -195,10 +197,7 @@ function AtsDetails({ ats, compute }: { ats: AtsScore | undefined; compute: Comp
               </p>
               <p className="mt-1 text-xs text-stone-600 dark:text-stone-400">
                 {t('resumeAts.checkedOn', {
-                  date: formatDate(new Date(ats.generatedAt), {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                  }),
+                  date: dates.dateTime(ats.generatedAt),
                 })}
               </p>
             </div>

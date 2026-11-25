@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import { oauthErrorKey } from '#/features/auth/lib/oauthError';
 import { API_ORIGIN } from '#/lib/apiOrigin';
 import { OAuthProviderLogo } from '#/features/auth/components/OAuthProviderLogo';
@@ -37,6 +38,7 @@ import {
 
 export function SettingsSecurityPage() {
   const { t } = useLocale();
+  const dates = useDates();
   const qc = useQueryClient();
   const { withStepUp, dialog: stepUpDialog } = useStepUpReauth();
 
@@ -310,7 +312,7 @@ export function SettingsSecurityPage() {
                 <p className="text-xs text-stone-500 dark:text-stone-400">
                   {session.location ? `${session.location} · ` : ''}
                   {session.ipAddress ?? t('security.unknownIp')} · {t('security.lastActive')}{' '}
-                  {new Date(session.lastUsedAt).toLocaleString()}
+                  {dates.dateTime(session.lastUsedAt)}
                 </p>
               </div>
               {!session.current && (
@@ -359,7 +361,7 @@ export function SettingsSecurityPage() {
                   {t(`security.device.${describeDevice(event.userAgent)}`)}
                   {event.ipAddress ? ` · ${event.ipAddress}` : ''}
                   {' · '}
-                  {new Date(event.createdAt).toLocaleString()}
+                  {dates.dateTime(event.createdAt)}
                 </p>
               </li>
             ))}

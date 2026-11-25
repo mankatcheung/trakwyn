@@ -56,4 +56,18 @@ describe('ApplicationRow', () => {
     render(<ApplicationRow app={app} displayFields={fields} selected onToggle={vi.fn()} />);
     expect(screen.getByRole('checkbox')).toBeChecked();
   });
+
+  it('shows the applied date as "Jun 15, 2020", not the numeric browser format (JEF-693)', () => {
+    const applied = new Date(2020, 5, 15, 12).toISOString();
+    render(
+      <ApplicationRow
+        app={{ ...app, appliedAt: applied }}
+        displayFields={{ ...fields, date: true }}
+        selected={false}
+        onToggle={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('Jun 15, 2020')).toBeInTheDocument();
+    expect(screen.queryByText(/\d\/\d/)).not.toBeInTheDocument();
+  });
 });

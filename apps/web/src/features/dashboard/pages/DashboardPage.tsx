@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { ErrorState } from '#/components/ErrorState';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import { Card, EmptyState, ProgressBar, Skeleton } from '@trakwyn/ui';
 import {
   AlertCircleIcon,
@@ -30,6 +31,7 @@ const UPCOMING_EVENT_ICON: Record<CalendarEventKind, React.ReactNode> = {
 
 export function DashboardPage() {
   const { t } = useLocale();
+  const dates = useDates();
   const UPCOMING_EVENT_LABEL: Record<CalendarEventKind, string> = {
     interview: t('dashboard.eventInterview'),
     followUp: t('applicationDetail.followUpLabel'),
@@ -165,11 +167,7 @@ export function DashboardPage() {
                 {UPCOMING_EVENT_ICON[event.type]}
                 <div className="min-w-0">
                   <p className="text-xs font-medium text-stone-500 dark:text-stone-400">
-                    {UPCOMING_EVENT_LABEL[event.type]} ·{' '}
-                    {new Date(event.date).toLocaleDateString(undefined, {
-                      month: 'short',
-                      day: 'numeric',
-                    })}
+                    {UPCOMING_EVENT_LABEL[event.type]} · {dates.day(event.date)}
                   </p>
                   <p className="truncate text-sm font-medium text-stone-900 dark:text-stone-100">
                     {event.company}

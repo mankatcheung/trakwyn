@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import { Card, EmptyState, Skeleton } from '@trakwyn/ui';
 import { ACTIVITY_LOGS_QUERY } from '../../graphql/applicationDetailQueries';
 
@@ -67,6 +68,7 @@ function formatActor(payloadStr: string): string | null {
 
 export function ActivityTab({ applicationId }: { applicationId: string }) {
   const { t } = useLocale();
+  const dates = useDates();
   const { data, isLoading } = useQuery({
     queryKey: ['activityLogs', applicationId],
     queryFn: async () =>
@@ -100,7 +102,7 @@ export function ActivityTab({ applicationId }: { applicationId: string }) {
                 {detail && <span className="ml-1 font-normal text-stone-500">— {detail}</span>}
               </p>
               <p className="mt-0.5 text-xs text-stone-400">
-                {new Date(log.createdAt).toLocaleString()}
+                {dates.dateTime(log.createdAt)}
                 {actor && <span className="ml-2">· {actor}</span>}
               </p>
             </div>

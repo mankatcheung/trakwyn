@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { gqlClient } from '#/graphql/client';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import { Card } from '@trakwyn/ui';
 import { RotateCcwIcon, Trash2Icon, TrashIcon } from 'lucide-react';
 import { StatusBadge } from '../../applications/components/StatusBadge';
@@ -26,6 +27,7 @@ import type { Application } from '../graphql/applicationQuery';
  */
 export function TrashedApplicationView({ app }: { app: Application }) {
   const { t } = useLocale();
+  const dates = useDates();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const days = daysUntilPurge(app.purgeAt ?? null);
@@ -124,7 +126,7 @@ export function TrashedApplicationView({ app }: { app: Application }) {
           {app.appliedAt && (
             <InfoItem
               label={t('applicationDetail.appliedLabel')}
-              value={new Date(app.appliedAt).toLocaleDateString()}
+              value={dates.day(app.appliedAt)}
             />
           )}
           {app.source && <InfoItem label={t('applicationForm.sourceLabel')} value={app.source} />}

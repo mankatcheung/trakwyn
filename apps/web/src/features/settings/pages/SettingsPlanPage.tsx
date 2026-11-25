@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { ANALYTICS_EVENTS, captureEvent } from '#/lib/analytics';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import {
   planStatus,
   useBillingStatus,
@@ -127,7 +128,8 @@ export function SettingsPlanPage() {
 }
 
 function PlanSummary({ status }: { status: BillingStatus }) {
-  const { t, formatDate } = useLocale();
+  const { t } = useLocale();
+  const dates = useDates();
   const message = planStatus(status);
 
   return (
@@ -141,10 +143,7 @@ function PlanSummary({ status }: { status: BillingStatus }) {
         </Badge>
       </div>
       <p className="text-sm text-stone-700 dark:text-stone-300">
-        {t(
-          message.key,
-          message.date ? { date: formatDate(message.date, { dateStyle: 'medium' }) } : {},
-        )}
+        {t(message.key, message.date ? { date: dates.day(message.date) } : {})}
       </p>
     </Card>
   );

@@ -39,6 +39,17 @@ describe('ActivityTab', () => {
     });
   });
 
+  it("dates an event to the minute in the app's style, never numeric or to the second (JEF-693)", async () => {
+    // Built from local parts, so the text is the same in any time zone.
+    const at = new Date(2020, 5, 15, 19, 3, 41).toISOString();
+    mockGqlRequest.mockResolvedValue({
+      activityLogs: [{ id: 'log-1', eventType: 'note_added', payload: '{}', createdAt: at }],
+    });
+    render(<ActivityTab applicationId="app-1" />, { wrapper: Wrapper });
+
+    expect(await screen.findByText('Jun 15, 2020, 7:03 PM')).toBeInTheDocument();
+  });
+
   it('renders a status_changed event with its from/to detail', async () => {
     mockGqlRequest.mockResolvedValue({
       activityLogs: [

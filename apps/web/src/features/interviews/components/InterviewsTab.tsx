@@ -4,6 +4,7 @@ import { CalendarIcon, CheckIcon, EditIcon, PlusIcon, Trash2Icon } from 'lucide-
 import { gqlClient } from '#/graphql/client';
 import { showUndoToast } from '#/lib/undoToast';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import { QuotaHint } from '#/features/quota/components/QuotaHint';
 import { useQuotaState } from '#/features/quota/lib/contentQuota';
 import { Button, Card, EmptyState, Skeleton } from '@trakwyn/ui';
@@ -41,6 +42,7 @@ export function InterviewsTab({
   role: string;
 }) {
   const { t } = useLocale();
+  const dates = useDates();
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingRound, setEditingRound] = useState<InterviewRound | null>(null);
@@ -198,7 +200,7 @@ export function InterviewsTab({
                   {round.scheduledAt && (
                     <p className="flex items-center gap-1 text-xs text-stone-400">
                       <CheckIcon size={11} />
-                      {new Date(round.scheduledAt).toLocaleString()}
+                      {dates.dateTime(round.scheduledAt)}
                     </p>
                   )}
                   {round.notes && (

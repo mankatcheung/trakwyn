@@ -6,6 +6,7 @@ import { getGqlErrorCode } from '#/lib/graphqlError';
 import { AiErrorMessage } from '#/features/ai/components/AiErrorMessage';
 import { Markdown } from '#/components/Markdown';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import { invalidateSectionCounts } from '../../lib/sectionCounts';
 import { Button, Card } from '@trakwyn/ui';
 import { AiActionBar } from '#/features/ai/components/AiActionBar';
@@ -33,7 +34,8 @@ type Briefing = {
 const isWebUrl = (url: string) => /^https?:\/\//i.test(url);
 
 export function CompanyBriefingTab({ applicationId }: { applicationId: string }) {
-  const { t, formatDate } = useLocale();
+  const { t } = useLocale();
+  const dates = useDates();
   const qc = useQueryClient();
   const [copied, setCopied] = useState(false);
   const [instructions, setInstructions] = useState('');
@@ -121,10 +123,7 @@ export function CompanyBriefingTab({ applicationId }: { applicationId: string })
               </h3>
               <p className="text-xs text-stone-400">
                 {t('companyBriefing.generatedAt', {
-                  date: formatDate(new Date(briefing.generatedAt), {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                  }),
+                  date: dates.dateTime(briefing.generatedAt),
                 })}
               </p>
             </div>
@@ -182,7 +181,7 @@ export function CompanyBriefingTab({ applicationId }: { applicationId: string })
                         dateTime={source.publishedAt}
                         className="shrink-0 text-xs/5 text-stone-400"
                       >
-                        {formatDate(new Date(source.publishedAt), { dateStyle: 'medium' })}
+                        {dates.day(source.publishedAt)}
                       </time>
                     ) : null}
                   </li>

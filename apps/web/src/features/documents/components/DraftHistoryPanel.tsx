@@ -5,6 +5,7 @@ import { Alert, Button } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import {
   CREATE_DRAFT_VERSION_MUTATION,
   DRAFT_VERSIONS_QUERY,
@@ -50,6 +51,7 @@ export function DraftHistoryPanel({
   refreshKey,
 }: DraftHistoryPanelProps) {
   const { t } = useLocale();
+  const dates = useDates();
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -126,7 +128,7 @@ export function DraftHistoryPanel({
   };
 
   const busy = save.isPending || restore.isPending;
-  const when = (iso: string) => new Date(iso).toLocaleString();
+  const when = (iso: string) => dates.dateTime(iso);
 
   return (
     <section

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { FileTextIcon, MoreVerticalIcon, PencilIcon } from 'lucide-react';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import { fileExtension } from '#/features/documents/lib/documentListItems';
 import { Badge, Menu, type MenuItem } from '@trakwyn/ui';
 import { isPreviewableMimeType } from './DocumentPreviewModal';
@@ -122,7 +123,8 @@ interface DraftRowProps {
 }
 
 export function DraftRow({ applicationId, draft, withMatch, onDelete }: DraftRowProps) {
-  const { t, formatDate } = useLocale();
+  const { t } = useLocale();
+  const dates = useDates();
   const navigate = useNavigate();
   const editParams = { applicationId, draftId: draft.id };
   return (
@@ -146,7 +148,7 @@ export function DraftRow({ applicationId, draft, withMatch, onDelete }: DraftRow
         </Badge>
       }
       meta={t('documents.editedOn', {
-        date: formatDate(new Date(draft.updatedAt), { dateStyle: 'medium' }),
+        date: dates.day(draft.updatedAt),
       })}
       menuItems={[
         { id: 'edit', label: t('documents.edit') },
@@ -184,7 +186,8 @@ export function FileRow({
   onPreview,
   onDelete,
 }: FileRowProps) {
-  const { t, formatDate } = useLocale();
+  const { t } = useLocale();
+  const dates = useDates();
   const extension = fileExtension(document.name, document.mimeType);
   const previewable = isPreviewableMimeType(document.mimeType);
   // The name, the Preview menu item and Download are one action: look at the file.
@@ -192,7 +195,7 @@ export function FileRow({
     previewable ? onPreview(document) : window.open(document.url, '_blank', 'noopener,noreferrer');
   const meta = [
     t('documents.uploadedOn', {
-      date: formatDate(new Date(document.createdAt), { dateStyle: 'medium' }),
+      date: dates.day(document.createdAt),
     }),
     `${(document.sizeBytes / 1024).toFixed(1)} KB`,
     ...(document.version ? [document.version] : []),
