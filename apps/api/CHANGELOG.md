@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.1](https://github.com/mankatcheung/trakwyn/compare/api-v0.21.0...api-v0.21.1) (2026-11-25)
+
+
+### Bug Fixes
+
+* **api:** normalise account emails before they reach the database (JEF-692) ([#1654](https://github.com/mankatcheung/trakwyn/issues/1654)) ([cb75e03](https://github.com/mankatcheung/trakwyn/commit/cb75e039ac9e8335af4bead326e7a9131eb301ae))
+
 ## [0.21.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.20.0...api-v0.21.0) (2026-11-25)
 
 
