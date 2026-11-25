@@ -1,0 +1,35 @@
+# F-19 — Narrow the applications list by search.
+#
+# The search box runs against the API's list query, so a list that ignores it
+# is only visible with a real server behind it. Two applications make the
+# assertions meaningful: the search has to keep one row and drop the other.
+# Split from flow 11 (star and the starred filter), which failed on search in
+# the iOS nightly of 2026-11-23 and so never ran its filter steps (JEF-690).
+appId: com.trakwyn.app
+---
+- runFlow: subflows/launch-signed-out.yml
+- runFlow: subflows/register-new-account.yml
+
+- evalScript: ${output.wanted = 'Wanted Co ' + Date.now()}
+- evalScript: ${output.other = 'Other Co ' + Date.now()}
+
+- runFlow:
+    file: subflows/create-application.yml
+    env:
+      COMPANY: ${output.wanted}
+      ROLE: Backend Engineer
+- runFlow:
+    file: subflows/create-application.yml
+    env:
+      COMPANY: ${output.other}
+      ROLE: Backend Engineer
+
+# create-application ends on the Applications tab.
+- assertVisible: '.*${output.other}.*'
+
+- tapOn:
+    id: 'applications-search-input'
+- inputText: ${output.wanted}
+- pressKey: Enter
+- assertVisible: '.*${output.wanted}.*'
+- assertNotVisible: '.*${output.other}.*'

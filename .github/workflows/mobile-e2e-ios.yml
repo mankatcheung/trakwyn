@@ -1,6 +1,6 @@
 name: Mobile E2E (iOS)
 
-# The same seven Maestro flows as the Android job in mobile-e2e-android.yml, on a simulator.
+# The same Maestro flows as the Android job in mobile-e2e-android.yml, on a simulator.
 #
 # Kept out of the per-PR path on purpose (JEF-300, D-2): an iOS build is Xcode's
 # to do and macOS runners queue longer, so this job costs an estimated 20-30

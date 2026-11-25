@@ -1,6 +1,6 @@
 # Mobile e2e flows
 
-Seventeen Maestro flows: the app's spine (JEF-300, F-1…F-7) and the write paths around it (JEF-668, F-8…F-17). They drive a
+The Maestro flows: the app's spine (JEF-300, F-1…F-7), the write paths around it (JEF-668, F-8…F-17) and the flows split out of 08 and 11 (JEF-690, F-18 and F-19). They drive a
 real release build on an Android emulator or an iOS simulator against a real
 API — the tier no Jest project can reach, because nothing below it starts a
 process, installs a bundle, or touches a keychain.
@@ -17,6 +17,7 @@ curl -Ls https://get.maestro.mobile.dev | bash
 pnpm e2e:local                 # every flow on an iOS simulator
 pnpm e2e:local android         # on an Android emulator
 pnpm e2e:local ios 04 06       # only the flows numbered 04 and 06
+pnpm e2e:local ios --smoke     # only the flows tagged smoke
 pnpm e2e:local ios --skip-build   # reuse the app already on the device
 pnpm e2e:local --help
 ```
@@ -99,6 +100,26 @@ while the API log recorded no request at all.
   list; flows 10 and 11 failed on exactly this.
 - **Flows run serially.** `maestro test` does that by default; keep it that way
   for the same reason `apps/web/playwright.config.ts` pins `workers: 1`.
+
+## Tags and splitting flows (JEF-690)
+
+- **`smoke` is the pull-request set:** 01 (cold start and sign in), 02 (register
+  and create an application) and 03 (session restore). Together they cover the
+  release bundle booting, the first write through a real resolver and the session
+  surviving a relaunch. A flow is smoke by `tags: [smoke]` above the `---` in its
+  header. `pnpm e2e:local --smoke` runs them, and CI runs
+  `maestro test --include-tags smoke` when `E2E_INCLUDE_TAGS=smoke`, which the
+  Android workflow sets for a pull-request run. The nightly and manual runs
+  leave it empty and run every flow. The iOS job has no PR trigger and always
+  runs everything.
+- **One user intent per flow.** A failure in the first intent of a flow leaves
+  the rest untested, so independent intents get their own flow: 08 (login
+  errors) and 18 (forgot password), 11 (star and the starred filter) and 19
+  (search). Flows whose second intent needs the first (02, 04, 12, 16) stay
+  whole: every new flow pays a launch and a register, 30 to 50 s on iOS.
+- **New flows take the next free number,** never a renumbering, so
+  `pnpm e2e:local ios 04 06`, the `F-n` headers and this file keep their meaning.
+  The flat numbered layout is kept until the suite is about 25 to 30 flows.
 
 ## How CI builds the app
 

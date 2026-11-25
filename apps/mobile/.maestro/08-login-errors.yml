@@ -1,9 +1,9 @@
-# F-8 — A failed sign-in shows an error, and forgot-password sends a link.
+# F-8 — A failed sign-in shows an error.
 #
 # Flow 01 only ever signs in successfully. This is the other branch of the same
 # screen: the API refusing the credentials must leave the user on the sign-in
-# screen with an error, not on the tab bar. Forgot-password then reaches the
-# one unauthenticated mutation the other flows never call.
+# screen with an error, not on the tab bar. Forgot-password is flow 18, so a
+# failure in one does not hide the other (JEF-690).
 #
 # Both assertions are by testID, never by message: the copy is the API's and
 # the app's to change (.maestro/README.md, conventions).
@@ -35,23 +35,3 @@ appId: com.trakwyn.app
     id: 'login-email-input'
 - assertNotVisible:
     id: 'tab-applications'
-
-# The link sits beside the password label, which a small phone's screen can
-# push off the bottom once the error banner is showing.
-- scrollUntilVisible:
-    element:
-      id: 'login-forgot-password-link'
-- waitForAnimationToEnd
-- tapOn:
-    id: 'login-forgot-password-link'
-
-- tapOn:
-    id: 'forgot-password-email-input'
-- inputText: ${output.email}
-- pressKey: Enter
-- tapOn:
-    id: 'forgot-password-submit-button'
-# The API answers the same for an address it does not know, so the account
-# existing is not what this asserts; the request round-tripping is.
-- assertVisible:
-    id: 'forgot-password-success'

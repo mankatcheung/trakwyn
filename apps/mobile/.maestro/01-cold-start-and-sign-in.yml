@@ -5,6 +5,8 @@
 # the next. Nothing below the e2e tier can fail here: every Jest suite replaces
 # SecureStore with a double and never starts a process.
 appId: com.trakwyn.app
+tags:
+  - smoke
 ---
 - runFlow: subflows/launch-signed-out.yml
 - runFlow: subflows/register-new-account.yml

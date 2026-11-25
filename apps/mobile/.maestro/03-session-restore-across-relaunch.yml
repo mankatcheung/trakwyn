@@ -8,6 +8,8 @@
 # src/auth/tokenStorage.ts — a fresh access token stored beside a stale refresh
 # token is what the API reads as token reuse, and it revokes the session.
 appId: com.trakwyn.app
+tags:
+  - smoke
 ---
 - runFlow: subflows/launch-signed-out.yml
 - runFlow: subflows/register-new-account.yml
