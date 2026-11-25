@@ -25,7 +25,7 @@ vi.mock('#/lib/analytics/analytics', async (importOriginal) => ({
   captureEvent: mockCaptureEvent,
 }));
 
-import { LockedFeaturePreview } from '#/features/plans/components/LockedFeaturePreview';
+import { LockedFeatureOverlay } from '#/features/plans/components/LockedFeaturePreview';
 import { AnalyticsPage } from '#/features/analytics/pages/AnalyticsPage';
 import { OffersPage } from '#/features/offers/pages/OffersPage';
 import { gqlText } from '#/__tests__/helpers/gqlText';
@@ -68,13 +68,13 @@ function serve(locked: boolean) {
   ]);
 }
 
-describe('LockedFeaturePreview', () => {
+describe('LockedFeatureOverlay', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('says the feature is on Pro and links to the plan page', () => {
-    render(<LockedFeaturePreview feature="analytics" />, { wrapper: Wrapper });
+    render(<LockedFeatureOverlay feature="analytics" />, { wrapper: Wrapper });
 
     expect(screen.getByText('Available on Pro')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'See what Pro includes' })).toHaveAttribute(
@@ -83,15 +83,39 @@ describe('LockedFeaturePreview', () => {
     );
   });
 
-  it('hides the blurred sample from assistive technology', () => {
-    render(<LockedFeaturePreview feature="offers" />, { wrapper: Wrapper });
+  it('shows a dimmed, inert, hidden picture of the real page, not blurred placeholders (JEF-693)', () => {
+    render(<LockedFeatureOverlay feature="offers" />, { wrapper: Wrapper });
 
-    const preview = screen.getByTestId('locked-feature-preview');
-    expect(preview.querySelector('[aria-hidden="true"].blur-sm')).not.toBeNull();
+    const picture = screen
+      .getByTestId('locked-feature-overlay')
+      .querySelector('[aria-hidden="true"]') as HTMLElement;
+    expect(picture).toHaveAttribute('inert');
+    expect(picture.className).toContain('opacity-40');
+    expect(picture.className).not.toContain('blur');
+    // Light and dark of the one Offers crop; decorative, so no alt text.
+    const images = [...picture.querySelectorAll('img')];
+    expect(images.map((img) => img.getAttribute('src'))).toEqual([
+      '/screenshots/crop-offers-light.webp',
+      '/screenshots/crop-offers-dark.webp',
+    ]);
+    expect(images.every((img) => img.getAttribute('alt') === '')).toBe(true);
+  });
+
+  it('stacks the three Analytics crops', () => {
+    render(<LockedFeatureOverlay feature="analytics" />, { wrapper: Wrapper });
+
+    const sources = [...screen.getByTestId('locked-feature-overlay').querySelectorAll('img')]
+      .map((img) => img.getAttribute('src') ?? '')
+      .filter((src) => src.endsWith('-light.webp'));
+    expect(sources).toEqual([
+      '/screenshots/crop-analytics-stats-light.webp',
+      '/screenshots/crop-stage-funnel-light.webp',
+      '/screenshots/crop-channels-light.webp',
+    ]);
   });
 
   it('reports the click with its source and feature', () => {
-    render(<LockedFeaturePreview feature="offers" />, { wrapper: Wrapper });
+    render(<LockedFeatureOverlay feature="offers" />, { wrapper: Wrapper });
 
     fireEvent.click(screen.getByRole('link', { name: 'See what Pro includes' }));
 
@@ -107,14 +131,14 @@ describe('AnalyticsPage plan gating', () => {
     vi.clearAllMocks();
   });
 
-  it('covers the whole page for a Free user, with a blurred inert sample and no real panels', async () => {
+  it('covers the whole page for a Free user, with a dimmed inert picture and no real panels', async () => {
     serve(true);
     render(<AnalyticsPage />, { wrapper: Wrapper });
 
     const overlay = await screen.findByTestId('locked-feature-overlay');
     const sample = overlay.querySelector('[aria-hidden="true"]');
     expect(sample).toHaveAttribute('inert');
-    expect(sample).toHaveClass('blur-md');
+    expect(sample).toHaveClass('opacity-40');
     expect(screen.getByText('Available on Pro')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Analytics' })).toBeInTheDocument();
 
@@ -141,11 +165,11 @@ describe('OffersPage plan gating', () => {
     vi.clearAllMocks();
   });
 
-  it('shows a Free user the preview and no error', async () => {
+  it('shows a Free user the overlay and no error', async () => {
     serve(true);
     render(<OffersPage />, { wrapper: Wrapper });
 
-    expect(await screen.findByTestId('locked-feature-preview')).toBeInTheDocument();
+    expect(await screen.findByTestId('locked-feature-overlay')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /try again/i })).not.toBeInTheDocument();
   });
 
@@ -154,7 +178,7 @@ describe('OffersPage plan gating', () => {
     render(<OffersPage />, { wrapper: Wrapper });
 
     expect(await screen.findByText(/no offers to compare/i)).toBeInTheDocument();
-    expect(screen.queryByTestId('locked-feature-preview')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('locked-feature-overlay')).not.toBeInTheDocument();
   });
 
   it('shows no preview where plans are not enforced', async () => {
@@ -167,6 +191,6 @@ describe('OffersPage plan gating', () => {
     render(<OffersPage />, { wrapper: Wrapper });
 
     expect(await screen.findByText(/no offers to compare/i)).toBeInTheDocument();
-    expect(screen.queryByTestId('locked-feature-preview')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('locked-feature-overlay')).not.toBeInTheDocument();
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, type RefObject } from 'react';
 
@@ -231,6 +231,16 @@ describe('DocumentDraftEditPage — Export PDF', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockApi();
+  });
+
+  it('is an icon on a phone, with "Export PDF" still its accessible name (JEF-693)', async () => {
+    renderPage();
+
+    const button = await screen.findByRole('button', { name: 'Export PDF' });
+    expect(button).toHaveAttribute('aria-label', 'Export PDF');
+    const label = within(button).getByText('Export PDF');
+    expect(label.className).toContain('hidden');
+    expect(label.className).toContain('sm:inline');
   });
 
   it('downloads the exported PDF, confirms it, and stays in the editor', async () => {

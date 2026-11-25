@@ -8,6 +8,7 @@ import {
   AlertCircleIcon,
   BriefcaseIcon,
   CalendarIcon,
+  CheckIcon,
   FileTextIcon,
   PlusIcon,
   StarIcon,
@@ -99,14 +100,14 @@ export function DashboardPage() {
         <OnboardingChecklist data={onboardingData} hasApplications={apps.length > 0} />
       )}
 
-      {/* Mobile: horizontal scrollable strip so 5 stats don't leave an orphaned card; sm+: grid */}
-      <div className="-mx-4 mb-8 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:mb-10 sm:grid sm:snap-none sm:grid-cols-3 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-5">
-        {statItems.map((item) => (
+      {/* Two columns on a phone, the fifth card across both, so none is cut off (JEF-693) */}
+      <div className="mb-8 grid grid-cols-2 gap-3 sm:mb-10 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
+        {statItems.map((item, index) => (
           <StatCard
             key={item.label}
             {...item}
             loading={isLoading}
-            className="w-32 shrink-0 snap-start sm:w-auto sm:shrink sm:snap-align-none"
+            className={index === statItems.length - 1 ? 'col-span-2 sm:col-span-1' : ''}
           />
         ))}
       </div>
@@ -118,19 +119,25 @@ export function DashboardPage() {
               <h2 className="text-lg font-medium text-stone-900 dark:text-stone-100">
                 {t('dashboard.weeklyGoalTitle')}
               </h2>
-              <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">
+              <p className="mt-1 flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-300">
+                {goal.currentWeekCount >= goal.weeklyApplicationGoal && (
+                  <CheckIcon size={15} aria-hidden="true" className="shrink-0 text-stone-500" />
+                )}
                 {t('dashboard.weeklyGoalProgress', {
                   current: goal.currentWeekCount,
                   goal: goal.weeklyApplicationGoal,
                 })}
               </p>
             </div>
-            <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
-              {t('dashboard.streakWeeks', { count: goal.streakWeeks })}
-            </p>
+            {goal.streakWeeks > 0 && (
+              <p className="text-sm font-medium text-stone-700 dark:text-stone-300">
+                {t('dashboard.streakWeeks', { count: goal.streakWeeks })}
+              </p>
+            )}
           </div>
           <ProgressBar
             className="mt-4"
+            tone={goal.currentWeekCount >= goal.weeklyApplicationGoal ? 'quiet' : 'accent'}
             value={goal.currentWeekCount}
             max={goal.weeklyApplicationGoal}
             aria-label={t('dashboard.weeklyGoalProgress', {

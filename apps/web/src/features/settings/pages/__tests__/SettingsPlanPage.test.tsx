@@ -238,6 +238,32 @@ describe('SettingsPlanPage', () => {
       expect(note).toHaveTextContent('stays $9 for as long as that subscription runs');
     });
 
+    it('keeps the founder price and refund text inside a closed "Billing details" disclosure (JEF-693)', async () => {
+      serve(freeStatus());
+      render(<SettingsPlanPage />, { wrapper: Wrapper });
+
+      const details = await screen.findByTestId('billing-details');
+      expect(details.tagName).toBe('DETAILS');
+      expect(details).not.toHaveAttribute('open');
+      expect(within(details).getByText('Billing details')).toBeInTheDocument();
+      expect(within(details).getByText(/Founder price/)).toBeInTheDocument();
+      expect(within(details).getByText(/Not happy\?/)).toBeInTheDocument();
+      // The VAT sentence stays by the buttons, outside the disclosure.
+      expect(details).not.toHaveTextContent('VAT');
+      expect(screen.getByText(/include VAT in the UK and EU/)).toBeInTheDocument();
+    });
+
+    it('shows the plan and its usage in one card, with one "Your plan" heading (JEF-693)', async () => {
+      serve(freeStatus());
+      render(<SettingsPlanPage />, { wrapper: Wrapper });
+
+      const heading = await screen.findByRole('heading', { name: 'Your plan' });
+      expect(screen.getAllByRole('heading', { name: 'Your plan' })).toHaveLength(1);
+      const card = heading.closest('div.space-y-6') as HTMLElement;
+      expect(within(card).getByText('Free')).toBeInTheDocument();
+      expect(within(card).getAllByRole('progressbar').length).toBeGreaterThan(0);
+    });
+
     it('does not show the founder note to an active subscriber (JEF-431)', async () => {
       serve(freeStatus({ plan: 'pro', planSource: 'subscription' }));
       render(<SettingsPlanPage />, { wrapper: Wrapper });

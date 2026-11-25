@@ -182,6 +182,12 @@ async function open(page: Page, scene: ScreenshotScene, phone = false): Promise<
         .click();
       await expect(page).toHaveURL(/\/documents\//);
       break;
+    case 'offers':
+      await page.goto('/offers');
+      await expect(page.locator(hook('offers-list'))).toBeVisible({ timeout: 30_000 });
+      // The locked preview means plans are enforced; refuse to photograph it.
+      await expect(page.getByText(/available on pro/i)).toHaveCount(0);
+      break;
     case 'analytics':
       await page.goto('/analytics');
       // A cold dev server compiles this route on first load: allow for it.

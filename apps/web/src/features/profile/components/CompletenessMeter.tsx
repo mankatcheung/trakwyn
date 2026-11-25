@@ -40,7 +40,12 @@ export function CompletenessMeter({ completeness }: CompletenessMeterProps) {
   return (
     <div className="space-y-2">
       <p className="text-sm font-medium text-stone-900 dark:text-stone-100">{label}</p>
-      <ProgressBar value={percent} max={100} aria-label={label} />
+      <ProgressBar
+        value={percent}
+        max={100}
+        tone={percent >= 100 ? 'quiet' : 'accent'}
+        aria-label={label}
+      />
       {nextStep ? (
         <Link
           to="/profile"

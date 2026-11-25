@@ -38,6 +38,19 @@ describe('CompletenessMeter', () => {
     );
   });
 
+  it('fills in the accent while incomplete and goes quiet at 100% (JEF-693)', () => {
+    const { unmount } = meter(60, 'skills');
+    expect((screen.getByRole('progressbar').firstChild as HTMLElement).className).toContain(
+      'bg-blue-800',
+    );
+    unmount();
+
+    meter(100, null);
+    const fill = screen.getByRole('progressbar').firstChild as HTMLElement;
+    expect(fill.className).toContain('bg-stone-400');
+    expect(fill.className).not.toContain('bg-blue');
+  });
+
   it.each<ProfileCheck>(['role', 'roleDescription', 'education', 'skills'])(
     'links the %s step to the section that completes it',
     (step) => {

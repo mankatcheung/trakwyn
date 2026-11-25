@@ -27,4 +27,16 @@ describe('ProgressBar', () => {
     const fill = screen.getByRole('progressbar').firstChild as HTMLElement;
     expect(fill.style.width).toBe('0%');
   });
+
+  it('fills in the accent by default and in stone when quiet (JEF-693)', () => {
+    const { rerender } = render(<ProgressBar value={5} max={5} />);
+    expect((screen.getByRole('progressbar').firstChild as HTMLElement).className).toContain(
+      'bg-blue-800',
+    );
+
+    rerender(<ProgressBar value={5} max={5} tone="quiet" />);
+    const fill = screen.getByRole('progressbar').firstChild as HTMLElement;
+    expect(fill.className).toContain('bg-stone-400');
+    expect(fill.className).not.toContain('bg-blue');
+  });
 });

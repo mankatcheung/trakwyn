@@ -1,10 +1,12 @@
-import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { ErrorState } from '#/components/ErrorState';
 import { useLocale } from '#/lib/i18n';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { Skeleton } from '@trakwyn/ui';
+import { CalendarLegend } from '../components/CalendarLegend';
+import { CalendarSidePanel } from '../components/CalendarSidePanel';
+import { EVENT_DOT_STYLES } from '../lib/eventStyles';
 import {
   calendarEventsQueryOptions,
   type CalendarEvent,
@@ -12,12 +14,6 @@ import {
 } from '../graphql/calendarQueries';
 
 type ViewMode = 'month' | 'week' | 'day';
-
-const EVENT_DOT_STYLES: Record<CalendarEventKind, string> = {
-  applied: 'bg-blue-500',
-  followUp: 'bg-amber-500',
-  interview: 'bg-purple-500',
-};
 
 // Local calendar day, deliberately not UTC — see JEF-54's timezone decision.
 function dayKey(date: Date): string {
@@ -111,6 +107,15 @@ export function CalendarPage() {
   const dayInFocus = viewMode === 'day' ? anchorDayKey : selectedDay;
   const focusedEvents = dayInFocus ? (eventsByDay.get(dayInFocus) ?? []) : [];
 
+  // Until a day is picked the side panel lists the next 7 days, today included.
+  const upcomingStart = new Date();
+  upcomingStart.setHours(0, 0, 0, 0);
+  const upcomingEnd = new Date(upcomingStart);
+  upcomingEnd.setDate(upcomingEnd.getDate() + 7);
+  const upcoming = (events ?? [])
+    .filter((e) => new Date(e.date) >= upcomingStart && new Date(e.date) < upcomingEnd)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
   const goToPeriod = (delta: number) => {
     setAnchorDate((prev) => {
       if (viewMode === 'month') return new Date(prev.getFullYear(), prev.getMonth() + delta, 1);
@@ -142,7 +147,7 @@ export function CalendarPage() {
           });
 
   return (
-    <div className="mx-auto max-w-3xl p-4 sm:p-8">
+    <div className="mx-auto max-w-6xl p-4 sm:p-8">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-medium text-stone-900 dark:text-stone-100">
           {t('nav.calendar')}
@@ -164,131 +169,105 @@ export function CalendarPage() {
         </div>
       </div>
 
-      <div className="mb-6 flex items-center justify-center gap-2">
-        <button
-          onClick={() => goToPeriod(-1)}
-          aria-label={t('calendarPage.previousPeriod', { period: t(`calendarPage.${viewMode}`) })}
-          className="rounded-lg p-1.5 text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700"
-        >
-          <ChevronLeftIcon size={18} />
-        </button>
-        <span className="w-48 text-center text-sm font-medium text-stone-700 dark:text-stone-300">
-          {periodLabel}
-        </span>
-        <button
-          onClick={() => goToPeriod(1)}
-          aria-label={t('calendarPage.nextPeriod', { period: t(`calendarPage.${viewMode}`) })}
-          className="rounded-lg p-1.5 text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700"
-        >
-          <ChevronRightIcon size={18} />
-        </button>
-      </div>
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-8">
+        <div className="min-w-0">
+          <div className="mb-6 flex items-center justify-center gap-2">
+            <button
+              onClick={() => goToPeriod(-1)}
+              aria-label={t('calendarPage.previousPeriod', {
+                period: t(`calendarPage.${viewMode}`),
+              })}
+              className="rounded-lg p-1.5 text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700"
+            >
+              <ChevronLeftIcon size={18} />
+            </button>
+            <span className="w-48 text-center text-sm font-medium text-stone-700 dark:text-stone-300">
+              {periodLabel}
+            </span>
+            <button
+              onClick={() => goToPeriod(1)}
+              aria-label={t('calendarPage.nextPeriod', { period: t(`calendarPage.${viewMode}`) })}
+              className="rounded-lg p-1.5 text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700"
+            >
+              <ChevronRightIcon size={18} />
+            </button>
+          </div>
 
-      {isLoading ? (
-        <Skeleton className="h-96 rounded-xl" />
-      ) : isError ? (
-        <ErrorState error={error} onRetry={() => refetch()} />
-      ) : (
-        <>
-          {viewMode !== 'day' && (
+          {isLoading ? (
+            <Skeleton className="h-96 rounded-xl" />
+          ) : isError ? (
+            <ErrorState error={error} onRetry={() => refetch()} />
+          ) : (
             <>
-              <div className="mb-1 grid grid-cols-7 gap-1">
-                {WEEKDAY_LABELS.map((d) => (
-                  <div
-                    key={d}
-                    className="py-1 text-center text-xs font-medium text-stone-400 dark:text-stone-500"
-                  >
-                    {d}
+              {viewMode !== 'day' && (
+                <>
+                  <div className="mb-1 grid grid-cols-7 gap-1">
+                    {WEEKDAY_LABELS.map((d) => (
+                      <div
+                        key={d}
+                        className="py-1 text-center text-xs font-medium text-stone-400 dark:text-stone-500"
+                      >
+                        {d}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-1">
-                {grid.map((date) => {
-                  const key = dayKey(date);
-                  const inMonth = viewMode === 'week' || date.getMonth() === anchorDate.getMonth();
-                  const dayEvents = eventsByDay.get(key) ?? [];
-                  const eventTypes = [...new Set(dayEvents.map((e) => e.type))];
-                  const isToday = key === today;
-                  const isSelected = key === selectedDay;
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => setSelectedDay(key === selectedDay ? null : key)}
-                      className={`flex aspect-square flex-col items-center gap-1 rounded-lg p-1.5 text-sm transition-colors ${
-                        !inMonth
-                          ? 'text-stone-300 dark:text-stone-600'
-                          : 'text-stone-700 dark:text-stone-300'
-                      } ${
-                        isSelected
-                          ? 'bg-blue-50 ring-1 ring-blue-400 dark:bg-blue-900/20'
-                          : 'hover:bg-stone-100 dark:hover:bg-stone-700'
-                      } ${isToday ? 'font-medium' : ''}`}
-                    >
-                      <span>{date.getDate()}</span>
-                      {eventTypes.length > 0 && (
-                        <span className="flex gap-0.5">
-                          {eventTypes.map((t) => (
-                            <span
-                              key={t}
-                              className={`size-1.5 rounded-full ${EVENT_DOT_STYLES[t]}`}
-                            />
-                          ))}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+                  <div className="grid grid-cols-7 gap-1">
+                    {grid.map((date) => {
+                      const key = dayKey(date);
+                      const inMonth =
+                        viewMode === 'week' || date.getMonth() === anchorDate.getMonth();
+                      const dayEvents = eventsByDay.get(key) ?? [];
+                      const eventTypes = [...new Set(dayEvents.map((e) => e.type))];
+                      const isToday = key === today;
+                      const isSelected = key === selectedDay;
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => setSelectedDay(key === selectedDay ? null : key)}
+                          className={`flex aspect-square flex-col items-center gap-1 rounded-lg p-1.5 text-sm transition-colors ${
+                            !inMonth
+                              ? 'text-stone-300 dark:text-stone-600'
+                              : 'text-stone-700 dark:text-stone-300'
+                          } ${
+                            isSelected
+                              ? 'bg-blue-50 ring-1 ring-blue-400 dark:bg-blue-900/20'
+                              : 'hover:bg-stone-100 dark:hover:bg-stone-700'
+                          } ${isToday ? 'font-medium' : ''}`}
+                        >
+                          <span>{date.getDate()}</span>
+                          {eventTypes.length > 0 && (
+                            <span className="flex gap-0.5">
+                              {eventTypes.map((t) => (
+                                <span
+                                  key={t}
+                                  className={`size-1.5 rounded-full ${EVENT_DOT_STYLES[t]}`}
+                                />
+                              ))}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+
+              <CalendarLegend labels={EVENT_LABEL} />
             </>
           )}
-
-          <div className="mt-6">
-            {!dayInFocus && (
-              <p className="py-4 text-center text-sm text-stone-400 dark:text-stone-500">
-                {t('calendarPage.selectDayPrompt')}
-              </p>
-            )}
-            {dayInFocus && focusedEvents.length === 0 && (
-              <p className="py-4 text-center text-sm text-stone-400 dark:text-stone-500">
-                {t('calendarPage.noEventsOnDay')}
-              </p>
-            )}
-            {dayInFocus && focusedEvents.length > 0 && (
-              <div className="space-y-2">
-                {viewMode !== 'day' && (
-                  <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
-                    {formatDate(dateFromDayKey(dayInFocus), {
-                      weekday: 'long',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </p>
-                )}
-                {focusedEvents.map((e) => (
-                  <Link
-                    key={e.id}
-                    to="/applications/$applicationId"
-                    params={{ applicationId: e.applicationId }}
-                    className="flex items-center gap-3 rounded-lg border border-stone-200 p-3 transition-colors hover:bg-stone-50 dark:border-stone-700 dark:hover:bg-stone-700"
-                  >
-                    <span className={`size-2 shrink-0 rounded-full ${EVENT_DOT_STYLES[e.type]}`} />
-                    <div>
-                      <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
-                        {EVENT_LABEL[e.type]}
-                        {e.type === 'interview' && e.interviewRoundType
-                          ? ` (${e.interviewRoundType})`
-                          : ''}{' '}
-                        — {e.company}
-                      </p>
-                      <p className="text-xs text-stone-500 dark:text-stone-400">{e.role}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        </>
-      )}
+        </div>
+        {!isLoading && !isError && (
+          <section className="mt-6 lg:mt-0" aria-label={t('calendarPage.next7Days')}>
+            <CalendarSidePanel
+              dayInFocus={dayInFocus}
+              dayHeadingDate={dayInFocus && viewMode !== 'day' ? dateFromDayKey(dayInFocus) : null}
+              focusedEvents={focusedEvents}
+              upcoming={upcoming}
+              eventLabels={EVENT_LABEL}
+            />
+          </section>
+        )}
+      </div>
     </div>
   );
 }
