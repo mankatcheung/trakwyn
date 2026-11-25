@@ -6,6 +6,8 @@
 # src/features/applications/graphql/operations.ts and nothing in the Jest tiers
 # ever sends it to a server.
 appId: com.trakwyn.app
+tags:
+  - smoke
 ---
 - runFlow: subflows/launch-signed-out.yml
 - runFlow: subflows/register-new-account.yml

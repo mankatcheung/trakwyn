@@ -1,6 +1,6 @@
 name: Mobile E2E (Android)
 
-# The seven Maestro flows on an Android emulator. Like the iOS job, this runs
+# The Maestro flows on an Android emulator. Like the iOS job, this runs
 # nightly, on demand, and on any pull request carrying the `run-android-e2e`
 # label, not on every PR: it costs a native build plus an emulator boot, and it
 # was advisory anyway. A red night sends an ntfy push (NTFY_TOPIC).
@@ -16,7 +16,9 @@ on:
   # No pull_request trigger while the mobile app is unreleased: the job only
   # ever showed as skipped (or action_required on release-please PRs). Restore
   # `pull_request` (branches: [main], types: [opened, synchronize, reopened,
-  # labeled]) to bring back the `run-android-e2e` label.
+  # labeled]) to bring back the `run-android-e2e` label. A pull-request run
+  # then executes only the flows tagged `smoke` (E2E_INCLUDE_TAGS below); the
+  # schedule and manual runs execute every flow (JEF-690).
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -167,6 +169,9 @@ jobs:
 
       - name: Run the Maestro flows
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          # Empty runs every flow. A pull request runs the smoke set only.
+          E2E_INCLUDE_TAGS: ${{ github.event_name == 'pull_request' && 'smoke' || '' }}
         with:
           api-level: 34
           arch: x86_64

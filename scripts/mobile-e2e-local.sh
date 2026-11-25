@@ -6,6 +6,7 @@
 #   pnpm e2e:local                      # every flow on an iOS simulator
 #   pnpm e2e:local android              # every flow on an Android emulator
 #   pnpm e2e:local ios 04 06            # only the flows numbered 04 and 06
+#   pnpm e2e:local ios --smoke          # only the flows tagged `smoke`
 #   pnpm e2e:local ios --skip-build     # reuse the app already on the device
 #   pnpm e2e:local --help
 #
@@ -26,6 +27,7 @@ Usage: pnpm e2e:local [ios|android] [NN ...] [options]
                     (default: every flow)
 
 Options:
+  --smoke           run only the flows tagged `smoke` (what a pull request runs)
   --skip-build      reuse the app already installed on the device
   --device ID       iOS simulator UDID or Android adb serial (default: picked)
   --window          show the device on screen: the Android emulator window (default:
@@ -58,6 +60,7 @@ warn() {
 
 PLATFORM="ios"
 SKIP_BUILD=0
+SMOKE=0
 KEEP_DEVICE=0
 SHOW_WINDOW=0
 DEVICE=""
@@ -67,6 +70,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     ios | android) PLATFORM="$1" ;;
     --skip-build) SKIP_BUILD=1 ;;
+    --smoke) SMOKE=1 ;;
     --keep) KEEP_DEVICE=1 ;;
     --window) SHOW_WINDOW=1 ;;
     --device)
@@ -454,9 +458,13 @@ prepare_android_device() {
 build_android() {
   step "Building the Android app (Release). The first build takes 20 minutes or more; log: $RUN_DIR/android-build.log"
   (
+    # Exported, not prefixed to prebuild: Metro inlines the URL while Gradle
+    # bundles the JS, so ./gradlew has to see it too. Without it the bundle
+    # falls back to apps/mobile/.env's localhost, which on the emulator is the
+    # emulator, and every flow that calls the API fails (JEF-690).
+    export EXPO_PUBLIC_API_URL="http://10.0.2.2:$API_PORT/graphql"
     cd "$MOBILE" &&
-      EXPO_PUBLIC_API_URL="http://10.0.2.2:$API_PORT/graphql" \
-        pnpm exec expo prebuild --platform android --no-install &&
+      pnpm exec expo prebuild --platform android --no-install &&
       cd android &&
       ./gradlew assembleRelease --build-cache
   ) > "$RUN_DIR/android-build.log" 2>&1 || {
@@ -496,8 +504,11 @@ run_flows() {
       > "$RUN_DIR/warm-up.log" 2>&1 || warn "the warm-up flow failed (log: $RUN_DIR/warm-up.log)"
   fi
 
+  local tag_args=()
+  [ "$SMOKE" -eq 1 ] && tag_args=(--include-tags smoke)
+
   step "Running the flows"
-  "$MAESTRO" --device "$DEVICE" test "${targets[@]}" --debug-output "$RUN_DIR/maestro"
+  "$MAESTRO" --device "$DEVICE" test "${targets[@]}" "${tag_args[@]+"${tag_args[@]}"}" --debug-output "$RUN_DIR/maestro"
 }
 
 # --- main ------------------------------------------------------------------

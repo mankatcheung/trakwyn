@@ -16,8 +16,15 @@ out="${RUNNER_TEMP:?RUNNER_TEMP is set on every GitHub-hosted runner}"
 
 adb install -r "$apk"
 
+# E2E_INCLUDE_TAGS (comma-separated, e.g. "smoke") narrows the run to flows
+# carrying one of those tags; unset or empty runs every flow (JEF-690).
+args=()
+if [ -n "${E2E_INCLUDE_TAGS:-}" ]; then
+  args+=(--include-tags "$E2E_INCLUDE_TAGS")
+fi
+
 status=0
-maestro test apps/mobile/.maestro --debug-output "$out/maestro-debug" || status=$?
+maestro test apps/mobile/.maestro ${args[@]+"${args[@]}"} --debug-output "$out/maestro-debug" || status=$?
 
 # Maestro's artifacts — per flow: screenshots, the screen hierarchy at the
 # failing step, the device logcat and its own log — land in a *hidden*

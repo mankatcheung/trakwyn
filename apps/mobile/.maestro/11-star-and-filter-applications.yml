@@ -1,9 +1,10 @@
-# F-11 — Star an application, then narrow the list by starred and by search.
+# F-11 — Star an application, then narrow the list by starred.
 #
-# Starring is an update mutation, and the starred filter and the search box
-# both run against the API's list query, so a list that ignores either one is
-# only visible with a real server behind it. Two applications make the
-# assertions meaningful: each filter has to keep one row and drop the other.
+# Starring is an update mutation, and the starred filter runs against the
+# API's list query, so a list that ignores it is only visible with a real
+# server behind it. Two applications make the assertions meaningful: the
+# filter has to keep one row and drop the other. Search is flow 19, so a
+# failure in one does not hide the other (JEF-690).
 appId: com.trakwyn.app
 ---
 - runFlow: subflows/launch-signed-out.yml
@@ -39,14 +40,6 @@ appId: com.trakwyn.app
     id: 'applications-filter-starred'
 - assertVisible: '.*${output.starred}.*'
 - assertNotVisible: '.*${output.plain}.*'
-# Switch it off again so the search below is tested on its own.
 - tapOn:
     id: 'applications-filter-starred'
 - assertVisible: '.*${output.plain}.*'
-
-- tapOn:
-    id: 'applications-search-input'
-- inputText: ${output.plain}
-- pressKey: Enter
-- assertVisible: '.*${output.plain}.*'
-- assertNotVisible: '.*${output.starred}.*'

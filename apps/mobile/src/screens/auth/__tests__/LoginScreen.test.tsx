@@ -84,7 +84,7 @@ describe('LoginScreen', () => {
     await fireEvent.press(getByTestId('login-submit-button'));
 
     await findByText('Enter a valid email address');
-    // .maestro/08-login-errors-and-forgot-password.yml asserts on this id
+    // .maestro/08-login-errors.yml asserts on this id
     // rather than on the message, so copy can change without breaking it.
     expect(getByTestId('login-error')).toBeTruthy();
     expect(login).not.toHaveBeenCalled();
@@ -106,7 +106,7 @@ describe('LoginScreen', () => {
       verifyStepUpCode: jest.fn(),
     });
 
-    // By testID: .maestro/08-login-errors-and-forgot-password.yml taps it.
+    // By testID: .maestro/18-forgot-password.yml taps it.
     const { getByTestId } = await renderScreen(push);
 
     await fireEvent.press(getByTestId('login-forgot-password-link'));
