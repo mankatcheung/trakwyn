@@ -31,11 +31,11 @@ test.describe('Application detail page', () => {
     await page.getByRole('button', { name: 'Add note' }).click();
 
     // The note goes through an optimistic insert, then a refetch once the
-    // mutation settles — wait for the settled card (with its timestamp) so
-    // later interactions target the final DOM node, not the optimistic one.
+    // mutation settles — wait for the settled card (with its timestamp, "Mar 3, 7:03 PM",
+    // JEF-693) so later interactions target the final DOM node, not the optimistic one.
     const noteCard = page
       .locator('div.rounded-xl', { hasText: 'Recruiter said team is hiring fast.' })
-      .filter({ hasText: /\d{1,2}\/\d{1,2}\/\d{4}/ });
+      .filter({ hasText: /[A-Z][a-z]{2} \d{1,2}, \d{1,2}:\d{2} [AP]M/ });
     await expect(noteCard).toBeVisible();
 
     // Edit
@@ -47,7 +47,7 @@ test.describe('Application detail page', () => {
     // Delete
     const updatedCard = page
       .locator('div.rounded-xl', { hasText: 'Updated: onsite scheduled for next week.' })
-      .filter({ hasText: /\d{1,2}\/\d{1,2}\/\d{4}/ });
+      .filter({ hasText: /[A-Z][a-z]{2} \d{1,2}, \d{1,2}:\d{2} [AP]M/ });
     await updatedCard.getByRole('button').nth(1).click();
     await expect(page.getByText('Updated: onsite scheduled for next week.')).not.toBeVisible();
   });

@@ -38,7 +38,7 @@ test.describe('Calendar', () => {
     await page.getByRole('button', { name: /^save$/i }).click();
     await createResponse;
 
-    await expect(page.getByText(/2:00:00 PM/)).toBeVisible();
+    await expect(page.getByText(/2:00 PM/)).toBeVisible();
 
     await page.getByRole('link', { name: 'Calendar' }).click();
     await expect(page.getByText('Sun')).toBeVisible();
