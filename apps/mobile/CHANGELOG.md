@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.13.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.12.0...mobile-v0.13.0) (2026-11-25)
+
+
+### Features
+
+* align emails, guide screenshots, done page and mobile header with the new look (JEF-687) ([#1640](https://github.com/mankatcheung/trakwyn/issues/1640)) ([dc326d2](https://github.com/mankatcheung/trakwyn/commit/dc326d254d5b4700be7e2d8bb9fcf195a88182e9))
+* **api:** log the GraphQL operation name for each request (JEF-689) ([#1646](https://github.com/mankatcheung/trakwyn/issues/1646)) ([47adc58](https://github.com/mankatcheung/trakwyn/commit/47adc5817dea670414f225f8ef4580139b9403c2))
+
+
+### Bug Fixes
+
+* **mobile:** keep the Assistant chat composer above the keyboard on iOS (JEF-377) ([#1580](https://github.com/mankatcheung/trakwyn/issues/1580)) ([06d122f](https://github.com/mankatcheung/trakwyn/commit/06d122f635d7dde843ac4fa733802ccda6336fe9))
+* **mobile:** keep the dashboard avatar on screen when the email is long (JEF-669) ([#1605](https://github.com/mankatcheung/trakwyn/issues/1605)) ([1770c34](https://github.com/mankatcheung/trakwyn/commit/1770c34c22f3f19f81d609d445f87f170ccbbd55))
+* **mobile:** measure the iOS keyboard offset on every header and page-sheet screen (JEF-661) ([#1589](https://github.com/mankatcheung/trakwyn/issues/1589)) ([f93cf21](https://github.com/mankatcheung/trakwyn/commit/f93cf21e0131c0b16a7a4f7f2a65394c683bd571))
+* **mobile:** repair flow 04 (AI helper assertion, Android back presses) ([#1578](https://github.com/mankatcheung/trakwyn/issues/1578)) ([7c9bc70](https://github.com/mankatcheung/trakwyn/commit/7c9bc70c268d3cebea7e42524367575575a00bfe))
+* **mobile:** return to the Applications tab after leaving a detail screen in flows 10 and 11 ([#1602](https://github.com/mankatcheung/trakwyn/issues/1602)) ([86ef7d3](https://github.com/mankatcheung/trakwyn/commit/86ef7d34a68f9bc541cd87121c21d1faeff35a62))
+* **mobile:** set the theme text colour on seven inputs and guard it with a test (JEF-683) ([#1632](https://github.com/mankatcheung/trakwyn/issues/1632)) ([bed50e8](https://github.com/mankatcheung/trakwyn/commit/bed50e8bdad34c35a76ec4cb8c31783f758db4e1))
+* **mobile:** show the notification bell as a native header item on iOS 26 (JEF-659) ([#1584](https://github.com/mankatcheung/trakwyn/issues/1584)) ([67a92ed](https://github.com/mankatcheung/trakwyn/commit/67a92ed0b8ab5ec918311af704631c146216064d))
+
 ## [0.12.0](https://github.com/mankatcheung/trakwyn/compare/mobile-v0.11.0...mobile-v0.12.0) (2026-11-17)
 
 
