@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.21.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.20.0...api-v0.21.0) (2026-11-25)
+
+
+### Features
+
+* align emails, guide screenshots, done page and mobile header with the new look (JEF-687) ([#1640](https://github.com/mankatcheung/trakwyn/issues/1640)) ([dc326d2](https://github.com/mankatcheung/trakwyn/commit/dc326d254d5b4700be7e2d8bb9fcf195a88182e9))
+* **api:** add a --help flag to the eval command (JEF-658) ([#1576](https://github.com/mankatcheung/trakwyn/issues/1576)) ([5141e00](https://github.com/mankatcheung/trakwyn/commit/5141e00f8ac8795bb1b13fda73fedf9b5989cd2f))
+* **api:** log the GraphQL operation name for each request (JEF-689) ([#1646](https://github.com/mankatcheung/trakwyn/issues/1646)) ([47adc58](https://github.com/mankatcheung/trakwyn/commit/47adc5817dea670414f225f8ef4580139b9403c2))
+* **web:** believable screenshot data, matching social card, phone crops and tighter spacing (JEF-684) ([#1634](https://github.com/mankatcheung/trakwyn/issues/1634)) ([60d144a](https://github.com/mankatcheung/trakwyn/commit/60d144a3b94c57b4f8a7db1c8b8a38bd012eaab6))
+
 ## [0.20.0](https://github.com/mankatcheung/trakwyn/compare/api-v0.19.0...api-v0.20.0) (2026-11-19)
 
 
