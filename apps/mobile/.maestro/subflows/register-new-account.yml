@@ -23,6 +23,12 @@ appId: com.trakwyn.app
 - tapOn:
     id: 'register-email-input'
 - inputText: ${output.email}
+# Check what reached the field, so lost keystrokes fail here rather than later
+# at `tab-applications` (JEF-688, JEF-663). The `.` in the email matches any
+# character, which is acceptable for a diagnostic.
+- assertVisible:
+    id: 'register-email-input'
+    text: ${output.email}
 # Close the keyboard before every next field. On the CI emulator's 320x640
 # screen the open keyboard covers the lower inputs, so a tap on one lands on
 # the keyboard, focus stays put and the next inputText types into the field
@@ -35,6 +41,18 @@ appId: com.trakwyn.app
     id: 'register-password-input'
 - inputText: ${output.password}
 - pressKey: Enter
+# Reveal the password and assert the field holds all of it. A hidden field
+# cannot be compared: iOS exposes a secure field's value as bullets. On a
+# mismatch the hierarchy shows what the field held. The check stays on after
+# this, and submitting with the password shown changes nothing for the API.
+# Maestro matches `text` as a regex: `!` is literal, but a password with
+# `.`, `+`, `(` or the like would match loosely or not at all.
+# Why it exists: the iOS nightly of 2026-11-22 lost keystrokes (JEF-663).
+- tapOn:
+    id: 'register-show-password'
+- assertVisible:
+    id: 'register-password-input'
+    text: ${output.password}
 - tapOn:
     id: 'register-submit-button'
 
