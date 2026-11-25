@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useEditorState, type Editor } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import { PluginKey } from '@tiptap/pm/state';
-import { LinkIcon, RemoveFormattingIcon, SparklesIcon } from 'lucide-react';
+import { LinkIcon, RemoveFormattingIcon, PenLineIcon } from 'lucide-react';
 import { useLocale } from '#/lib/i18n';
 import { ToolbarButton } from './EditorToolbarButton';
 import { DocumentEditorLinkForm } from './DocumentEditorLinkForm';
@@ -142,7 +142,7 @@ export function DocumentEditorBubbleMenu({
               setAiOpen((open) => !open);
             }}
           >
-            <SparklesIcon className="size-4" />
+            <PenLineIcon className="size-4" />
           </ToolbarButton>
         )}
         <ToolbarButton

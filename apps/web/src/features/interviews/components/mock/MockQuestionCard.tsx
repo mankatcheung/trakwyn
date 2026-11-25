@@ -1,4 +1,4 @@
-import { ArrowDownIcon, ArrowUpIcon, EditIcon, SparklesIcon, Trash2Icon } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, EditIcon, PenLineIcon, Trash2Icon } from 'lucide-react';
 import { Button, IconButton } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
 import { AiGeneratedBadge } from '../../../ai/components/AiGeneratedBadge';
@@ -89,7 +89,7 @@ export function MockQuestionCard({
                     onClick={onGenerateAnswer}
                   >
                     <span className="flex items-center gap-1.5">
-                      <SparklesIcon size={13} aria-hidden="true" />
+                      <PenLineIcon size={13} aria-hidden="true" />
                       {generatingForThis
                         ? t('interviews.generating')
                         : t('interviews.generateAnswer')}

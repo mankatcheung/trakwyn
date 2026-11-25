@@ -222,4 +222,25 @@ describe('JdImportPanel', () => {
       expect(screen.queryByText(/Uses \d+ credit/)).not.toBeInTheDocument();
     });
   });
+
+  describe('the panel (JEF-693)', () => {
+    it('is a standard white card, not a blue-tinted panel', () => {
+      const { container } = render(<JdImportPanel onFill={vi.fn()} />);
+
+      const panel = container.querySelector('[data-screenshot="jd-import"]');
+      expect(panel?.className).toContain('bg-white');
+      expect(panel?.className).not.toMatch(/blue/);
+    });
+
+    it('opens and closes with an icon chevron, not a typed arrow', () => {
+      const { container } = render(<JdImportPanel onFill={vi.fn()} />);
+      const toggle = screen.getByRole('button', { name: 'Auto-fill from job posting' });
+
+      expect(toggle).toHaveAttribute('aria-expanded', 'false');
+      expect(toggle.querySelectorAll('svg')).toHaveLength(2);
+      fireEvent.click(toggle);
+      expect(toggle).toHaveAttribute('aria-expanded', 'true');
+      expect(container.textContent ?? '').not.toMatch(/[▲▼]/);
+    });
+  });
 });

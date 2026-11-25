@@ -182,11 +182,7 @@ export function InterviewQuestionsPanel({
         aria-expanded={expanded}
         aria-controls={panelId}
         onClick={() => setExpanded((open) => !open)}
-        className={`flex min-h-11 w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm font-medium sm:inline-flex sm:min-h-9 sm:w-auto ${
-          shownCount > 0
-            ? 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300'
-            : 'border-stone-300 text-stone-600 dark:border-stone-600 dark:text-stone-300'
-        }`}
+        className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 -ml-2 text-sm font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 sm:min-h-9 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100"
       >
         <span className="flex items-center gap-2">
           <MessageSquareIcon size={15} aria-hidden="true" />

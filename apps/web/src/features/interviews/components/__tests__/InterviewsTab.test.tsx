@@ -113,6 +113,33 @@ describe('InterviewsTab', () => {
     expect(screen.getByRole('button', { name: 'No questions yet' })).toBeInTheDocument();
   });
 
+  it('shows the question toggles as quiet text rows, not bordered or tinted buttons (JEF-693)', async () => {
+    mockGqlRequest.mockResolvedValue({
+      interviewRounds: [{ ...mockRound, questionCount: 3, mockQuestionCount: 2 }],
+    });
+    render(<InterviewsTab {...baseProps} />, { wrapper: Wrapper });
+
+    const toggles = [
+      await screen.findByRole('button', { name: '3 questions' }),
+      screen.getByRole('button', { name: '2 practice questions' }),
+    ];
+    for (const toggle of toggles) {
+      expect(toggle.classList.contains('border')).toBe(false);
+      expect(toggle.className).not.toMatch(/bg-(blue|violet)|border-(blue|violet)/);
+      expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    }
+  });
+
+  it('does not print when the round was created (JEF-693)', async () => {
+    mockGqlRequest.mockResolvedValue({ interviewRounds: [mockRound] });
+    render(<InterviewsTab {...baseProps} />, { wrapper: Wrapper });
+
+    await screen.findByText('Technical');
+    expect(
+      screen.queryByText(new Date(String(mockRound.createdAt)).toLocaleString()),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows each round's practice question count apart from its asked-question count (JEF-393)", async () => {
     mockGqlRequest.mockResolvedValue({
       interviewRounds: [

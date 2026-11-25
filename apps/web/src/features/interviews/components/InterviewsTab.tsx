@@ -249,9 +249,6 @@ export function InterviewsTab({
                   />
                 </>
               )}
-              <p className="mt-2 text-xs text-stone-400">
-                {new Date(round.createdAt).toLocaleString()}
-              </p>
             </>
           )}
         </Card>
