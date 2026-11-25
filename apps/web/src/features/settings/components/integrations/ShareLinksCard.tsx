@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import { Alert, Button, Card, FormLabel, Input } from '@trakwyn/ui';
 import { UpgradePrompt } from '#/features/plans/components/UpgradePrompt';
 import { QuotaHint } from '#/features/quota/components/QuotaHint';
@@ -23,6 +24,7 @@ function FormMessage({ message, needsPro }: { message: string; needsPro: boolean
 
 export function ShareLinksCard() {
   const { t } = useLocale();
+  const dates = useDates();
   const qc = useQueryClient();
 
   const { data: shareLinksData } = useQuery({
@@ -180,10 +182,10 @@ export function ShareLinksCard() {
                 </p>
                 <p className="text-xs text-stone-500 dark:text-stone-400">
                   {t('integrations.createdOn', {
-                    date: new Date(link.createdAt).toLocaleDateString(),
+                    date: dates.day(link.createdAt),
                   })}
                   {link.lastUsedAt &&
-                    ` · ${t('integrations.lastViewedSuffix', { date: new Date(link.lastUsedAt).toLocaleDateString() })}`}
+                    ` · ${t('integrations.lastViewedSuffix', { date: dates.day(link.lastUsedAt) })}`}
                 </p>
               </div>
               <button

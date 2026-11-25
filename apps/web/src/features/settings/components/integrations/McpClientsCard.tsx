@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import { Alert, Badge, Card, Skeleton } from '@trakwyn/ui';
 import { MCP_OAUTH_GRANTS_QUERY, REVOKE_MCP_OAUTH_GRANT } from '../../graphql/integrationsQueries';
 import { extractGqlError } from '../../lib/gqlErrors';
@@ -15,6 +16,7 @@ import type { McpOAuthGrant } from '../../lib/integrations/integrationTypes';
  */
 export function McpClientsCard() {
   const { t } = useLocale();
+  const dates = useDates();
   const qc = useQueryClient();
 
   const [revokingGrantId, setRevokingGrantId] = useState<string | null>(null);
@@ -73,10 +75,10 @@ export function McpClientsCard() {
                 </p>
                 <p className="text-xs text-stone-500 dark:text-stone-400">
                   {t('integrations.mcpGrantAuthorizedOn', {
-                    date: new Date(grant.authorizedAt).toLocaleDateString(),
+                    date: dates.day(grant.authorizedAt),
                   })}
                   {grant.lastUsedAt &&
-                    ` · ${t('integrations.lastUsedSuffix', { date: new Date(grant.lastUsedAt).toLocaleDateString() })}`}
+                    ` · ${t('integrations.lastUsedSuffix', { date: dates.day(grant.lastUsedAt) })}`}
                 </p>
               </div>
               <button

@@ -4,6 +4,7 @@ import { gqlClient } from '#/graphql/client';
 import { getGqlErrorCode } from '#/lib/graphqlError';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import { AiErrorMessage } from '#/features/ai/components/AiErrorMessage';
 import { AiCreditCost } from '#/features/ai/components/AiCreditCost';
 import { Spinner } from '@trakwyn/ui';
@@ -34,7 +35,8 @@ function RequirementList({ title, items }: { title: string; items: string[] }) {
 }
 
 function Requirements({ requirements }: { requirements: PostingRequirements }) {
-  const { t, formatDate } = useLocale();
+  const { t } = useLocale();
+  const dates = useDates();
   const { mustHave, niceToHave, keywords } = requirements;
   const isEmpty = mustHave.length + niceToHave.length + keywords.length === 0;
 
@@ -75,7 +77,7 @@ function Requirements({ requirements }: { requirements: PostingRequirements }) {
       )}
       <p className="text-xs text-stone-400">
         {t('postingRequirements.readOn', {
-          date: formatDate(new Date(requirements.generatedAt), { dateStyle: 'medium' }),
+          date: dates.day(requirements.generatedAt),
         })}
       </p>
     </div>

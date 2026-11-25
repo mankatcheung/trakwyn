@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import { Alert } from '@trakwyn/ui';
 import { SHARED_SUMMARY_QUERY } from '#/features/share/graphql/sharedSummaryQueries';
 
@@ -21,6 +22,7 @@ interface SharedSummary {
 
 export function SharedSummaryPage() {
   const { t } = useLocale();
+  const dates = useDates();
   const { token } = useSearch({ from: '/share' });
 
   const { data, isLoading } = useQuery({
@@ -91,7 +93,7 @@ export function SharedSummaryPage() {
 
             <p className="text-xs text-stone-400">
               {t('sharedSummary.generatedAt', {
-                date: new Date(summary.generatedAt).toLocaleString(),
+                date: dates.dateTime(summary.generatedAt),
               })}
             </p>
           </>

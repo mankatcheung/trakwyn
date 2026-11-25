@@ -7,6 +7,7 @@ import { AiPromptInput } from '#/features/ai/components/AiPromptInput';
 import { gqlClient } from '#/graphql/client';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import { AiGeneratedBadge } from '../../../ai/components/AiGeneratedBadge';
 import { MockBackgroundPicker, type MockBackground } from './MockBackgroundPicker';
 import { readRememberedUseProfile } from '../../lib/mockBackgroundChoice';
@@ -36,7 +37,8 @@ export function MockTalkingPoints({
   question: MockQuestion;
   onSaved: () => void;
 }) {
-  const { t, formatDate } = useLocale();
+  const { t } = useLocale();
+  const dates = useDates();
   const [open, setOpen] = useState(false);
   // Talking points are meaningless without a source, so the profile starts on.
   const [background, setBackground] = useState<MockBackground>(() => ({
@@ -83,7 +85,7 @@ export function MockTalkingPoints({
             {question.talkingPointsGeneratedAt && (
               <span className="text-xs text-stone-500 dark:text-stone-400">
                 {t('interviews.talkingPointsGeneratedOn', {
-                  date: formatDate(question.talkingPointsGeneratedAt),
+                  date: dates.day(question.talkingPointsGeneratedAt),
                 })}
               </span>
             )}

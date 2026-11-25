@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { StarIcon } from 'lucide-react';
 import { Card, Checkbox } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import type { Application } from '#/features/applications/graphql/applicationsPageQueries';
 import type { ApplicationDisplayFields } from '#/features/applications/lib/applicationDisplayFields';
 import { StatusBadge } from './StatusBadge';
@@ -15,6 +16,7 @@ interface ApplicationRowProps {
 
 export function ApplicationRow({ app, displayFields, selected, onToggle }: ApplicationRowProps) {
   const { t } = useLocale();
+  const dates = useDates();
   return (
     <Card
       key={app.id}
@@ -65,9 +67,7 @@ export function ApplicationRow({ app, displayFields, selected, onToggle }: Appli
           )}
           {displayFields.date && (
             <p className="hidden text-xs text-stone-400 sm:block">
-              {app.appliedAt
-                ? new Date(app.appliedAt).toLocaleDateString()
-                : new Date(app.createdAt).toLocaleDateString()}
+              {app.appliedAt ? dates.day(app.appliedAt) : dates.day(app.createdAt)}
             </p>
           )}
           {displayFields.status && <StatusBadge status={app.status} />}

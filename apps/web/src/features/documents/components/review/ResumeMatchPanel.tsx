@@ -6,6 +6,7 @@ import { getGqlErrorCode } from '#/lib/graphqlError';
 import { AiErrorMessage } from '#/features/ai/components/AiErrorMessage';
 import { getErrorMessage } from '#/lib/errors';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import { useAiCredits } from '#/features/ai/hooks/useAiCredits';
 import { Modal, Spinner } from '@trakwyn/ui';
 import { SCORE_COLORS, scoreColor } from './HealthScorePanel';
@@ -212,7 +213,8 @@ function MatchChip({
 }
 
 function MatchDetails({ match, compute }: { match: ResumeMatch | undefined; compute: Compute }) {
-  const { t, formatDate } = useLocale();
+  const { t } = useLocale();
+  const dates = useDates();
   const color = match ? SCORE_COLORS[scoreColor(match.score)] : null;
 
   return (
@@ -229,10 +231,7 @@ function MatchDetails({ match, compute }: { match: ResumeMatch | undefined; comp
               </p>
               <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
                 {t('resumeMatch.generatedOn', {
-                  date: formatDate(new Date(match.generatedAt), {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                  }),
+                  date: dates.dateTime(match.generatedAt),
                 })}
               </p>
             </div>

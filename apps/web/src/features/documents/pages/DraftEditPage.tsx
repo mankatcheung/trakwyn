@@ -3,6 +3,7 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router';
 import { DownloadIcon, TrashIcon, ArrowLeftIcon, HistoryIcon } from 'lucide-react';
 import { Alert, Button, IconButton } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import { useDocumentLanguage } from '../lib/editor/documentLanguage';
 import { useDraftEditor } from '../hooks/useDraftEditor';
 import { DocumentDraftEditor } from '../components/editor/DocumentDraftEditor';
@@ -16,6 +17,7 @@ const route = getRouteApi('/_authenticated/applications/$applicationId/documents
 
 export function DraftEditPage() {
   const { t, locale } = useLocale();
+  const dates = useDates();
   const { applicationId, draftId } = route.useParams();
   // The spell-check language of this draft (JEF-579): the app's language until one is chosen.
   const [documentLanguage, setDocumentLanguage] = useDocumentLanguage(draftId, locale);
@@ -91,7 +93,7 @@ export function DraftEditPage() {
               {typeLabel}
               {lastSaved && (
                 <span className="ml-2">
-                  · {t('documentDraftEdit.savedAt', { time: lastSaved.toLocaleTimeString() })}
+                  · {t('documentDraftEdit.savedAt', { time: dates.time(lastSaved) })}
                 </span>
               )}
               {saving && (

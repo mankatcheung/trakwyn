@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { formatDay } from '#/lib/dates';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -188,7 +189,7 @@ describe('CompanyBriefingTab', () => {
 
         expect(item.textContent).toContain('Acme raises Series B');
         expect(date).toHaveAttribute('datetime', '2026-03-12T00:00:00.000Z');
-        expect(date?.textContent).toMatch(/2026/);
+        expect(date?.textContent).toBe(formatDay('2026-03-12T00:00:00.000Z', 'en'));
       });
 
       it('shows no date for a page from the company’s site, or a search result with none', async () => {

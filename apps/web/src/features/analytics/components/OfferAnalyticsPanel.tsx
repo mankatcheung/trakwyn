@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import { Card, EmptyState, Skeleton } from '@trakwyn/ui';
 import { offerAnalyticsQueryOptions } from '../graphql/offerAnalyticsQueries';
 
@@ -17,14 +18,6 @@ function formatCurrency(amount: number, currency: string): string {
   }
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-}
-
 /**
  * Offer is a full domain entity (base salary, bonus, equity, benefits,
  * currency, pay period) and until now had zero cross-application view —
@@ -37,6 +30,7 @@ function formatDate(iso: string): string {
  */
 export function OfferAnalyticsPanel() {
   const { t } = useLocale();
+  const dates = useDates();
   const { data, isLoading } = useQuery(offerAnalyticsQueryOptions);
 
   if (isLoading) {
@@ -83,7 +77,7 @@ export function OfferAnalyticsPanel() {
                 className="flex items-center gap-3 border-b border-stone-100 py-2 last:border-0 dark:border-stone-700"
               >
                 <span className="w-24 shrink-0 text-xs text-stone-400 dark:text-stone-500">
-                  {formatDate(point.createdAt)}
+                  {dates.day(point.createdAt)}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-sm text-stone-900 dark:text-stone-100">
                   {point.company}

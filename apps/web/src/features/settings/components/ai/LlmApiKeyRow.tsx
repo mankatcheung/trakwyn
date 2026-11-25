@@ -7,6 +7,7 @@ import { EllipsisVerticalIcon, PencilIcon, Trash2Icon, ZapIcon } from 'lucide-re
 import { Alert, Button, Input, Menu, SubmitButton, type MenuItem } from '@trakwyn/ui';
 import { gqlClient } from '#/graphql/client';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import { useFormAction } from '#/hooks/useFormAction';
 import { SET_LLM_API_KEY_MONTHLY_LIMIT } from '../../graphql/aiQueries';
 import type { LlmApiKey, LlmUsageSummary, TestLlmApiKeyResult } from '../../lib/ai/aiTypes';
@@ -50,6 +51,7 @@ export function LlmApiKeyRow({
   onRemove,
 }: LlmApiKeyRowProps) {
   const { t, formatNumber } = useLocale();
+  const dates = useDates();
   const [editing, setEditing] = useState(false);
 
   const avatar = LLM_PROVIDER_AVATAR[llmApiKey.provider];
@@ -172,7 +174,7 @@ export function LlmApiKeyRow({
                     ? [t('integrations.usageTokens', { count: formatNumber(used) })]
                     : []),
                   t('integrations.usageLastUsed', {
-                    date: new Date(usage.lastUsedAt).toLocaleDateString(),
+                    date: dates.day(usage.lastUsedAt),
                   }),
                 ].join(' · ')}
               </p>
@@ -180,7 +182,7 @@ export function LlmApiKeyRow({
 
             {reached && (
               <p className="mt-2 text-xs text-red-700 dark:text-red-400">
-                {t('integrations.limitReachedRow', { date: nextResetLabel() })}
+                {t('integrations.limitReachedRow', { date: dates.day(nextResetDate()) })}
               </p>
             )}
 
@@ -237,9 +239,9 @@ export function LlmApiKeyRow({
 }
 
 /** The 1st of next month, which is when the allowance refills. */
-function nextResetLabel(): string {
+function nextResetDate(): Date {
   const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)).toLocaleDateString();
+  return new Date(now.getUTCFullYear(), now.getUTCMonth() + 1, 1);
 }
 
 interface LimitEditorProps {

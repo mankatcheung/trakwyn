@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { StarIcon } from 'lucide-react';
 import { useLocale } from '#/lib/i18n';
+import { useDates } from '#/hooks/useDates';
 import type { ApplicationDisplayFields } from '#/features/applications/lib/applicationDisplayFields';
 import type { BoardApplication } from '../../graphql/boardQueries';
 
@@ -14,6 +15,7 @@ export function BoardCard({
   displayFields: ApplicationDisplayFields;
 }) {
   const { t } = useLocale();
+  const dates = useDates();
   const showMetaRow =
     (displayFields.starred && app.starred) ||
     displayFields.date ||
@@ -63,7 +65,7 @@ export function BoardCard({
             )}
             {displayFields.date && (
               <span className="truncate text-xs text-stone-400">
-                {new Date(app.appliedAt ?? app.createdAt).toLocaleDateString()}
+                {dates.day(app.appliedAt ?? app.createdAt)}
               </span>
             )}
           </span>

@@ -54,18 +54,16 @@ function buildWeekGrid(anchor: Date): Date[] {
   });
 }
 
-function formatWeekRange(start: Date, end: Date): string {
-  const startStr = start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  const endStr = end.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+type FormatDate = ReturnType<typeof useLocale>['formatDate'];
+
+function formatWeekRange(start: Date, end: Date, formatDate: FormatDate): string {
+  const startStr = formatDate(start, { month: 'short', day: 'numeric' });
+  const endStr = formatDate(end, { month: 'short', day: 'numeric', year: 'numeric' });
   return `${startStr} – ${endStr}`;
 }
 
 export function CalendarPage() {
-  const { t, locale } = useLocale();
+  const { t, locale, formatDate } = useLocale();
   const EVENT_LABEL: Record<CalendarEventKind, string> = {
     applied: t('status.applied'),
     followUp: t('applicationDetail.followUpLabel'),
@@ -133,10 +131,10 @@ export function CalendarPage() {
 
   const periodLabel =
     viewMode === 'month'
-      ? anchorDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+      ? formatDate(anchorDate, { month: 'long', year: 'numeric' })
       : viewMode === 'week'
-        ? formatWeekRange(grid[0], grid[6])
-        : anchorDate.toLocaleDateString(undefined, {
+        ? formatWeekRange(grid[0], grid[6], formatDate)
+        : formatDate(anchorDate, {
             weekday: 'long',
             month: 'long',
             day: 'numeric',
@@ -259,7 +257,7 @@ export function CalendarPage() {
               <div className="space-y-2">
                 {viewMode !== 'day' && (
                   <p className="text-sm font-medium text-stone-500 dark:text-stone-400">
-                    {dateFromDayKey(dayInFocus).toLocaleDateString(undefined, {
+                    {formatDate(dateFromDayKey(dayInFocus), {
                       weekday: 'long',
                       month: 'long',
                       day: 'numeric',
