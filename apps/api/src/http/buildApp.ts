@@ -39,6 +39,10 @@ import { otelMetrics } from '#src/infrastructure/observability/metrics.js';
 import { LocalStorageProvider } from '#src/infrastructure/storage/LocalStorageProvider.js';
 import { PinoLogger } from '#src/infrastructure/observability/PinoLogger.js';
 import { setRootLogger } from '#src/infrastructure/observability/rootLogger.js';
+import {
+  describeGraphQLOperation,
+  formatGraphQLOperation,
+} from '#src/infrastructure/observability/graphqlOperation.js';
 import { recordGraphQLOperation } from '#src/infrastructure/observability/graphqlOperationSpanName.js';
 import {
   INBOUND_TRACEPARENT_MESSAGE,
@@ -312,6 +316,22 @@ export async function buildApp(fastify: FastifyInstance): Promise<FastifyInstanc
       return { statusCode: 200, response: { ...result, errors } };
     },
     context: buildGraphQLContext,
+  });
+
+  // One line per request naming its operation, before it runs (JEF-689). A
+  // request the client abandons never logs "request completed", so this is the
+  // only line that says what it was. Variables and query text are left out:
+  // they can hold passwords and personal data. Logged at `info`, so it shows in
+  // dev and e2e and not in production (`warn`). The request's own logger
+  // carries its `reqId`.
+  fastify.graphql.addHook('preExecution', async (_schema, document, context) => {
+    const { request } = context as unknown as GraphQLContext;
+    const operation = describeGraphQLOperation(document, operationNameOf(request));
+    if (!operation) return;
+    context.reply.request.log.info(
+      { operation: formatGraphQLOperation(operation) },
+      'graphql operation',
+    );
   });
 
   if (isObservabilityEnabled) {
