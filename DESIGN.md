@@ -81,7 +81,7 @@ No custom typeface — Tailwind's default system-font stack (`-apple-system, Bli
 | `text-5xl`  | 48px               | A feature or pricing hero `h1` at `sm:` and up                                                                     |
 | `text-6xl`  | 60px               | The landing hero `h1` at `sm:` and up — the largest text in the app                                                |
 
-Weight: `font-normal` for body copy and `font-medium` for everything that needs emphasis — labels, nav, buttons and headings alike. There is no `font-semibold` or `font-bold` anywhere: hierarchy comes from size and color, not weight. `tracking-tight` pairs with the largest hero headings. A small section label (an eyebrow, a table-of-contents group heading) is sentence case in `text-xs font-medium text-stone-500 dark:text-stone-400` — never `uppercase` and never `tracking-wide`. The one `uppercase` left is a file-type tag such as `PDF`.
+Weight: `font-normal` for body copy and `font-medium` for everything that needs emphasis — labels, nav, buttons and headings alike. There is no `font-semibold` or `font-bold` anywhere: hierarchy comes from size and color, not weight. `tracking-tight` pairs with the largest hero headings. A small section label (an eyebrow, a table-of-contents group heading) is sentence case in `text-xs font-medium text-stone-500 dark:text-stone-400` — never `uppercase` and never `tracking-wide`. Nothing in the app is set in `uppercase`, badges included (the Draft badge reads "Draft").
 
 Numbers that line up in a column use `tabular-nums`.
 

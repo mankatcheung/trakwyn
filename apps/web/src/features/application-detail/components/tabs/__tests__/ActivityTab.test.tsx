@@ -58,7 +58,7 @@ describe('ActivityTab', () => {
     expect(screen.getByText(/applied → interviewing/)).toBeInTheDocument();
   });
 
-  it('falls back to the raw eventType label for an unrecognized event', async () => {
+  it('says "Updated" for an unrecognized event and never shows its raw code (JEF-693)', async () => {
     mockGqlRequest.mockResolvedValue({
       activityLogs: [
         {
@@ -72,8 +72,55 @@ describe('ActivityTab', () => {
     render(<ActivityTab applicationId="app-1" />, { wrapper: Wrapper });
 
     await waitFor(() => {
-      expect(screen.getByText('something_new')).toBeInTheDocument();
+      expect(screen.getByText('Updated')).toBeInTheDocument();
     });
+    expect(screen.queryByText('something_new')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['status_changed', 'Status changed'],
+    ['note_added', 'Note added'],
+    ['note_deleted', 'Note deleted'],
+    ['document_uploaded', 'Document uploaded'],
+    ['document_deleted', 'Document deleted'],
+    ['interview_added', 'Interview round added'],
+    ['field_updated', 'Fields updated'],
+  ])('labels a %s event "%s" from the language bundle (JEF-693)', async (eventType, label) => {
+    mockGqlRequest.mockResolvedValue({
+      activityLogs: [
+        { id: 'log-x', eventType, payload: '{}', createdAt: '2024-01-01T00:00:00.000Z' },
+      ],
+    });
+    render(<ActivityTab applicationId="app-1" />, { wrapper: Wrapper });
+
+    expect(await screen.findByText(label)).toBeInTheDocument();
+  });
+
+  it('marks every row with a line icon, never an emoji (JEF-693)', async () => {
+    const eventTypes = [
+      'status_changed',
+      'note_added',
+      'note_deleted',
+      'document_uploaded',
+      'document_deleted',
+      'interview_added',
+      'field_updated',
+      'something_new',
+    ];
+    mockGqlRequest.mockResolvedValue({
+      activityLogs: eventTypes.map((eventType, i) => ({
+        id: `log-${i}`,
+        eventType,
+        payload: '{}',
+        createdAt: '2024-01-01T00:00:00.000Z',
+      })),
+    });
+    const { container } = render(<ActivityTab applicationId="app-1" />, { wrapper: Wrapper });
+
+    await waitFor(() => {
+      expect(container.querySelectorAll('svg[aria-hidden="true"]')).toHaveLength(eventTypes.length);
+    });
+    expect(container.textContent ?? '').not.toMatch(/\p{Extended_Pictographic}/u);
   });
 
   it('labels a change an MCP client made with the token it used (JEF-466)', async () => {

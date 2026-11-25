@@ -141,7 +141,7 @@ export function DraftRow({ applicationId, draft, withMatch, onDelete }: DraftRow
         </Link>
       }
       badges={
-        <Badge tone="blue" className="shrink-0 uppercase">
+        <Badge tone="blue" className="shrink-0">
           {t('documents.draftBadge')}
         </Badge>
       }

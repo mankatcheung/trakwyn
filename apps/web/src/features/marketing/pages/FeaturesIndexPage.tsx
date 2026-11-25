@@ -237,7 +237,6 @@ export function FeaturesIndexPage() {
       <main>
         {/* Hero */}
         <section className="relative overflow-hidden pt-14 text-center sm:pt-16">
-          <div className="absolute inset-0 -z-10 bg-linear-to-b from-blue-50 to-stone-50 dark:from-stone-900 dark:to-stone-900" />
           <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
             <h1 className="text-4xl font-medium tracking-tight text-stone-900 sm:text-5xl dark:text-stone-100">
               {t('features.index.heroTitle')}

@@ -107,8 +107,9 @@ export async function seedApplications(
 
     // Interview rounds
     for (const round of app.interviewRounds) {
+      const roundId = nanoid();
       await db.insert(interviewRound).values({
-        id: nanoid(),
+        id: roundId,
         applicationId: appId,
         type: round.type,
         scheduledAt: round.scheduledAt,
@@ -123,21 +124,15 @@ export async function seedApplications(
         id: nanoid(),
         applicationId: appId,
         actorId: userId,
-        eventType: 'interview_round_added',
-        payload: JSON.stringify({ type: round.type, outcome: round.outcome }),
+        eventType: 'interview_added',
+        payload: JSON.stringify({ roundId, type: round.type }),
         createdAt: now,
       });
     }
 
-    // Activity log for the application status
-    await db.insert(activityLog).values({
-      id: nanoid(),
-      applicationId: appId,
-      actorId: userId,
-      eventType: 'status_change',
-      payload: JSON.stringify({ status: app.status }),
-      createdAt: now,
-    });
+    // No status row: creating an application logs nothing, as in the app. A `status_changed`
+    // row stamped `now` would also count in the response-time analytics as an application that
+    // sat in draft since it was applied to (JEF-693).
 
     console.log(`  Created application: ${app.company} — ${app.role} (${app.status})`);
   }

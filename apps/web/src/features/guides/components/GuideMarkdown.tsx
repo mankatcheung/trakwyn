@@ -52,7 +52,7 @@ export function GuideMarkdown({ slug, children }: GuideMarkdownProps) {
   };
 
   return (
-    <div className="prose max-w-none prose-gray dark:prose-invert">
+    <div className="prose max-w-none prose-stone prose-headings:font-medium prose-strong:font-medium prose-code:font-medium dark:prose-invert">
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
         {children}
       </ReactMarkdown>

@@ -43,9 +43,9 @@ export interface StatusColor {
 export const STATUS_COLORS: Record<ApplicationStatus, StatusColor> = {
   draft: {
     tone: 'gray',
-    dot: 'bg-gray-400',
-    columnBorder: 'border-t-gray-400',
-    columnHeading: 'text-gray-600 dark:text-gray-300',
+    dot: 'bg-stone-400',
+    columnBorder: 'border-t-stone-400',
+    columnHeading: 'text-stone-600 dark:text-stone-300',
   },
   applied: {
     tone: 'blue',
@@ -87,9 +87,9 @@ export const STATUS_COLORS: Record<ApplicationStatus, StatusColor> = {
 
 const FALLBACK: StatusColor = {
   tone: 'gray',
-  dot: 'bg-gray-400',
-  columnBorder: 'border-t-gray-400',
-  columnHeading: 'text-gray-600 dark:text-gray-300',
+  dot: 'bg-stone-400',
+  columnBorder: 'border-t-stone-400',
+  columnHeading: 'text-stone-600 dark:text-stone-300',
 };
 
 /**

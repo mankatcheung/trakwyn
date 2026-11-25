@@ -51,7 +51,6 @@ export function FeaturePageLayout({
       <main>
         {/* Hero */}
         <section className="relative overflow-hidden py-16 sm:py-20">
-          <div className="absolute inset-0 -z-10 bg-linear-to-b from-blue-50 to-stone-50 dark:from-stone-900 dark:to-stone-900" />
           <div className="mx-auto max-w-2xl px-4 text-center sm:px-6 lg:px-8">
             <div className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-600 dark:text-stone-400">
               <EyebrowIcon className="size-3.5" />

@@ -66,7 +66,9 @@ describe('seed steps', () => {
     expect((await db.db.select().from(note)).length).toBe(24 + 80 + 100);
     expect((await db.db.select().from(contact)).length).toBe(11 + 20 + 25);
     expect((await db.db.select().from(interviewRound)).length).toBe(19 + 12 + 15);
-    expect((await db.db.select().from(activityLog)).length).toBe(56 + 2 + 180 + 27);
+    // One row per note and per interview round. Creating an application logs nothing, as in
+    // the app, so there is no status row (JEF-693).
+    expect((await db.db.select().from(activityLog)).length).toBe(24 + 80 + 100 + (19 + 12 + 15));
 
     const appIds = apps.map((a) => a.id);
     const orphanOffers = await db.db
@@ -74,6 +76,29 @@ describe('seed steps', () => {
       .from(offer)
       .where(notInArray(offer.applicationId, appIds));
     expect(orphanOffers).toHaveLength(0);
+  });
+
+  it('writes only activity event types the API knows, with the payload the app reads (JEF-693)', async () => {
+    const logs = await db.db.select().from(activityLog);
+
+    const known = [
+      'status_changed',
+      'note_added',
+      'note_deleted',
+      'document_uploaded',
+      'document_deleted',
+      'interview_added',
+      'field_updated',
+    ];
+    expect(logs.filter((log) => !known.includes(log.eventType))).toEqual([]);
+
+    const rounds = logs.filter((log) => log.eventType === 'interview_added');
+    expect(rounds).toHaveLength(19 + 12 + 15);
+    for (const round of rounds) {
+      expect(JSON.parse(round.payload)).toEqual(
+        expect.objectContaining({ roundId: expect.any(String), type: expect.any(String) }),
+      );
+    }
   });
 
   it('creates each application when it was applied to, so the analytics weekly chart has several bars (JEF-530)', async () => {
