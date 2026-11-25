@@ -149,5 +149,7 @@ leaves what is needed to compare runs:
   screenshots and view hierarchies.
 
 A request that the app abandoned has no "request completed" line in `api.log`;
-line its "incoming request" time up against the failing flow's time in Maestro's
-log instead.
+find its "graphql operation" line (the `operation` field, e.g. `mutation
+register`, logged before the request runs and sharing its `reqId` with the
+"incoming request" line) and line that time up against the failing flow's time in
+Maestro's log instead (JEF-689).

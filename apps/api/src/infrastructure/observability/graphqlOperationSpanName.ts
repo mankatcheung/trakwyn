@@ -3,8 +3,12 @@ import {
   ATTR_GRAPHQL_OPERATION_NAME,
   ATTR_GRAPHQL_OPERATION_TYPE,
 } from '@opentelemetry/semantic-conventions/incubating';
-import { getOperationAST, type DocumentNode } from 'graphql';
+import type { DocumentNode } from 'graphql';
 
+import {
+  describeGraphQLOperation,
+  formatGraphQLOperation,
+} from '#src/infrastructure/observability/graphqlOperation.js';
 import { recordOperationSpanName } from '#src/infrastructure/observability/operationSpanName.js';
 
 /**
@@ -18,12 +22,11 @@ export function recordGraphQLOperation(
   operationName: string | null | undefined,
   ctx: Context = otelContext.active(),
 ): void {
-  const operation = getOperationAST(document, operationName);
+  const operation = describeGraphQLOperation(document, operationName);
   if (!operation) return;
 
-  const type = operation.operation;
-  const name = operation.name?.value;
-  const span = recordOperationSpanName(name ? `${type} ${name}` : type, ctx);
+  const { type, name } = operation;
+  const span = recordOperationSpanName(formatGraphQLOperation(operation), ctx);
   if (!span) return;
 
   span.setAttribute(ATTR_GRAPHQL_OPERATION_TYPE, type);
