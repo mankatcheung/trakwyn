@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.21.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.20.0...web-v0.21.0) (2026-11-25)
+
+
+### Features
+
+* align emails, guide screenshots, done page and mobile header with the new look (JEF-687) ([#1640](https://github.com/mankatcheung/trakwyn/issues/1640)) ([dc326d2](https://github.com/mankatcheung/trakwyn/commit/dc326d254d5b4700be7e2d8bb9fcf195a88182e9))
+* **web:** believable screenshot data, matching social card, phone crops and tighter spacing (JEF-684) ([#1634](https://github.com/mankatcheung/trakwyn/issues/1634)) ([60d144a](https://github.com/mankatcheung/trakwyn/commit/60d144a3b94c57b4f8a7db1c8b8a38bd012eaab6))
+* **web:** give the pricing page one recommended option and fold away the fine print (JEF-679) ([#1626](https://github.com/mankatcheung/trakwyn/issues/1626)) ([eba0c36](https://github.com/mankatcheung/trakwyn/commit/eba0c36c523a46328dcc6fcab3b67d8b72408045))
+* **web:** lead the landing and features heroes with a larger product view (JEF-675) ([#1616](https://github.com/mankatcheung/trakwyn/issues/1616)) ([a9e7cb0](https://github.com/mankatcheung/trakwyn/commit/a9e7cb005cb44e719ad31ade512a7d9f12a91504))
+* **web:** move How it works up the landing page, after the AI demo (JEF-677) ([#1624](https://github.com/mankatcheung/trakwyn/issues/1624)) ([b4abe81](https://github.com/mankatcheung/trakwyn/commit/b4abe8169d0cb3de9f763d1438959ad215052ab5))
+* **web:** move the setup guide link from the marketing header to Guides (JEF-678) ([#1625](https://github.com/mankatcheung/trakwyn/issues/1625)) ([16f8ddc](https://github.com/mankatcheung/trakwyn/commit/16f8ddc3a6c017e7daf3a7ab6e08c3e508712366))
+* **web:** name the feature in marketing links and add an FAQ to /features (JEF-680) ([#1627](https://github.com/mankatcheung/trakwyn/issues/1627)) ([7a1d8a1](https://github.com/mankatcheung/trakwyn/commit/7a1d8a19d4eba2bce9e26f89262e72eab806d63f))
+* **web:** quieter tags, one status colour per board card, email forms under Security (JEF-686) ([#1638](https://github.com/mankatcheung/trakwyn/issues/1638)) ([c052072](https://github.com/mankatcheung/trakwyn/commit/c05207270381eff693543433e4b381769d7e2291))
+* **web:** send security headers and a report-only CSP (JEF-685) ([#1637](https://github.com/mankatcheung/trakwyn/issues/1637)) ([d5058b4](https://github.com/mankatcheung/trakwyn/commit/d5058b4deffbd1a5c39dd954954caa79366c45d7))
+* **web:** vary the features pages' layout rhythm and share one closing CTA (JEF-676) ([#1623](https://github.com/mankatcheung/trakwyn/issues/1623)) ([ecd150b](https://github.com/mankatcheung/trakwyn/commit/ecd150b3fad980366a49b162f620227fe342a9c5))
+
+
+### Performance Improvements
+
+* **web:** preload the hero screenshot for the visitor's colour scheme (JEF-682) ([#1630](https://github.com/mankatcheung/trakwyn/issues/1630)) ([e51423c](https://github.com/mankatcheung/trakwyn/commit/e51423cd2a247c1090d8c04480f925a3cb68ddd3))
+
 ## [0.20.0](https://github.com/mankatcheung/trakwyn/compare/web-v0.19.0...web-v0.20.0) (2026-11-19)
 
 
