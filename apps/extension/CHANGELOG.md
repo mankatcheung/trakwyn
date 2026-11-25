@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/mankatcheung/trakwyn/compare/clipper-v1.6.0...clipper-v1.7.0) (2026-11-25)
+
+
+### Bug Fixes
+
+* **extension:** align the Clipper popup with the web's warm stone and ink-blue look (JEF-673) ([72c5763](https://github.com/mankatcheung/trakwyn/commit/72c5763110bb3833f6453ef32f5b043c289777bc))
+
 ## [1.6.0](https://github.com/mankatcheung/trakwyn/compare/clipper-v1.5.0...clipper-v1.6.0) (2026-11-16)
 
 
