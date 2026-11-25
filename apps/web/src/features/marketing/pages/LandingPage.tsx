@@ -110,7 +110,6 @@ export function LandingPage() {
       <main>
         {/* Hero */}
         <section className="relative overflow-hidden pt-16 pb-10 sm:pt-20 sm:pb-12">
-          <div className="absolute inset-0 -z-10 bg-linear-to-b from-blue-50 to-stone-50 dark:from-stone-900 dark:to-stone-900" />
           <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
             <h1 className="text-4xl font-medium tracking-tight text-stone-900 sm:text-6xl dark:text-stone-100">
               {t('landing.heroTitleLine1')}

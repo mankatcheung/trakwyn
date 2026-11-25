@@ -86,7 +86,7 @@ export const LLM_PROVIDER_AVATAR: Record<string, { initials: string; className: 
   },
   deepseek: {
     initials: 'DS',
-    className: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+    className: 'bg-stone-100 text-stone-700 dark:bg-stone-700 dark:text-stone-300',
   },
   nvidia: {
     initials: 'NV',
@@ -94,6 +94,6 @@ export const LLM_PROVIDER_AVATAR: Record<string, { initials: string; className: 
   },
   [CUSTOM_LLM_PROVIDER]: {
     initials: 'C',
-    className: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+    className: 'bg-stone-100 text-stone-700 dark:bg-stone-700 dark:text-stone-300',
   },
 };

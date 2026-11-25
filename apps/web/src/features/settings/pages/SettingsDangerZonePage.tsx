@@ -66,11 +66,11 @@ export function SettingsDangerZonePage() {
       <Card className="space-y-4 border-red-200 bg-red-50 p-5 dark:border-red-900 dark:bg-red-900/20">
         <div>
           <h2 className="text-base font-medium text-red-600">{t('data.dangerZoneTitle')}</h2>
-          <p className="text-sm text-red-500 dark:text-red-400">
+          <p className="text-sm text-stone-700 dark:text-stone-300">
             {t('data.dangerZoneDescription')}
           </p>
           {hasSubscription && (
-            <p className="mt-1 text-sm text-red-500 dark:text-red-400">
+            <p className="mt-1 text-sm text-stone-700 dark:text-stone-300">
               {t('data.dangerZoneSubscriptionNote')}
             </p>
           )}

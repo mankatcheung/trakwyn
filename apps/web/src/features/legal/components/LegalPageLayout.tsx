@@ -36,7 +36,7 @@ export function LegalPageLayout({ titleKey, lastUpdated, children }: LegalPageLa
           <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
             {t('legal.lastUpdated', { date: formatDate(lastUpdated, { dateStyle: 'long' }) })}
           </p>
-          <div className="prose prose-sm mt-8 max-w-none text-stone-700 dark:text-stone-300 dark:prose-invert">
+          <div className="prose prose-sm prose-stone mt-8 max-w-none prose-headings:font-medium prose-strong:font-medium prose-code:font-medium text-stone-700 dark:text-stone-300 dark:prose-invert">
             {children}
           </div>
         </div>
