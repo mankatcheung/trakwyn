@@ -3,6 +3,7 @@ import {
   UnauthorizedError,
   UserNotFoundError,
 } from '#src/use-cases/errors/DomainError.js';
+import { normalizeEmail } from '#src/domain/user/normalizeEmail.js';
 import type { IPasswordHasher } from '#src/use-cases/ports/IPasswordHasher.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { ILoginEventRepository } from '#src/use-cases/ports/ILoginEventRepository.js';
@@ -29,7 +30,8 @@ interface Deps {
 export class LoginUseCase implements ILoginUseCase {
   constructor(private readonly deps: Deps) {}
 
-  async execute(input: LoginInput): Promise<LoginOutput> {
+  async execute(rawInput: LoginInput): Promise<LoginOutput> {
+    const input = { ...rawInput, email: normalizeEmail(rawInput.email) };
     const failureKeys = this.failureKeys(input);
     await this.assertWithinAttemptLimit(input);
     if (input.enforceCaptcha && (await this.hasRepeatedFailures(failureKeys))) {
@@ -66,16 +68,14 @@ export class LoginUseCase implements ILoginUseCase {
    * reveal whether the account exists.
    */
   private failureKeys(input: LoginInput): string[] {
-    const keys = [`login-failure:email:${input.email.toLowerCase()}`];
+    const keys = [`login-failure:email:${input.email}`];
     if (input.ipAddress) keys.push(`login-failure:ip:${input.ipAddress}`);
     return keys;
   }
 
   /** The ceiling on attempts of any outcome, which no captcha lifts. */
   private async assertWithinAttemptLimit(input: LoginInput): Promise<void> {
-    const emailAllowed = await this.deps.loginRateLimiter.consume(
-      `login:email:${input.email.toLowerCase()}`,
-    );
+    const emailAllowed = await this.deps.loginRateLimiter.consume(`login:email:${input.email}`);
     const ipAllowed = input.ipAddress
       ? await this.deps.loginRateLimiter.consume(`login:ip:${input.ipAddress}`)
       : true;

@@ -1,95 +1,110 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, text, integer, bigint, boolean, timestamp } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  text,
+  integer,
+  bigint,
+  boolean,
+  timestamp,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core';
 import { TIMESTAMP } from './columns.js';
 
-export const user = pgTable('User', {
-  id: text('id').primaryKey(),
-  email: text('email').notNull().unique(),
-  passwordHash: text('passwordHash'),
-  name: text('name'),
-  timezone: text('timezone'),
-  targetRole: text('targetRole'),
-  phone: text('phone'),
-  location: text('location'),
-  profileLinks: text('profileLinks').array(),
-  emailVerifiedAt: timestamp('emailVerifiedAt', TIMESTAMP),
-  avatarKey: text('avatarKey'),
-  weeklyDigestEnabled: boolean('weeklyDigestEnabled').notNull().default(true),
-  digestFrequency: text('digestFrequency').notNull().default('weekly'),
-  lastDigestSentAt: timestamp('lastDigestSentAt', TIMESTAMP),
-  followUpRemindersEnabled: boolean('followUpRemindersEnabled').notNull().default(true),
-  pushNotificationsEnabled: boolean('pushNotificationsEnabled').notNull().default(false),
-  weeklyApplicationGoal: integer('weeklyApplicationGoal').notNull().default(5),
-  applicationCount: integer('applicationCount').notNull().default(0),
-  /** Running total of `Document.sizeBytes` over the user's applications, Trash included (JEF-425). */
-  documentBytes: bigint('documentBytes', { mode: 'number' }).notNull().default(0),
-  /** Hosted AI credits spent in the period `aiCreditsPeriodStart` starts (JEF-447). Reset lazily by the first call of a new UTC month. */
-  aiCreditsUsed: integer('aiCreditsUsed').notNull().default(0),
-  aiCreditsPeriodStart: timestamp('aiCreditsPeriodStart', TIMESTAMP),
-  /** `free` or `pro` (JEF-344). What it allows is resolved in code (`resolveEntitlements`), not stored. */
-  plan: text('plan').notNull().default('free'),
-  /** When a Pro pass or trial ends; null for a Free plan and for an active subscription. */
-  planExpiresAt: timestamp('planExpiresAt', TIMESTAMP),
-  /** How the plan was obtained: `subscription`, `pass`, `trial` or `grant`. Null while on Free. */
-  planSource: text('planSource'),
-  /** The payment provider's customer id, set by the first webhook (JEF-426). Provider-neutral. */
-  billingCustomerId: text('billingCustomerId'),
-  /** The active subscription's id at the payment provider; null for passes and non-payers. */
-  billingSubscriptionId: text('billingSubscriptionId'),
-  totpSecret: text('totpSecret'),
-  totpEnabled: boolean('totpEnabled').notNull().default(false),
-  /**
-   * Which of the user's configured LlmApiKey rows (see below) is used for
-   * automatic AI features (cover letter, JD parsing, resume match) — the
-   * assistant chooses its own provider per-conversation instead.
-   */
-  defaultLlmProvider: text('defaultLlmProvider'),
-  /** User-authored instruction spliced into the system prompt for AI-generated text (cover letters, chat assistant). */
-  customAiPrompt: text('customAiPrompt'),
-  /**
-   * Opt-in (JEF-249): let cover letter generation read a small, recent slice
-   * of notes and cover letters from the user's *other* applications, to
-   * match voice/tone. Off by default — it reaches into application data the
-   * user didn't ask about when generating a single letter.
-   */
-  useCrossApplicationContext: boolean('useCrossApplicationContext').notNull().default(false),
-  /**
-   * When a key hits its monthly token limit (JEF-258), fall through to the
-   * user's next key that still has headroom instead of stopping.
-   *
-   * Off by default: spending on a provider the user did not pick for this
-   * task is the surprising behaviour, so it is opted into rather than out of.
-   */
-  llmFallbackWhenLimited: boolean('llmFallbackWhenLimited').notNull().default(false),
-  /** `auto` | `trakwyn` | `own` (JEF-446): which key AI calls run on. See `AI_SOURCE`. */
-  aiSource: text('aiSource').notNull().default('auto'),
-  /**
-   * The AI providers to try, first to last (JEF-503): `trakwyn` and/or the ids
-   * of the user's own keys. Null means the user never set one, and the order is
-   * derived from `aiSource`, `defaultLlmProvider` and `llmFallbackWhenLimited`
-   * (`effectiveAiProviderOrder`), so nobody's behaviour changed when this arrived.
-   */
-  aiProviderOrder: text('aiProviderOrder').array(),
-  /** Secondary email for account recovery when primary inbox is inaccessible. */
-  backupEmail: text('backupEmail'),
-  /** When the backup email was verified; null until verification completes. */
-  backupEmailVerifiedAt: timestamp('backupEmailVerifiedAt', TIMESTAMP),
-  /** When the user dismissed the dashboard onboarding checklist (JEF-333); null until dismissed. */
-  onboardingChecklistDismissedAt: timestamp('onboardingChecklistDismissedAt', TIMESTAMP),
-  /** Goals picked in the welcome flow (JEF-460), values of `ONBOARDING_GOALS`; empty when skipped. */
-  onboardingGoals: text('onboardingGoals')
-    .array()
-    .notNull()
-    .default(sql`'{}'::text[]`),
-  /** When the welcome flow was finished or skipped (JEF-460); null sends the user to it. */
-  onboardingCompletedAt: timestamp('onboardingCompletedAt', TIMESTAMP),
-  /** When the account will be purged (JEF-463); null unless a deletion is confirmed and not cancelled. */
-  deletionScheduledAt: timestamp('deletionScheduledAt', TIMESTAMP),
-  createdAt: timestamp('createdAt', TIMESTAMP)
-    .notNull()
-    .$defaultFn(() => new Date()),
-  updatedAt: timestamp('updatedAt', TIMESTAMP)
-    .notNull()
-    .$defaultFn(() => new Date())
-    .$onUpdate(() => new Date()),
-});
+export const user = pgTable(
+  'User',
+  {
+    id: text('id').primaryKey(),
+    email: text('email').notNull(),
+    passwordHash: text('passwordHash'),
+    name: text('name'),
+    timezone: text('timezone'),
+    targetRole: text('targetRole'),
+    phone: text('phone'),
+    location: text('location'),
+    profileLinks: text('profileLinks').array(),
+    emailVerifiedAt: timestamp('emailVerifiedAt', TIMESTAMP),
+    avatarKey: text('avatarKey'),
+    weeklyDigestEnabled: boolean('weeklyDigestEnabled').notNull().default(true),
+    digestFrequency: text('digestFrequency').notNull().default('weekly'),
+    lastDigestSentAt: timestamp('lastDigestSentAt', TIMESTAMP),
+    followUpRemindersEnabled: boolean('followUpRemindersEnabled').notNull().default(true),
+    pushNotificationsEnabled: boolean('pushNotificationsEnabled').notNull().default(false),
+    weeklyApplicationGoal: integer('weeklyApplicationGoal').notNull().default(5),
+    applicationCount: integer('applicationCount').notNull().default(0),
+    /** Running total of `Document.sizeBytes` over the user's applications, Trash included (JEF-425). */
+    documentBytes: bigint('documentBytes', { mode: 'number' }).notNull().default(0),
+    /** Hosted AI credits spent in the period `aiCreditsPeriodStart` starts (JEF-447). Reset lazily by the first call of a new UTC month. */
+    aiCreditsUsed: integer('aiCreditsUsed').notNull().default(0),
+    aiCreditsPeriodStart: timestamp('aiCreditsPeriodStart', TIMESTAMP),
+    /** `free` or `pro` (JEF-344). What it allows is resolved in code (`resolveEntitlements`), not stored. */
+    plan: text('plan').notNull().default('free'),
+    /** When a Pro pass or trial ends; null for a Free plan and for an active subscription. */
+    planExpiresAt: timestamp('planExpiresAt', TIMESTAMP),
+    /** How the plan was obtained: `subscription`, `pass`, `trial` or `grant`. Null while on Free. */
+    planSource: text('planSource'),
+    /** The payment provider's customer id, set by the first webhook (JEF-426). Provider-neutral. */
+    billingCustomerId: text('billingCustomerId'),
+    /** The active subscription's id at the payment provider; null for passes and non-payers. */
+    billingSubscriptionId: text('billingSubscriptionId'),
+    totpSecret: text('totpSecret'),
+    totpEnabled: boolean('totpEnabled').notNull().default(false),
+    /**
+     * Which of the user's configured LlmApiKey rows (see below) is used for
+     * automatic AI features (cover letter, JD parsing, resume match) — the
+     * assistant chooses its own provider per-conversation instead.
+     */
+    defaultLlmProvider: text('defaultLlmProvider'),
+    /** User-authored instruction spliced into the system prompt for AI-generated text (cover letters, chat assistant). */
+    customAiPrompt: text('customAiPrompt'),
+    /**
+     * Opt-in (JEF-249): let cover letter generation read a small, recent slice
+     * of notes and cover letters from the user's *other* applications, to
+     * match voice/tone. Off by default — it reaches into application data the
+     * user didn't ask about when generating a single letter.
+     */
+    useCrossApplicationContext: boolean('useCrossApplicationContext').notNull().default(false),
+    /**
+     * When a key hits its monthly token limit (JEF-258), fall through to the
+     * user's next key that still has headroom instead of stopping.
+     *
+     * Off by default: spending on a provider the user did not pick for this
+     * task is the surprising behaviour, so it is opted into rather than out of.
+     */
+    llmFallbackWhenLimited: boolean('llmFallbackWhenLimited').notNull().default(false),
+    /** `auto` | `trakwyn` | `own` (JEF-446): which key AI calls run on. See `AI_SOURCE`. */
+    aiSource: text('aiSource').notNull().default('auto'),
+    /**
+     * The AI providers to try, first to last (JEF-503): `trakwyn` and/or the ids
+     * of the user's own keys. Null means the user never set one, and the order is
+     * derived from `aiSource`, `defaultLlmProvider` and `llmFallbackWhenLimited`
+     * (`effectiveAiProviderOrder`), so nobody's behaviour changed when this arrived.
+     */
+    aiProviderOrder: text('aiProviderOrder').array(),
+    /** Secondary email for account recovery when primary inbox is inaccessible. */
+    backupEmail: text('backupEmail'),
+    /** When the backup email was verified; null until verification completes. */
+    backupEmailVerifiedAt: timestamp('backupEmailVerifiedAt', TIMESTAMP),
+    /** When the user dismissed the dashboard onboarding checklist (JEF-333); null until dismissed. */
+    onboardingChecklistDismissedAt: timestamp('onboardingChecklistDismissedAt', TIMESTAMP),
+    /** Goals picked in the welcome flow (JEF-460), values of `ONBOARDING_GOALS`; empty when skipped. */
+    onboardingGoals: text('onboardingGoals')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    /** When the welcome flow was finished or skipped (JEF-460); null sends the user to it. */
+    onboardingCompletedAt: timestamp('onboardingCompletedAt', TIMESTAMP),
+    /** When the account will be purged (JEF-463); null unless a deletion is confirmed and not cancelled. */
+    deletionScheduledAt: timestamp('deletionScheduledAt', TIMESTAMP),
+    createdAt: timestamp('createdAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: timestamp('updatedAt', TIMESTAMP)
+      .notNull()
+      .$defaultFn(() => new Date())
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    // Case-insensitive (JEF-692): the API stores emails lowercased, and this holds even for a row written around it.
+    uniqueIndex('User_email_lower_key').on(sql`lower(${table.email})`),
+  ],
+);

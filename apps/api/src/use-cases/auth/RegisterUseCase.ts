@@ -1,4 +1,5 @@
 import { ConflictError, RateLimitedError } from '#src/use-cases/errors/DomainError.js';
+import { normalizeEmail } from '#src/domain/user/normalizeEmail.js';
 import type { IPasswordHasher } from '#src/use-cases/ports/IPasswordHasher.js';
 import type { ICaptchaVerifier } from '#src/use-cases/ports/ICaptchaVerifier.js';
 import type { IRateLimiter } from '#src/use-cases/ports/IRateLimiter.js';
@@ -27,7 +28,8 @@ interface Deps {
 export class RegisterUseCase implements IRegisterUseCase {
   constructor(private readonly deps: Deps) {}
 
-  async execute(input: RegisterInput): Promise<RegisterOutput> {
+  async execute(rawInput: RegisterInput): Promise<RegisterOutput> {
+    const input = { ...rawInput, email: normalizeEmail(rawInput.email) };
     // Before the password hash and the lookup: a rejected sign-up costs nothing.
     await this.assertNotAbusive(input);
     assertValidPassword(input.password);
@@ -74,7 +76,7 @@ export class RegisterUseCase implements IRegisterUseCase {
     const [limiter, route] = input.enforceCaptcha
       ? [this.deps.registerRateLimiter, 'register']
       : [this.deps.registerWithoutCaptchaRateLimiter, 'register-without-captcha'];
-    const emailAllowed = await limiter.consume(`${route}:email:${input.email.toLowerCase()}`);
+    const emailAllowed = await limiter.consume(`${route}:email:${input.email}`);
     const ipAllowed = input.ipAddress
       ? await limiter.consume(`${route}:ip:${input.ipAddress}`)
       : true;

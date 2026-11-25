@@ -1,4 +1,5 @@
 import { RateLimitedError } from '#src/use-cases/errors/DomainError.js';
+import { normalizeEmail } from '#src/domain/user/normalizeEmail.js';
 import { createHash, randomBytes } from 'crypto';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { IPasswordResetTokenRepository } from '#src/use-cases/ports/IPasswordResetTokenRepository.js';
@@ -22,9 +23,10 @@ interface Deps {
 export class RequestBackupEmailRecoveryUseCase implements IRequestBackupEmailRecoveryUseCase {
   constructor(private readonly deps: Deps) {}
 
-  async execute(input: RequestBackupEmailRecoveryInput): Promise<void> {
+  async execute(rawInput: RequestBackupEmailRecoveryInput): Promise<void> {
+    const input = { ...rawInput, backupEmail: normalizeEmail(rawInput.backupEmail) };
     const emailAllowed = await this.deps.backupEmailRecoveryRateLimiter.consume(
-      `backup-email-recovery:email:${input.backupEmail.toLowerCase()}`,
+      `backup-email-recovery:email:${input.backupEmail}`,
     );
     const ipAllowed = input.ipAddress
       ? await this.deps.backupEmailRecoveryRateLimiter.consume(

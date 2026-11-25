@@ -218,6 +218,13 @@
       "when": 1794777682450,
       "tag": "0030_gifted_devos",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1795617771840,
+      "tag": "0031_dazzling_shaman",
+      "breakpoints": true
     }
   ]
 }

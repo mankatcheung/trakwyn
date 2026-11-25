@@ -115,6 +115,50 @@ describe('auth integration', () => {
     expect(wrongBody.errors?.[0]?.extensions?.code).toBe('UNAUTHORIZED');
   });
 
+  it('treats emails that differ by case or surrounding whitespace as one account (JEF-692)', async () => {
+    const local = randomUUID();
+    const password = 'correct-horse-3';
+    const post = (query: string, variables: object, headers?: Record<string, string>) =>
+      testApp.app.inject({
+        method: 'POST',
+        url: '/graphql',
+        headers,
+        payload: { query, variables },
+      });
+
+    const registerRes = await post(REGISTER_MUTATION, {
+      email: `${local}@Example.COM`,
+      password,
+    });
+    expect((registerRes.json() as GraphQLResponse<unknown>).errors).toBeUndefined();
+
+    const loginRes = await post(LOGIN_MUTATION, {
+      email: `  ${local}@example.com `,
+      password,
+    });
+    const loginBody = loginRes.json() as GraphQLResponse<{
+      login: { success: boolean; accessToken: string | null };
+    }>;
+    expect(loginBody.errors).toBeUndefined();
+    expect(loginBody.data!.login.success).toBe(true);
+
+    const meRes = await testApp.app.inject({
+      method: 'POST',
+      url: '/graphql',
+      headers: { authorization: `Bearer ${loginBody.data!.login.accessToken}` },
+      payload: { query: ME_QUERY },
+    });
+    const meBody = meRes.json() as GraphQLResponse<{ me: { email: string } }>;
+    expect(meBody.data!.me.email).toBe(`${local}@example.com`);
+
+    const duplicateRes = await post(REGISTER_MUTATION, {
+      email: `${local}@EXAMPLE.com`,
+      password,
+    });
+    const duplicateBody = duplicateRes.json() as GraphQLResponse<unknown>;
+    expect(duplicateBody.errors?.[0]?.extensions?.code).toBe('CONFLICT');
+  });
+
   it('rejects the me query with no Authorization header', async () => {
     const res = await testApp.app.inject({
       method: 'POST',

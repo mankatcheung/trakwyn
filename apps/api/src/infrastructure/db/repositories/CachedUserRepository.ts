@@ -1,4 +1,5 @@
 import type { User } from '#src/domain/user/User.js';
+import { normalizeEmail } from '#src/domain/user/normalizeEmail.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { ICache } from '#src/infrastructure/cache/ICache.js';
 import { BoundedMap } from '#src/infrastructure/cache/BoundedMap.js';
@@ -28,7 +29,10 @@ export class CachedUserRepository implements IUserRepository {
     return result;
   }
 
-  async findByEmail(email: string): Promise<User | null> {
+  async findByEmail(rawEmail: string): Promise<User | null> {
+    // Keyed on the normalised address (JEF-692): create/update/delete invalidate by the
+    // stored email, which is normalised, so a raw-cased key would never be evicted.
+    const email = normalizeEmail(rawEmail);
     const key = CACHE_KEYS.userByEmail(email);
     const result = await this.cache.getOrSet(key, () => this.inner.findByEmail(email));
     if (result) this.emailByUserId.set(result.id, result.email);

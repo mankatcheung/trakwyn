@@ -1,4 +1,5 @@
 import type { Plan, PlanSource } from '#src/domain/plan/Plan.js';
+import { normalizeEmail } from '#src/domain/user/normalizeEmail.js';
 import { DURATIONS_MS } from '#src/use-cases/constants.js';
 import { NotFoundError, ValidationError } from '#src/use-cases/errors/DomainError.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
@@ -41,7 +42,7 @@ export class SetUserPlanUseCase {
       }
     }
 
-    const user = await this.deps.userRepository.findByEmail(input.email);
+    const user = await this.deps.userRepository.findByEmail(normalizeEmail(input.email));
     if (!user) throw new NotFoundError('User');
 
     const isPro = input.plan === 'pro';

@@ -3,6 +3,7 @@ import {
   NotFoundError,
   RateLimitedError,
 } from '#src/use-cases/errors/DomainError.js';
+import { normalizeEmail } from '#src/domain/user/normalizeEmail.js';
 import { createHash, randomBytes } from 'crypto';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { IEmailVerificationTokenRepository } from '#src/use-cases/ports/IEmailVerificationTokenRepository.js';
@@ -29,7 +30,8 @@ interface Deps {
 export class RequestEmailChangeUseCase implements IRequestEmailChangeUseCase {
   constructor(private readonly deps: Deps) {}
 
-  async execute(input: RequestEmailChangeInput): Promise<void> {
+  async execute(rawInput: RequestEmailChangeInput): Promise<void> {
+    const input = { ...rawInput, newEmail: normalizeEmail(rawInput.newEmail) };
     // Rate-limit by user ID to prevent abuse of email change requests
     const allowed = await this.deps.requestEmailChangeRateLimiter.consume(
       `request-email-change:user:${input.userId}`,

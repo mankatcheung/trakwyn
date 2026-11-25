@@ -155,10 +155,48 @@ describe('DrizzleUserRepository', () => {
       expect(found).toBeNull();
     });
 
-    it('is case-sensitive', async () => {
+    it('ignores case and surrounding whitespace (JEF-692)', async () => {
       await repo.create({ id: 'u1', email: 'test@example.com', passwordHash: 'hashed' });
-      const found = await repo.findByEmail('TEST@EXAMPLE.COM');
-      expect(found).toBeNull();
+      const found = await repo.findByEmail(' TEST@Example.COM ');
+      expect(found?.id).toBe('u1');
+    });
+  });
+
+  describe('email normalisation (JEF-692)', () => {
+    it('stores a created email trimmed and lowercased', async () => {
+      const u = await repo.create({ id: 'u1', email: ' Foo@Example.COM ', passwordHash: 'hashed' });
+      expect(u.email).toBe('foo@example.com');
+    });
+
+    it('stores an updated email and backup email trimmed and lowercased', async () => {
+      await repo.create({ id: 'u1', email: 'a@b.com', passwordHash: 'hashed' });
+      const updated = await repo.update('u1', {
+        email: 'New@B.com ',
+        backupEmail: ' Backup@B.com',
+      });
+      expect(updated.email).toBe('new@b.com');
+      expect(updated.backupEmail).toBe('backup@b.com');
+    });
+
+    it('finds a user by backup email regardless of case', async () => {
+      await repo.create({ id: 'u1', email: 'a@b.com', passwordHash: 'hashed' });
+      await repo.update('u1', { backupEmail: 'Backup@B.com' });
+      const found = await repo.findByBackupEmail(' BACKUP@b.com ');
+      expect(found?.id).toBe('u1');
+    });
+
+    it('rejects a second account whose email differs only by case', async () => {
+      await repo.create({ id: 'u1', email: 'a@b.com', passwordHash: 'hashed' });
+      await expect(
+        repo.create({ id: 'u2', email: 'A@B.com', passwordHash: 'hashed' }),
+      ).rejects.toThrow();
+    });
+
+    it('enforces uniqueness in the database even for a row written around the repository', async () => {
+      await repo.create({ id: 'u1', email: 'a@b.com', passwordHash: 'hashed' });
+      await expect(
+        db.db.insert(user).values({ id: 'u2', email: 'A@B.COM', passwordHash: 'hashed' }),
+      ).rejects.toThrow();
     });
   });
 
