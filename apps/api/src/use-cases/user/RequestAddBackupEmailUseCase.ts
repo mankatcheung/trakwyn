@@ -3,6 +3,7 @@ import {
   RateLimitedError,
   ValidationError,
 } from '#src/use-cases/errors/DomainError.js';
+import { normalizeEmail } from '#src/domain/user/normalizeEmail.js';
 import { createHash, randomBytes } from 'crypto';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { IBackupEmailVerificationTokenRepository } from '#src/use-cases/ports/IBackupEmailVerificationTokenRepository.js';
@@ -29,7 +30,8 @@ interface Deps {
 export class RequestAddBackupEmailUseCase implements IRequestAddBackupEmailUseCase {
   constructor(private readonly deps: Deps) {}
 
-  async execute(input: RequestAddBackupEmailInput): Promise<void> {
+  async execute(rawInput: RequestAddBackupEmailInput): Promise<void> {
+    const input = { ...rawInput, backupEmail: normalizeEmail(rawInput.backupEmail) };
     const allowedByUser = await this.deps.requestAddBackupEmailRateLimiter.consume(
       `request-add-backup-email:user:${input.userId}`,
     );

@@ -73,6 +73,28 @@ describe('CachedUserRepository', () => {
     });
   });
 
+  describe('findByEmail normalisation (JEF-692)', () => {
+    it('shares one cache entry across casings and whitespace', async () => {
+      const { repo, inner } = makeRepo();
+      vi.mocked(inner.findByEmail).mockResolvedValue(user);
+
+      await repo.findByEmail('Test@Example.com');
+      await repo.findByEmail(' test@example.com ');
+      expect(inner.findByEmail).toHaveBeenCalledOnce();
+    });
+
+    it('a create clears a cached "not found" that was looked up with different casing', async () => {
+      const { repo, inner } = makeRepo();
+      vi.mocked(inner.findByEmail).mockResolvedValueOnce(null).mockResolvedValue(user);
+      vi.mocked(inner.create).mockResolvedValue(user);
+
+      expect(await repo.findByEmail('TEST@EXAMPLE.COM')).toBeNull();
+      await repo.create({ id: user.id, email: 'TEST@EXAMPLE.COM' });
+
+      expect(await repo.findByEmail('test@example.com')).toEqual(user);
+    });
+  });
+
   describe('findAll', () => {
     it('always passes through to inner without caching', async () => {
       const { repo, inner } = makeRepo();

@@ -1,4 +1,5 @@
 import { RateLimitedError } from '#src/use-cases/errors/DomainError.js';
+import { normalizeEmail } from '#src/domain/user/normalizeEmail.js';
 import { createHash, randomBytes } from 'crypto';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { IPasswordResetTokenRepository } from '#src/use-cases/ports/IPasswordResetTokenRepository.js';
@@ -25,7 +26,8 @@ interface Deps {
 export class RequestPasswordResetUseCase implements IRequestPasswordResetUseCase {
   constructor(private readonly deps: Deps) {}
 
-  async execute(input: RequestPasswordResetInput): Promise<void> {
+  async execute(rawInput: RequestPasswordResetInput): Promise<void> {
+    const input = { ...rawInput, email: normalizeEmail(rawInput.email) };
     // Captcha first, so a bot cannot spend a victim's per-email budget below
     // (JEF-401). A refusal says nothing about whether the account exists.
     if (input.enforceCaptcha) {
@@ -36,7 +38,7 @@ export class RequestPasswordResetUseCase implements IRequestPasswordResetUseCase
     // the exact same amount of work regardless of outcome, so a rate-limit
     // response never reveals whether the account exists.
     const emailAllowed = await this.deps.passwordResetRateLimiter.consume(
-      `password-reset:email:${input.email.toLowerCase()}`,
+      `password-reset:email:${input.email}`,
     );
     const ipAllowed = input.ipAddress
       ? await this.deps.passwordResetRateLimiter.consume(`password-reset:ip:${input.ipAddress}`)

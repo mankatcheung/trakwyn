@@ -3,6 +3,7 @@ import {
   NotFoundError,
   ValidationError,
 } from '#src/use-cases/errors/DomainError.js';
+import { normalizeEmail } from '#src/domain/user/normalizeEmail.js';
 import type { User } from '#src/domain/user/User.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import type { ISessionRepository } from '#src/use-cases/ports/ISessionRepository.js';
@@ -56,7 +57,7 @@ export class LoginOrSignupWithOAuthUseCase implements ILoginOrSignupWithOAuthUse
       );
     }
 
-    const email = profile.email;
+    const email = normalizeEmail(profile.email);
     const existingUser = await this.deps.userRepository.findByEmail(email);
     if (existingUser?.emailVerifiedAt) {
       // Deliberately not auto-linking: silently attaching a new OAuth identity

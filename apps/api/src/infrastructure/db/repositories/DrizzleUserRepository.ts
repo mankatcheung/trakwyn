@@ -2,6 +2,7 @@ import { and, eq, asc, lte, sql } from 'drizzle-orm';
 import type { DrizzleDb, DrizzleClient } from '../client.js';
 import { user } from '../schema.js';
 import type { User } from '#src/domain/user/User.js';
+import { normalizeEmail } from '#src/domain/user/normalizeEmail.js';
 import type { Plan, PlanSource } from '#src/domain/plan/Plan.js';
 import type { AiSource } from '#src/domain/user/AiSource.js';
 import type { OnboardingGoal } from '#src/domain/user/OnboardingGoal.js';
@@ -25,12 +26,20 @@ export class DrizzleUserRepository implements IUserRepository {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    const [row] = await this.db.select().from(user).where(eq(user.email, email)).limit(1);
+    const [row] = await this.db
+      .select()
+      .from(user)
+      .where(eq(user.email, normalizeEmail(email)))
+      .limit(1);
     return row ? this.toEntity(row) : null;
   }
 
   async findByBackupEmail(email: string): Promise<User | null> {
-    const [row] = await this.db.select().from(user).where(eq(user.backupEmail, email)).limit(1);
+    const [row] = await this.db
+      .select()
+      .from(user)
+      .where(eq(user.backupEmail, normalizeEmail(email)))
+      .limit(1);
     return row ? this.toEntity(row) : null;
   }
 
@@ -64,7 +73,10 @@ export class DrizzleUserRepository implements IUserRepository {
     name?: string | null;
     emailVerifiedAt?: Date | null;
   }): Promise<User> {
-    const [row] = await this.db.insert(user).values(data).returning();
+    const [row] = await this.db
+      .insert(user)
+      .values({ ...data, email: normalizeEmail(data.email) })
+      .returning();
     return this.toEntity(row);
   }
 
@@ -109,7 +121,7 @@ export class DrizzleUserRepository implements IUserRepository {
   ): Promise<User> {
     const [row] = await this.db
       .update(user)
-      .set({ ...data, updatedAt: new Date() })
+      .set({ ...normalizeEmails(data), updatedAt: new Date() })
       .where(eq(user.id, id))
       .returning();
     return this.toEntity(row);
@@ -196,4 +208,15 @@ export class DrizzleUserRepository implements IUserRepository {
       updatedAt: row.updatedAt,
     };
   }
+}
+
+/** Email and backup email are stored normalised (JEF-692); leaves other fields, and absent keys, untouched. */
+function normalizeEmails<T extends { email?: string; backupEmail?: string | null }>(data: T): T {
+  return {
+    ...data,
+    ...(data.email !== undefined ? { email: normalizeEmail(data.email) } : {}),
+    ...(typeof data.backupEmail === 'string'
+      ? { backupEmail: normalizeEmail(data.backupEmail) }
+      : {}),
+  };
 }

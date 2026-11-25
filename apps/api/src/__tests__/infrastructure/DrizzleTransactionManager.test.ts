@@ -17,7 +17,8 @@ describe('DrizzleTransactionManager', () => {
 
     const found = await userRepo.findById(id);
     expect(found).not.toBeNull();
-    expect(found!.email).toBe(`${id}@example.com`);
+    // Stored lowercased (JEF-692); the nanoid has capitals.
+    expect(found!.email).toBe(`${id}@example.com`.toLowerCase());
     await cleanup();
   });
 

@@ -1,4 +1,5 @@
 import { RateLimitedError, UnauthorizedError } from '#src/use-cases/errors/DomainError.js';
+import { normalizeEmail } from '#src/domain/user/normalizeEmail.js';
 import type { IPasswordHasher } from '#src/use-cases/ports/IPasswordHasher.js';
 import type { User } from '#src/domain/user/User.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
@@ -27,7 +28,8 @@ interface Deps {
 export class LoginWithTotpUseCase implements ILoginWithTotpUseCase {
   constructor(private readonly deps: Deps) {}
 
-  async execute(input: LoginWithTotpInput): Promise<User> {
+  async execute(rawInput: LoginWithTotpInput): Promise<User> {
+    const input = { ...rawInput, email: normalizeEmail(rawInput.email) };
     const user = await this.deps.userRepository.findByEmail(input.email);
     if (!user) {
       this.logFailure('invalid_credentials');
@@ -47,9 +49,7 @@ export class LoginWithTotpUseCase implements ILoginWithTotpUseCase {
       throw new UnauthorizedError('Invalid credentials');
     }
 
-    const allowedByEmail = await this.deps.totpRateLimiter.consume(
-      `totp:email:${input.email.toLowerCase()}`,
-    );
+    const allowedByEmail = await this.deps.totpRateLimiter.consume(`totp:email:${input.email}`);
     const allowedByIp = input.ipAddress
       ? await this.deps.totpRateLimiter.consume(`totp:ip:${input.ipAddress}`)
       : true;
