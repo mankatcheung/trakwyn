@@ -5,6 +5,7 @@ import type {
 } from '#src/use-cases/ports/IApiTokenRepository.js';
 import type { ICache } from '#src/infrastructure/cache/ICache.js';
 import { CACHE, CACHE_KEYS } from '#src/infrastructure/config/constants.js';
+import { runAfterCommit } from '#src/infrastructure/db/transactionContext.js';
 
 interface Deps {
   drizzleApiTokenRepository: IApiTokenRepository;
@@ -74,10 +75,13 @@ export class CachedApiTokenRepository implements IApiTokenRepository {
     // and the delete land on different serverless instances.
     const existing = await this.findById(id);
     await this.inner.delete(id);
-    await this.cache.delete(CACHE_KEYS.apiTokenById(id));
-    if (existing) {
-      await this.cache.delete(CACHE_KEYS.apiTokenByHash(existing.tokenHash));
-      await this.cache.delete(CACHE_KEYS.apiTokenList(existing.userId));
-    }
+    // Once committed: evicting earlier lets a concurrent read re-cache the token (JEF-694).
+    await runAfterCommit(async () => {
+      await this.cache.delete(CACHE_KEYS.apiTokenById(id));
+      if (existing) {
+        await this.cache.delete(CACHE_KEYS.apiTokenByHash(existing.tokenHash));
+        await this.cache.delete(CACHE_KEYS.apiTokenList(existing.userId));
+      }
+    });
   }
 }

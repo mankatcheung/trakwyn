@@ -50,10 +50,19 @@ describe('DrizzleTotpBackupCodeRepository', () => {
     it('sets usedAt on the code', async () => {
       await repo.create({ id: 'code-1', userId: 'user-1', codeHash: 'hash-1' });
 
-      await repo.markUsed('code-1');
+      expect(await repo.markUsed('code-1')).toBe(true);
 
       const found = await repo.findByCodeHash('hash-1');
       expect(found?.usedAt).toBeInstanceOf(Date);
+    });
+
+    it('refuses a code already used, keeping the first usedAt', async () => {
+      await repo.create({ id: 'code-1', userId: 'user-1', codeHash: 'hash-1' });
+      await repo.markUsed('code-1');
+      const first = (await repo.findByCodeHash('hash-1'))?.usedAt;
+
+      expect(await repo.markUsed('code-1')).toBe(false);
+      expect((await repo.findByCodeHash('hash-1'))?.usedAt).toEqual(first);
     });
   });
 

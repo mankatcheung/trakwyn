@@ -8,8 +8,11 @@ import type {
   IRemoveBackupEmailUseCase,
   RemoveBackupEmailInput,
 } from '#src/use-cases/user/IRemoveBackupEmailUseCase.js';
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 
 interface Deps {
+  transactionManager?: ITransactionManager;
   passwordHasher: IPasswordHasher;
   userRepository: IUserRepository;
   backupEmailVerificationTokenRepository: IBackupEmailVerificationTokenRepository;
@@ -31,11 +34,14 @@ export class RemoveBackupEmailUseCase implements IRemoveBackupEmailUseCase {
     if (!user) throw new NotFoundError('User not found');
     await confirmIdentity(this.deps.passwordHasher, user, input);
 
-    await this.deps.userRepository.update(input.userId, {
-      backupEmail: null,
-      backupEmailVerifiedAt: null,
+    // One transaction: a pending confirmation link left behind could put the
+    // removed address back (JEF-694).
+    await runInTransaction(this.deps.transactionManager, async () => {
+      await this.deps.userRepository.update(input.userId, {
+        backupEmail: null,
+        backupEmailVerifiedAt: null,
+      });
+      await this.deps.backupEmailVerificationTokenRepository.deleteAllForUser(input.userId);
     });
-
-    await this.deps.backupEmailVerificationTokenRepository.deleteAllForUser(input.userId);
   }
 }

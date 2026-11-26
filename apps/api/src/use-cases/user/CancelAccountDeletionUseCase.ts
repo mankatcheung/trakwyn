@@ -7,11 +7,14 @@ import type { ISecurityEventRepository } from '#src/use-cases/ports/ISecurityEve
 import type { IUserActionTokenRepository } from '#src/use-cases/ports/IUserActionTokenRepository.js';
 import type { IUserRepository } from '#src/use-cases/ports/IUserRepository.js';
 import { hashLinkToken } from '#src/use-cases/shared/actionTokens.js';
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 
 /** A signed-in user cancelling, or anyone holding the link from the "scheduled" mail. */
 export type CancelAccountDeletionInput = { userId: string } | { token: string };
 
 interface Deps {
+  transactionManager?: ITransactionManager;
   userRepository: IUserRepository;
   userActionTokenRepository: IUserActionTokenRepository;
   securityEventRepository: ISecurityEventRepository;
@@ -42,14 +45,18 @@ export class CancelAccountDeletionUseCase {
     const user = await this.resolveUser(input);
     if (!user?.deletionScheduledAt) return;
 
-    await this.deps.userRepository.update(user.id, { deletionScheduledAt: null });
-    await this.deps.userActionTokenRepository.deleteForUser(user.id, 'account_deletion_cancel');
-    await this.deps.securityEventRepository.create({
-      id: this.deps.generateId(),
-      userId: user.id,
-      eventType: 'account_deletion_cancelled',
-      ipAddress: null,
-      userAgent: null,
+    // One transaction: once the date is cleared, a retry returns early, so a
+    // later write that failed would never be made (JEF-694).
+    await runInTransaction(this.deps.transactionManager, async () => {
+      await this.deps.userRepository.update(user.id, { deletionScheduledAt: null });
+      await this.deps.userActionTokenRepository.deleteForUser(user.id, 'account_deletion_cancel');
+      await this.deps.securityEventRepository.create({
+        id: this.deps.generateId(),
+        userId: user.id,
+        eventType: 'account_deletion_cancelled',
+        ipAddress: null,
+        userAgent: null,
+      });
     });
 
     if (user.billingSubscriptionId) {

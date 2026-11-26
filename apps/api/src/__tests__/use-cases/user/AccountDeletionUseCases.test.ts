@@ -18,6 +18,7 @@ import {
   makeStorageProvider,
 } from '#src/__tests__/helpers/mocks/documents.js';
 import {
+  makeTransactionManager,
   makeEmailService,
   makeLogger,
   makeRateLimiter,
@@ -274,6 +275,19 @@ describe('ConfirmAccountDeletionUseCase', () => {
     });
     expect(deps.logger.error).toHaveBeenCalled();
   });
+
+  it('revokes tokens and grants inside the transaction that schedules (JEF-694)', async () => {
+    const { deps, useCase } = build(undefined, {
+      transactionManager: makeTransactionManager({ run: vi.fn() }),
+    });
+
+    await expect(useCase.execute({ token: 'raw-confirm' })).rejects.toThrow();
+
+    expect(deps.userRepository.update).not.toHaveBeenCalled();
+    expect(deps.apiTokenRepository.delete).not.toHaveBeenCalled();
+    expect(deps.mcpOAuthTokenRepository.revokeFamily).not.toHaveBeenCalled();
+    expect(deps.mcpOAuthRefreshTokenRepository.revokeFamily).not.toHaveBeenCalled();
+  });
 });
 
 describe('CancelAccountDeletionUseCase', () => {
@@ -362,6 +376,18 @@ describe('CancelAccountDeletionUseCase', () => {
     await expect(useCase.execute({ token: 'raw-cancel' })).rejects.toMatchObject({
       code: 'VALIDATION',
     });
+  });
+
+  it('writes only inside a transaction (JEF-694)', async () => {
+    const { deps, useCase } = build(undefined, {
+      transactionManager: makeTransactionManager({ run: vi.fn() }),
+    });
+
+    await useCase.execute({ userId: 'user-1' });
+
+    expect(deps.userRepository.update).not.toHaveBeenCalled();
+    expect(deps.userActionTokenRepository.deleteForUser).not.toHaveBeenCalled();
+    expect(deps.securityEventRepository.create).not.toHaveBeenCalled();
   });
 });
 

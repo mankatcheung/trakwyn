@@ -1,3 +1,5 @@
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { makeTransactionManager } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { describe, expect, it, vi } from 'vitest';
 import { RevokeMcpOAuthGrantForUserUseCase } from '#src/use-cases/mcpOAuth/RevokeMcpOAuthGrantForUserUseCase.js';
 
@@ -13,7 +15,7 @@ describe('RevokeMcpOAuthGrantForUserUseCase', () => {
     lastUsedAt: null,
   };
 
-  function makeUseCase(grants = [ownGrant]) {
+  function makeUseCase(grants = [ownGrant], transactionManager?: ITransactionManager) {
     const grantRepository = { findActiveByUserId: vi.fn().mockResolvedValue(grants) };
     const tokenRepository = { revokeFamily: vi.fn().mockResolvedValue(undefined) };
     const refreshTokenRepository = { revokeFamily: vi.fn().mockResolvedValue(undefined) };
@@ -26,6 +28,7 @@ describe('RevokeMcpOAuthGrantForUserUseCase', () => {
         securityEventRepository: securityEventRepository as never,
         generateId: () => 'event-1',
         now: () => now,
+        transactionManager,
       }),
       grantRepository,
       tokenRepository,
@@ -81,5 +84,15 @@ describe('RevokeMcpOAuthGrantForUserUseCase', () => {
     expect(ctx.securityEventRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({ userId: 'user-1', eventType: 'mcp_oauth_token_revoked' }),
     );
+  });
+
+  it('writes only inside a transaction (JEF-694)', async () => {
+    const ctx = makeUseCase(undefined, makeTransactionManager({ run: vi.fn() }));
+
+    await ctx.useCase.execute('user-1', 'grant-1');
+
+    expect(ctx.tokenRepository.revokeFamily).not.toHaveBeenCalled();
+    expect(ctx.refreshTokenRepository.revokeFamily).not.toHaveBeenCalled();
+    expect(ctx.securityEventRepository.create).not.toHaveBeenCalled();
   });
 });

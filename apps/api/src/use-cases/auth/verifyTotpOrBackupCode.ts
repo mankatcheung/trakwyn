@@ -24,6 +24,6 @@ export async function verifyTotpOrBackupCode(
   const validBackupCode = backupCode && backupCode.userId === user.id && !backupCode.usedAt;
   if (!validBackupCode) return false;
 
-  await deps.totpBackupCodeRepository.markUsed(backupCode.id);
-  return true;
+  // The check above can pass for two requests at once; only the update decides.
+  return deps.totpBackupCodeRepository.markUsed(backupCode.id);
 }

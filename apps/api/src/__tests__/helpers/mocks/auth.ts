@@ -7,6 +7,7 @@
  */
 
 import { vi } from 'vitest';
+import type { IBackupEmailVerificationTokenRepository } from '#src/use-cases/ports/IBackupEmailVerificationTokenRepository.js';
 import type { EmailVerificationToken } from '#src/domain/emailVerificationToken/EmailVerificationToken.js';
 import type { IEmailVerificationTokenRepository } from '#src/use-cases/ports/IEmailVerificationTokenRepository.js';
 import type { ILoginEventRepository } from '#src/use-cases/ports/ILoginEventRepository.js';
@@ -112,6 +113,16 @@ export const makeEmailVerificationTokenRepository = (
   ...overrides,
 });
 
+export const makeBackupEmailVerificationTokenRepository = (
+  overrides?: Partial<IBackupEmailVerificationTokenRepository>,
+): IBackupEmailVerificationTokenRepository => ({
+  create: vi.fn(),
+  findByTokenHash: vi.fn().mockResolvedValue(null),
+  markUsed: vi.fn().mockResolvedValue(undefined),
+  deleteAllForUser: vi.fn().mockResolvedValue(undefined),
+  ...overrides,
+});
+
 export const makeEmailVerificationToken = (
   overrides?: Partial<EmailVerificationToken>,
 ): EmailVerificationToken => ({
@@ -130,7 +141,7 @@ export const makeTotpBackupCodeRepository = (
 ): ITotpBackupCodeRepository => ({
   create: vi.fn(),
   findByCodeHash: vi.fn().mockResolvedValue(null),
-  markUsed: vi.fn().mockResolvedValue(undefined),
+  markUsed: vi.fn().mockResolvedValue(true),
   deleteAllForUser: vi.fn().mockResolvedValue(undefined),
   ...overrides,
 });

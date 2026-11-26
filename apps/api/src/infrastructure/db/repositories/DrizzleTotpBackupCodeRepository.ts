@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import type { DrizzleDb, DrizzleClient } from '../client.js';
 import { totpBackupCode } from '../schema.js';
 import type { TotpBackupCode } from '#src/domain/totpBackupCode/TotpBackupCode.js';
@@ -30,11 +30,13 @@ export class DrizzleTotpBackupCodeRepository implements ITotpBackupCodeRepositor
     return row ? this.toEntity(row) : null;
   }
 
-  async markUsed(id: string): Promise<void> {
-    await this.db
+  async markUsed(id: string): Promise<boolean> {
+    const rows = await this.db
       .update(totpBackupCode)
       .set({ usedAt: new Date() })
-      .where(eq(totpBackupCode.id, id));
+      .where(and(eq(totpBackupCode.id, id), isNull(totpBackupCode.usedAt)))
+      .returning({ id: totpBackupCode.id });
+    return rows.length > 0;
   }
 
   async deleteAllForUser(userId: string): Promise<void> {

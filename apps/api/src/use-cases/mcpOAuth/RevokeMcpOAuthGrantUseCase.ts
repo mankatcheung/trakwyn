@@ -2,8 +2,11 @@ import { createHash } from 'node:crypto';
 import { MCP_OAUTH } from '#src/use-cases/constants.js';
 import type { IMcpOAuthRefreshTokenRepository } from '#src/use-cases/ports/IMcpOAuthRefreshTokenRepository.js';
 import type { IMcpOAuthTokenRepository } from '#src/use-cases/ports/IMcpOAuthTokenRepository.js';
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 
 interface Deps {
+  transactionManager?: ITransactionManager;
   mcpOAuthTokenRepository: IMcpOAuthTokenRepository;
   mcpOAuthRefreshTokenRepository: IMcpOAuthRefreshTokenRepository;
   now: () => Date;
@@ -35,8 +38,10 @@ export class RevokeMcpOAuthGrantUseCase {
     if (!grant) return null;
 
     const now = this.deps.now();
-    await this.deps.mcpOAuthTokenRepository.revokeFamily(grant.familyId, now);
-    await this.deps.mcpOAuthRefreshTokenRepository.revokeFamily(grant.familyId, now);
+    await runInTransaction(this.deps.transactionManager, async () => {
+      await this.deps.mcpOAuthTokenRepository.revokeFamily(grant.familyId, now);
+      await this.deps.mcpOAuthRefreshTokenRepository.revokeFamily(grant.familyId, now);
+    });
     return grant.userId;
   }
 

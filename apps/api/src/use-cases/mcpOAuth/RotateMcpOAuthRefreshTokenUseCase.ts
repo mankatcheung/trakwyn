@@ -90,11 +90,16 @@ export class RotateMcpOAuthRefreshTokenUseCase {
    * that one consent goes — refresh tokens *and* the access tokens already
    * issued from them. Revoking only the refresh side would leave the attacker
    * a live access token for the rest of its hour.
+   *
+   * Its own transaction, never the rotate one. Half done could not be retried:
+   * a revoked refresh token is turned away before reuse is detected (JEF-694).
    */
   private async burnFamily(familyId: string, userId: string, now: Date): Promise<void> {
-    await this.deps.mcpOAuthRefreshTokenRepository.revokeFamily(familyId, now);
-    await this.deps.mcpOAuthTokenRepository.revokeFamily(familyId, now);
-    await this.recordReuse(userId);
+    await runInTransaction(this.deps.transactionManager, async () => {
+      await this.deps.mcpOAuthRefreshTokenRepository.revokeFamily(familyId, now);
+      await this.deps.mcpOAuthTokenRepository.revokeFamily(familyId, now);
+      await this.recordReuse(userId);
+    });
   }
 
   private async recordReuse(userId: string): Promise<void> {

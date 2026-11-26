@@ -1,3 +1,4 @@
+import { makeTransactionManager } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RevokeOtherSessionsUseCase } from '#src/use-cases/sessions/RevokeOtherSessionsUseCase.js';
 import { makeSecurityEventRepository } from '#src/__tests__/helpers/mocks/auth.js';
@@ -37,5 +38,20 @@ describe('RevokeOtherSessionsUseCase', () => {
       ipAddress: '1.2.3.4',
       userAgent: 'Mozilla/5.0',
     });
+  });
+
+  it('writes only inside a transaction (JEF-694)', async () => {
+    const sessionRepository = makeSessionRepository();
+    const securityEventRepository = makeSecurityEventRepository();
+
+    await new RevokeOtherSessionsUseCase({
+      sessionRepository,
+      securityEventRepository,
+      generateId: () => 'evt-1',
+      transactionManager: makeTransactionManager({ run: vi.fn() }),
+    }).execute('user-1', 'session-1');
+
+    expect(sessionRepository.revokeAllForUserExcept).not.toHaveBeenCalled();
+    expect(securityEventRepository.create).not.toHaveBeenCalled();
   });
 });

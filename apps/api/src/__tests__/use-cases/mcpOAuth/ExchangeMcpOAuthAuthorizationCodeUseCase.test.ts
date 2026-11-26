@@ -1,3 +1,5 @@
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { makeTransactionManager } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import { ExchangeMcpOAuthAuthorizationCodeUseCase } from '#src/use-cases/mcpOAuth/ExchangeMcpOAuthAuthorizationCodeUseCase.js';
@@ -37,7 +39,10 @@ describe('ExchangeMcpOAuthAuthorizationCodeUseCase', () => {
     codeVerifier: verifier,
   };
 
-  function makeUseCase(codeOverrides: Record<string, unknown> = {}) {
+  function makeUseCase(
+    codeOverrides: Record<string, unknown> = {},
+    transactionManager?: ITransactionManager,
+  ) {
     const authorizationCodeRepository = {
       findByCodeHash: vi.fn().mockResolvedValue({ ...code, ...codeOverrides }),
       consume: vi.fn().mockResolvedValue(true),
@@ -66,6 +71,7 @@ describe('ExchangeMcpOAuthAuthorizationCodeUseCase', () => {
         createMcpOAuthRefreshTokenUseCase,
         generateId: () => 'event-1',
         now: () => now,
+        transactionManager,
       }),
       authorizationCodeRepository,
       clientRepository,
@@ -184,5 +190,15 @@ describe('ExchangeMcpOAuthAuthorizationCodeUseCase', () => {
 
     expect(await ctx.useCase.execute({ ...validInput, code: 'trakwyn_mcp_access' })).toBeNull();
     expect(ctx.clientRepository.findById).not.toHaveBeenCalled();
+  });
+
+  it('revokes a replayed code only inside a transaction (JEF-694)', async () => {
+    const ctx = makeUseCase({ consumedAt: now }, makeTransactionManager({ run: vi.fn() }));
+
+    await ctx.useCase.execute(validInput);
+
+    expect(ctx.tokenRepository.revokeFamily).not.toHaveBeenCalled();
+    expect(ctx.refreshTokenRepository.revokeFamily).not.toHaveBeenCalled();
+    expect(ctx.securityEventRepository.create).not.toHaveBeenCalled();
   });
 });
