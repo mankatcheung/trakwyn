@@ -26,7 +26,6 @@ import { ExchangeMcpOAuthAuthorizationCodeUseCase } from '#src/use-cases/mcpOAut
 import { RotateMcpOAuthRefreshTokenUseCase } from '#src/use-cases/mcpOAuth/RotateMcpOAuthRefreshTokenUseCase.js';
 import { verifyTotpOrBackupCode } from '#src/use-cases/auth/verifyTotpOrBackupCode.js';
 import { hashLinkToken } from '#src/use-cases/shared/actionTokens.js';
-import { MCP_OAUTH } from '#src/use-cases/constants.js';
 
 const sha256 = (value: string): string => createHash('sha256').update(value).digest('hex');
 const boom = (): never => {
@@ -103,6 +102,8 @@ describe('revocation and account-deletion transactions (JEF-694)', () => {
     return id;
   }
 
+  // Prefixes are spelled out: reading them from the constants makes CodeQL take
+  // these random tokens for passwords hashed too cheaply.
   /** A live MCP grant: the consent, one access token and one refresh token. */
   async function seedGrant(userId?: string) {
     const ownerId = userId ?? (await makeUser());
@@ -113,7 +114,7 @@ describe('revocation and account-deletion transactions (JEF-694)', () => {
       name: 'test client',
       redirectUris: ['https://client.example/cb'],
     });
-    const code = `${MCP_OAUTH.AUTHORIZATION_CODE_PREFIX}${nanoid()}`;
+    const code = `trakwyn_mcp_code_${nanoid()}`;
     const consent = await codes.create({
       id: nanoid(),
       codeHash: sha256(code),
@@ -128,7 +129,7 @@ describe('revocation and account-deletion transactions (JEF-694)', () => {
     });
     await codes.consume(consent.id, new Date());
     const shared = { familyId, clientId, userId: ownerId, scope: 'read' as const };
-    const access = `${MCP_OAUTH.ACCESS_TOKEN_PREFIX}${nanoid()}`;
+    const access = `trakwyn_mcp_${nanoid()}`;
     await accessTokens.create({
       id: nanoid(),
       tokenHash: sha256(access),
@@ -136,7 +137,7 @@ describe('revocation and account-deletion transactions (JEF-694)', () => {
       expiresAt: inOneMinute(),
       ...shared,
     });
-    const refresh = `${MCP_OAUTH.REFRESH_TOKEN_PREFIX}${nanoid()}`;
+    const refresh = `trakwyn_mcp_refresh_${nanoid()}`;
     await refreshTokens.create({
       id: nanoid(),
       tokenHash: sha256(refresh),
