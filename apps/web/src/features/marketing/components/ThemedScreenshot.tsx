@@ -21,18 +21,16 @@ import { useLocale } from '#/lib/i18n';
  * its text is readable, instead of a desktop image shrunk to the same width.
  * The `<source>` carries its own width and height, so the space it reserves
  * has the phone image's shape and nothing shifts.
+ *
+ * A full-screen phone capture is drawn as a device: narrower than the screen,
+ * with a thick bezel. Edge to edge, it read as the page's own interface on a
+ * real phone. A crop is only a region of the app, so it keeps the plain frame.
  */
 export function ThemedScreenshot({
   name,
   priority = false,
-  bleed = false,
 }: {
   name: ScreenshotName;
-  /**
-   * Edge to edge below the `sm` breakpoint (JEF-675): no rounding and no side
-   * borders, so a hero screenshot on a phone uses the whole width.
-   */
-  bleed?: boolean;
   /**
    * An above-the-fold image (the likely LCP): high priority. Both images stay
    * lazy, because a hidden eager image is still fetched and most visitors would
@@ -46,8 +44,11 @@ export function ThemedScreenshot({
   const light = getScreenshot(name, 'light');
   const dark = getScreenshot(name, 'dark');
   const alt = t(light.altKey);
-  const frame = bleed ? 'rounded-none border-x-0 sm:rounded-2xl sm:border-x' : 'rounded-2xl border';
-  const shared = `mx-auto h-auto w-full ${frame} border-stone-200 shadow-sm dark:border-stone-800`;
+  const device = !name.startsWith('crop-') && getPhoneScreenshot(name, 'light') !== undefined;
+  const frame = device
+    ? 'w-72 rounded-4xl border-8 border-stone-800 sm:w-full sm:rounded-2xl sm:border sm:border-stone-200 dark:border-stone-700 dark:sm:border-stone-800'
+    : 'w-full rounded-2xl border border-stone-200 dark:border-stone-800';
+  const shared = `mx-auto h-auto ${frame} shadow-sm`;
   // A small crop is shown at its own size at most, never stretched past its pixels.
   const style = { maxWidth: light.width / SCREENSHOT_SCALE };
   const image = (shot: Screenshot, phone: Screenshot | undefined, className: string) => (

@@ -52,19 +52,25 @@ describe('ThemedScreenshot', () => {
     expect(dark).toHaveAttribute('loading', 'lazy');
   });
 
-  it('goes edge to edge below sm when bleed is set (JEF-675)', () => {
-    render(<ThemedScreenshot name="board" bleed />);
+  it('frames a full-screen phone capture as a narrow device below sm', () => {
+    render(<ThemedScreenshot name="board" />);
     for (const img of screen.getAllByAltText('t:screenshots.board.alt')) {
-      expect(img).toHaveClass('rounded-none', 'border-x-0', 'sm:rounded-2xl', 'sm:border-x');
+      expect(img).toHaveClass('w-72', 'rounded-4xl', 'border-8', 'sm:w-full', 'sm:rounded-2xl');
     }
   });
 
-  it('keeps the rounded frame without bleed', () => {
-    render(<ThemedScreenshot name="board" />);
-    expect(screen.getAllByAltText('t:screenshots.board.alt')[0]).toHaveClass(
-      'rounded-2xl',
-      'border',
+  it('keeps the plain full-width frame on a crop, with or without a phone variant', () => {
+    render(
+      <>
+        <ThemedScreenshot name="crop-cover-letter" />
+        <ThemedScreenshot name="crop-chat-history" />
+      </>,
     );
+    for (const key of ['coverLetter', 'cropChatHistory']) {
+      const [light] = screen.getAllByAltText(`t:screenshots.${key}.alt`);
+      expect(light).toHaveClass('w-full', 'rounded-2xl', 'border');
+      expect(light).not.toHaveClass('w-72', 'border-8');
+    }
   });
 
   it('never stretches a small crop past its own CSS size (JEF-674)', () => {

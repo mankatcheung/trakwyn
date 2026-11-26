@@ -247,7 +247,7 @@ export function FeaturesIndexPage() {
           </div>
           {/* The product, cut off at the fold so the first screen shows it (JEF-675). */}
           <div className="mx-auto mt-10 max-h-72 max-w-5xl overflow-hidden sm:max-h-96 sm:px-6 lg:px-8">
-            <ThemedScreenshot name="application-detail" priority bleed />
+            <ThemedScreenshot name="application-detail" priority />
           </div>
         </section>
 

@@ -143,10 +143,10 @@ export function LandingPage() {
         </section>
 
         {/* Hero screenshot: the board, on the first fold. Likely the LCP element (JEF-530). */}
-        {/* Wide, and edge to edge on a phone, so the board's own text stays readable (JEF-675). */}
-        <section className="pb-8 sm:px-6 lg:px-8">
+        {/* Wide on a desktop so the board's own text stays readable; a framed phone below `sm`. */}
+        <section className="px-4 pb-8 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl">
-            <ThemedScreenshot name="board" priority bleed />
+            <ThemedScreenshot name="board" priority />
           </div>
         </section>
 
