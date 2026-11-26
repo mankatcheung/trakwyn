@@ -5,6 +5,7 @@ import type {
 } from '#src/use-cases/ports/IApiTokenRepository.js';
 import type { ICache } from '#src/infrastructure/cache/ICache.js';
 import { CACHE, CACHE_KEYS } from '#src/infrastructure/config/constants.js';
+import { afterCommit } from '#src/infrastructure/db/transactionContext.js';
 
 interface Deps {
   drizzleApiTokenRepository: IApiTokenRepository;
@@ -74,10 +75,15 @@ export class CachedApiTokenRepository implements IApiTokenRepository {
     // and the delete land on different serverless instances.
     const existing = await this.findById(id);
     await this.inner.delete(id);
-    await this.cache.delete(CACHE_KEYS.apiTokenById(id));
-    if (existing) {
-      await this.cache.delete(CACHE_KEYS.apiTokenByHash(existing.tokenHash));
-      await this.cache.delete(CACHE_KEYS.apiTokenList(existing.userId));
-    }
+    const evict = async () => {
+      await this.cache.delete(CACHE_KEYS.apiTokenById(id));
+      if (existing) {
+        await this.cache.delete(CACHE_KEYS.apiTokenByHash(existing.tokenHash));
+        await this.cache.delete(CACHE_KEYS.apiTokenList(existing.userId));
+      }
+    };
+    await evict();
+    // Again after the commit, when a delete inside a transaction becomes visible (JEF-694).
+    afterCommit(evict);
   }
 }

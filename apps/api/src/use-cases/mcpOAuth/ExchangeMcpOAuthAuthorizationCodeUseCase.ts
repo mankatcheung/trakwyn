@@ -113,16 +113,19 @@ export class ExchangeMcpOAuthAuthorizationCodeUseCase {
     return issued;
   }
 
+  /** Its own transaction, never the consume one: it must commit while the exchange is refused. */
   private async revokeGrant(familyId: string, userId: string): Promise<void> {
     const now = this.deps.now();
-    await this.deps.mcpOAuthTokenRepository.revokeFamily(familyId, now);
-    await this.deps.mcpOAuthRefreshTokenRepository.revokeFamily(familyId, now);
-    await this.deps.securityEventRepository.create({
-      id: this.deps.generateId(),
-      userId,
-      eventType: 'mcp_oauth_code_reuse_detected',
-      ipAddress: null,
-      userAgent: null,
+    await runInTransaction(this.deps.transactionManager, async () => {
+      await this.deps.mcpOAuthTokenRepository.revokeFamily(familyId, now);
+      await this.deps.mcpOAuthRefreshTokenRepository.revokeFamily(familyId, now);
+      await this.deps.securityEventRepository.create({
+        id: this.deps.generateId(),
+        userId,
+        eventType: 'mcp_oauth_code_reuse_detected',
+        ipAddress: null,
+        userAgent: null,
+      });
     });
   }
 }

@@ -2,8 +2,11 @@ import type { IMcpOAuthGrantRepository } from '#src/use-cases/ports/IMcpOAuthGra
 import type { IMcpOAuthRefreshTokenRepository } from '#src/use-cases/ports/IMcpOAuthRefreshTokenRepository.js';
 import type { IMcpOAuthTokenRepository } from '#src/use-cases/ports/IMcpOAuthTokenRepository.js';
 import type { ISecurityEventRepository } from '#src/use-cases/ports/ISecurityEventRepository.js';
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { runInTransaction } from '#src/use-cases/runInTransaction.js';
 
 interface Deps {
+  transactionManager?: ITransactionManager;
   mcpOAuthGrantRepository: IMcpOAuthGrantRepository;
   mcpOAuthTokenRepository: IMcpOAuthTokenRepository;
   mcpOAuthRefreshTokenRepository: IMcpOAuthRefreshTokenRepository;
@@ -34,16 +37,18 @@ export class RevokeMcpOAuthGrantForUserUseCase {
     const grants = await this.deps.mcpOAuthGrantRepository.findActiveByUserId(userId, now);
     if (!grants.some((grant) => grant.id === grantId)) return false;
 
-    await this.deps.mcpOAuthTokenRepository.revokeFamily(grantId, now);
-    await this.deps.mcpOAuthRefreshTokenRepository.revokeFamily(grantId, now);
-    await this.deps.securityEventRepository.create({
-      id: this.deps.generateId(),
-      userId,
-      // Deliberately the same event type the client-initiated path records:
-      // the audit trail is about the grant ending, not about who ended it.
-      eventType: 'mcp_oauth_token_revoked',
-      ipAddress: null,
-      userAgent: null,
+    await runInTransaction(this.deps.transactionManager, async () => {
+      await this.deps.mcpOAuthTokenRepository.revokeFamily(grantId, now);
+      await this.deps.mcpOAuthRefreshTokenRepository.revokeFamily(grantId, now);
+      await this.deps.securityEventRepository.create({
+        id: this.deps.generateId(),
+        userId,
+        // Deliberately the same event type the client-initiated path records:
+        // the audit trail is about the grant ending, not about who ended it.
+        eventType: 'mcp_oauth_token_revoked',
+        ipAddress: null,
+        userAgent: null,
+      });
     });
     return true;
   }

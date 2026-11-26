@@ -1,3 +1,5 @@
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { makeTransactionManager } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { describe, expect, it, vi } from 'vitest';
 import { RotateMcpOAuthRefreshTokenUseCase } from '#src/use-cases/mcpOAuth/RotateMcpOAuthRefreshTokenUseCase.js';
 
@@ -16,7 +18,7 @@ describe('RotateMcpOAuthRefreshTokenUseCase', () => {
     createdAt: now,
   };
 
-  function makeUseCase(token = baseToken) {
+  function makeUseCase(token = baseToken, transactionManager?: ITransactionManager) {
     const mcpOAuthRefreshTokenRepository = {
       findByTokenHash: vi.fn().mockResolvedValue(token),
       markUsed: vi.fn().mockResolvedValue(true),
@@ -44,6 +46,7 @@ describe('RotateMcpOAuthRefreshTokenUseCase', () => {
         securityEventRepository: securityEventRepository as never,
         generateId: () => 'event-1',
         now: () => now,
+        transactionManager,
       }),
       mcpOAuthRefreshTokenRepository,
       mcpOAuthTokenRepository,
@@ -138,5 +141,21 @@ describe('RotateMcpOAuthRefreshTokenUseCase', () => {
       await deps.useCase.execute({ refreshToken: 'trakwyn_mcp_access', clientId: 'client-1' }),
     ).toBeNull();
     expect(deps.mcpOAuthRefreshTokenRepository.findByTokenHash).not.toHaveBeenCalled();
+  });
+
+  it('burns a reused family only inside a transaction (JEF-694)', async () => {
+    const deps = makeUseCase(
+      { ...baseToken, usedAt: now },
+      makeTransactionManager({ run: vi.fn() }),
+    );
+
+    await deps.useCase.execute({
+      refreshToken: 'trakwyn_mcp_refresh_1',
+      clientId: 'client-1',
+    });
+
+    expect(deps.mcpOAuthRefreshTokenRepository.revokeFamily).not.toHaveBeenCalled();
+    expect(deps.mcpOAuthTokenRepository.revokeFamily).not.toHaveBeenCalled();
+    expect(deps.securityEventRepository.create).not.toHaveBeenCalled();
   });
 });

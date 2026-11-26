@@ -48,10 +48,10 @@ const SUBSCRIPTION_NOT_STOPPED_MESSAGE =
  *    refuses, nothing changes and the link still works (JEF-439's rule: never
  *    assume a charge has stopped).
  * 2. In one transaction: the date, a cancel link valid until it, every
- *    session revoked, and the audit event.
- * 3. API tokens and MCP grants revoked, so nothing keeps acting for an
- *    account its owner is closing.
- * 4. The mail, to the primary and a verified backup address. A failed send is
+ *    session revoked, the audit event, and the API tokens and MCP grants
+ *    revoked, so nothing keeps acting for an account its owner is closing.
+ *    A failed revoke leaves the link unused to try again (JEF-694).
+ * 3. The mail, to the primary and a verified backup address. A failed send is
  *    logged, not thrown: the deletion is scheduled either way, and the
  *    "scheduled" screen after sign-in offers the same cancel.
  *
@@ -108,11 +108,11 @@ export class ConfirmAccountDeletionUseCase {
         ipAddress: null,
         userAgent: null,
       });
+      await this.revokeMachineAccess(user.id, now);
       return true;
     });
     if (!consumed) throw new ValidationError('This link is invalid or has expired');
 
-    await this.revokeMachineAccess(user.id, now);
     await this.notify(user, deletionScheduledAt, cancelLink.raw);
     return { deletionScheduledAt };
   }

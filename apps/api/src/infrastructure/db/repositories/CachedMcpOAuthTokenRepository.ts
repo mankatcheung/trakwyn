@@ -5,6 +5,7 @@ import type {
 } from '#src/use-cases/ports/IMcpOAuthTokenRepository.js';
 import type { ICache } from '#src/infrastructure/cache/ICache.js';
 import { CACHE, CACHE_KEYS } from '#src/infrastructure/config/constants.js';
+import { afterCommit } from '#src/infrastructure/db/transactionContext.js';
 
 interface Deps {
   drizzleMcpOAuthTokenRepository: IMcpOAuthTokenRepository;
@@ -84,12 +85,18 @@ export class CachedMcpOAuthTokenRepository implements IMcpOAuthTokenRepository {
    * The inner call reports which hashes it revoked, so exactly those keys are
    * dropped — no second query to discover them, and no chance of the two
    * disagreeing.
+   *
+   * Inside a transaction they are dropped again after the commit.
    */
   async revokeFamily(familyId: string, revokedAt: Date): Promise<string[]> {
     const revokedHashes = await this.inner.revokeFamily(familyId, revokedAt);
-    await Promise.all(
-      revokedHashes.map((hash) => this.cache.delete(CACHE_KEYS.mcpOAuthTokenByHash(hash))),
-    );
+    const evict = async () => {
+      await Promise.all(
+        revokedHashes.map((hash) => this.cache.delete(CACHE_KEYS.mcpOAuthTokenByHash(hash))),
+      );
+    };
+    await evict();
+    afterCommit(evict);
     return revokedHashes;
   }
 }

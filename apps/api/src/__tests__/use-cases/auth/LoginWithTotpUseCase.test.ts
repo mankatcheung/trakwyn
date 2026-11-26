@@ -216,6 +216,26 @@ describe('LoginWithTotpUseCase', () => {
     expect(totpBackupCodeRepository.markUsed).toHaveBeenCalledWith('backup-1');
   });
 
+  it('rejects a backup code another request spent first (JEF-694)', async () => {
+    const secret = totpProvider.generateSecret();
+    const user = makeUser({ id: 'user-1', totpEnabled: true, totpSecret: `encrypted:${secret}` });
+    vi.mocked(passwordHasher.compare).mockResolvedValue(true as never);
+
+    await expect(
+      new LoginWithTotpUseCase({
+        passwordHasher,
+        userRepository: makeUserRepository({ findByEmail: vi.fn().mockResolvedValue(user) }),
+        totpBackupCodeRepository: makeTotpBackupCodeRepository({
+          findByCodeHash: vi.fn().mockResolvedValue(makeTotpBackupCode({ userId: 'user-1' })),
+          markUsed: vi.fn().mockResolvedValue(false),
+        }),
+        totpRateLimiter: makeRateLimiter(),
+        totpProvider,
+        logger,
+      }).execute({ ...input, code: 'a1b2c3d4e5f60718' }),
+    ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+  });
+
   it('rejects an already-used backup code', async () => {
     const secret = totpProvider.generateSecret();
     const user = makeUser({ id: 'user-1', totpEnabled: true, totpSecret: `encrypted:${secret}` });

@@ -1,3 +1,5 @@
+import type { ITransactionManager } from '#src/use-cases/ports/ITransactionManager.js';
+import { makeTransactionManager } from '#src/__tests__/helpers/mocks/infrastructure.js';
 import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import { RevokeMcpOAuthGrantUseCase } from '#src/use-cases/mcpOAuth/RevokeMcpOAuthGrantUseCase.js';
@@ -6,7 +8,7 @@ describe('RevokeMcpOAuthGrantUseCase', () => {
   const now = new Date('2026-08-19T12:00:00.000Z');
   const grant = { familyId: 'grant-1', userId: 'user-1' };
 
-  function makeUseCase() {
+  function makeUseCase(transactionManager?: ITransactionManager) {
     const tokenRepository = {
       findByTokenHash: vi.fn().mockResolvedValue(null),
       revokeFamily: vi.fn().mockResolvedValue(undefined),
@@ -20,6 +22,7 @@ describe('RevokeMcpOAuthGrantUseCase', () => {
         mcpOAuthTokenRepository: tokenRepository as never,
         mcpOAuthRefreshTokenRepository: refreshTokenRepository as never,
         now: () => now,
+        transactionManager,
       }),
       tokenRepository,
       refreshTokenRepository,
@@ -76,5 +79,15 @@ describe('RevokeMcpOAuthGrantUseCase', () => {
     expect(await ctx.useCase.execute('trakwyn_api_token')).toBeNull();
     expect(ctx.tokenRepository.findByTokenHash).not.toHaveBeenCalled();
     expect(ctx.refreshTokenRepository.findByTokenHash).not.toHaveBeenCalled();
+  });
+
+  it('revokes only inside a transaction (JEF-694)', async () => {
+    const ctx = makeUseCase(makeTransactionManager({ run: vi.fn() }));
+    ctx.tokenRepository.findByTokenHash.mockResolvedValue(grant);
+
+    await ctx.useCase.execute('trakwyn_mcp_abc');
+
+    expect(ctx.tokenRepository.revokeFamily).not.toHaveBeenCalled();
+    expect(ctx.refreshTokenRepository.revokeFamily).not.toHaveBeenCalled();
   });
 });
