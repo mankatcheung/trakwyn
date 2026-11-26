@@ -11,13 +11,14 @@ export function getClient(db: DrizzleDb): DrizzleClient {
 export const afterCommitStorage = new AsyncLocalStorage<Array<() => Promise<void>>>();
 
 /**
- * Queues `task` for after the commit, and drops it on rollback. Outside a
- * transaction there is nothing to wait for and it is not queued, so the caller
- * does the work immediately as well.
+ * Runs `task` once the current transaction has committed, or now when there is
+ * none. On rollback it never runs, since nothing changed.
  *
- * For cache eviction (JEF-694): an entry dropped while a transaction is still
- * open can be re-read, and cached again, from the row as it was before.
+ * For cache eviction (JEF-694): an entry dropped while the transaction is still
+ * open can be read again, and re-cached, from the row as it was before.
  */
-export function afterCommit(task: () => Promise<void>): void {
-  afterCommitStorage.getStore()?.push(task);
+export async function runAfterCommit(task: () => Promise<void>): Promise<void> {
+  const pending = afterCommitStorage.getStore();
+  if (pending) pending.push(task);
+  else await task();
 }

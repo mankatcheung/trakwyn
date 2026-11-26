@@ -1,12 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createTestDb, type TestDb } from '#src/__tests__/helpers/createTestDb.js';
 import { DrizzleTransactionManager } from '#src/infrastructure/db/DrizzleTransactionManager.js';
-import { afterCommit } from '#src/infrastructure/db/transactionContext.js';
+import { runAfterCommit } from '#src/infrastructure/db/transactionContext.js';
 import { CachedMcpOAuthTokenRepository } from '#src/infrastructure/db/repositories/CachedMcpOAuthTokenRepository.js';
 import { CachedApiTokenRepository } from '#src/infrastructure/db/repositories/CachedApiTokenRepository.js';
 import { MemoryCache } from '#src/infrastructure/cache/MemoryCache.js';
 
-describe('afterCommit (JEF-694)', () => {
+describe('runAfterCommit (JEF-694)', () => {
   let testDb: TestDb;
   let tm: DrizzleTransactionManager;
 
@@ -19,11 +19,19 @@ describe('afterCommit (JEF-694)', () => {
     await testDb.cleanup();
   });
 
+  it('runs the task straight away outside a transaction', async () => {
+    const task = vi.fn().mockResolvedValue(undefined);
+
+    await runAfterCommit(task);
+
+    expect(task).toHaveBeenCalledOnce();
+  });
+
   it('runs the task once the transaction has committed, nested runs included', async () => {
     const task = vi.fn().mockResolvedValue(undefined);
 
     await tm.run(async () => {
-      await tm.run(async () => afterCommit(task));
+      await tm.run(async () => runAfterCommit(task));
       expect(task).not.toHaveBeenCalled();
     });
 
@@ -35,7 +43,7 @@ describe('afterCommit (JEF-694)', () => {
 
     await expect(
       tm.run(async () => {
-        afterCommit(task);
+        await runAfterCommit(task);
         throw new Error('simulated failure');
       }),
     ).rejects.toThrow('simulated failure');
@@ -46,7 +54,7 @@ describe('afterCommit (JEF-694)', () => {
   it('does not fail a committed transaction when a task fails', async () => {
     await expect(
       tm.run(async () => {
-        afterCommit(async () => {
+        await runAfterCommit(async () => {
           throw new Error('cache down');
         });
         return 'done';
