@@ -154,14 +154,14 @@ describe('LandingPage', () => {
     }
   });
 
-  it('shows the hero board wide and edge to edge on a phone (JEF-675)', () => {
+  it('shows the hero board wide on a desktop and as a framed phone below sm', () => {
     mockHasSessionCookie.mockReturnValue(false);
 
     render(<LandingPage />);
 
     const [light] = screen.getAllByAltText('screenshots.board.alt');
     expect(light.closest('.max-w-6xl')).not.toBeNull();
-    expect(light).toHaveClass('rounded-none', 'border-x-0', 'sm:rounded-2xl');
+    expect(light).toHaveClass('w-72', 'border-8', 'sm:w-full');
   });
 
   it('mentions the self-ending passes once, by the closing CTA', () => {
