@@ -118,34 +118,11 @@ export function SettingsPlanPage() {
 
   return (
     <div className="space-y-8">
-      <PlanSummary status={status} />
-      {status.enforced && <PlanActions status={status} />}
       <Usage status={status} />
+      {status.enforced && <PlanActions status={status} />}
       <AiCreditsCard />
       <Comparison status={status} />
     </div>
-  );
-}
-
-function PlanSummary({ status }: { status: BillingStatus }) {
-  const { t } = useLocale();
-  const dates = useDates();
-  const message = planStatus(status);
-
-  return (
-    <Card className="space-y-3 p-5">
-      <div className="flex items-center gap-3">
-        <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
-          {t('plan.title')}
-        </h2>
-        <Badge tone={status.plan === 'pro' ? 'blue' : 'gray'}>
-          {status.plan === 'pro' ? t('plan.badgePro') : t('plan.badgeFree')}
-        </Badge>
-      </div>
-      <p className="text-sm text-stone-700 dark:text-stone-300">
-        {t(message.key, message.date ? { date: dates.day(message.date) } : {})}
-      </p>
-    </Card>
   );
 }
 
@@ -203,8 +180,18 @@ function PlanActions({ status }: { status: BillingStatus }) {
             </p>
           )}
           {checkout.isError && <Alert tone="error">{t('plan.checkoutFailed')}</Alert>}
-          <p className="text-sm text-stone-500 dark:text-stone-400">{t('plan.founderNote')}</p>
-          <p className="text-sm text-stone-500 dark:text-stone-400">{t('plan.refundPolicy')}</p>
+          <details
+            data-testid="billing-details"
+            className="text-sm text-stone-500 dark:text-stone-400"
+          >
+            <summary className="cursor-pointer font-medium text-stone-700 dark:text-stone-300">
+              {t('pricing.billingDetails')}
+            </summary>
+            <div className="mt-2 space-y-2">
+              <p>{t('plan.founderNote')}</p>
+              <p>{t('plan.refundPolicy')}</p>
+            </div>
+          </details>
         </div>
       )}
       {hasPaid && (
@@ -230,9 +217,12 @@ function PlanActions({ status }: { status: BillingStatus }) {
   );
 }
 
+/** Your plan and what it has used: one card, since the second reads from the first. */
 function Usage({ status }: { status: BillingStatus }) {
   const { t } = useLocale();
+  const dates = useDates();
   const { usage, limits } = status;
+  const message = planStatus(status);
 
   const countCaption = (used: number, limit: number | null, usageKey: string, openKey: string) =>
     limit === null
@@ -241,10 +231,18 @@ function Usage({ status }: { status: BillingStatus }) {
 
   return (
     <Card className="space-y-6 p-5">
-      <div>
-        <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
-          {t('plan.usageTitle')}
-        </h2>
+      <div className="space-y-1">
+        <div className="flex items-center gap-3">
+          <h2 className="text-base font-medium text-stone-900 dark:text-stone-100">
+            {t('plan.title')}
+          </h2>
+          <Badge tone={status.plan === 'pro' ? 'blue' : 'gray'}>
+            {status.plan === 'pro' ? t('plan.badgePro') : t('plan.badgeFree')}
+          </Badge>
+        </div>
+        <p className="text-sm text-stone-700 dark:text-stone-300">
+          {t(message.key, message.date ? { date: dates.day(message.date) } : {})}
+        </p>
         <p className="text-sm text-stone-500 dark:text-stone-400">{t('plan.description')}</p>
       </div>
       <UsageMeter

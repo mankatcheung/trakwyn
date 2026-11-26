@@ -10,7 +10,6 @@ import {
   type BarShapeProps,
 } from 'recharts';
 import { ErrorState } from '#/components/ErrorState';
-import { LockedAnalyticsSample } from '#/features/analytics/components/LockedAnalyticsSample';
 import { LockedFeatureOverlay } from '#/features/plans/components/LockedFeaturePreview';
 import { useFeatureLocked } from '#/features/plans/lib/billingStatus';
 import { useLocale } from '#/lib/i18n';
@@ -126,9 +125,7 @@ export function AnalyticsPage() {
         <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
           {t('nav.analytics')}
         </h1>
-        <LockedFeatureOverlay feature="analytics">
-          <LockedAnalyticsSample />
-        </LockedFeatureOverlay>
+        <LockedFeatureOverlay feature="analytics" />
       </div>
     );
   }

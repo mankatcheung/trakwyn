@@ -68,6 +68,10 @@ export function DraftEditPage() {
     );
   }
 
+  const exportLabel = exporting
+    ? t('documentDraftEdit.exporting')
+    : t('documentDraftEdit.exportPdf');
+
   if (!draft) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -78,8 +82,8 @@ export function DraftEditPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="mb-6 flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-3">
           <IconButton
             label={t('documentDraftEdit.backAria')}
             icon={<ArrowLeftIcon className="size-5" />}
@@ -104,17 +108,18 @@ export function DraftEditPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <IconButton
             label={t('draftHistory.open')}
             icon={<HistoryIcon className="size-4" />}
             aria-pressed={historyOpen}
             onClick={() => setHistoryOpen((open) => !open)}
           />
-          <Button onClick={handleExportPdf} disabled={exporting}>
+          {/* An icon on a phone, so the title keeps the row; the label stays its name (JEF-693). */}
+          <Button onClick={handleExportPdf} disabled={exporting} aria-label={exportLabel}>
             <span className="inline-flex items-center gap-1.5">
-              <DownloadIcon className="size-4" />
-              {exporting ? t('documentDraftEdit.exporting') : t('documentDraftEdit.exportPdf')}
+              <DownloadIcon className="size-4" aria-hidden="true" />
+              <span className="hidden sm:inline">{exportLabel}</span>
             </span>
           </Button>
           <IconButton

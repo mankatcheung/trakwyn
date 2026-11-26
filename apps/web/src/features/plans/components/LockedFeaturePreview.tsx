@@ -1,47 +1,19 @@
 import { Link } from '@tanstack/react-router';
-import type { ReactNode } from 'react';
 import { LockIcon } from 'lucide-react';
 import { trackLockedPreviewClick, type LockedPreviewFeature } from '#/lib/analytics/funnel';
 import { useLocale } from '#/lib/i18n';
-import { Card } from '@trakwyn/ui';
+import { getScreenshot, type ScreenshotName } from '#/features/marketing/lib/screenshots';
 
-interface LockedFeaturePreviewProps {
-  feature: LockedPreviewFeature;
-  className?: string;
-}
-
-// Fictional, static sample data. Nothing here comes from the user's account.
-const SAMPLE_BARS = [38, 62, 45, 80, 58, 92, 70];
-const SAMPLE_ROWS = [
-  { width: 'w-3/4', value: '$142,000' },
-  { width: 'w-2/3', value: '$128,500' },
-  { width: 'w-4/5', value: '$156,000' },
-];
-
-function SampleAnalytics() {
-  return (
-    <div className="flex h-28 items-end gap-2">
-      {SAMPLE_BARS.map((height, i) => (
-        <div key={i} className="flex-1 rounded-t bg-blue-500/70" style={{ height: `${height}%` }} />
-      ))}
-    </div>
-  );
-}
-
-function SampleOffers() {
-  return (
-    <div className="space-y-3">
-      {SAMPLE_ROWS.map((row, i) => (
-        <div key={i} className="flex items-center gap-3">
-          <div className={`h-3 rounded-sm bg-stone-300 dark:bg-stone-600 ${row.width}`} />
-          <span className="ml-auto text-sm font-medium text-stone-700 dark:text-stone-300">
-            {row.value}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
+/**
+ * The real marketing crops of each locked page, shown dimmed behind the message
+ * (JEF-693). They are photographs of the seeded demo account, never the viewer's own
+ * data, and they replace the blurred bars and rows this once drew: those looked like
+ * a decoy, and on Offers the message sat over the placeholder rows.
+ */
+const LOCKED_SHOTS: Record<LockedPreviewFeature, ScreenshotName[]> = {
+  analytics: ['crop-analytics-stats', 'crop-stage-funnel', 'crop-channels'],
+  offers: ['crop-offers'],
+};
 
 function LockedMessage({ feature }: { feature: LockedPreviewFeature }) {
   const { t } = useLocale();
@@ -69,49 +41,58 @@ function LockedMessage({ feature }: { feature: LockedPreviewFeature }) {
   );
 }
 
-/**
- * What a Pro feature looks like, for a Free user, in place of the error the
- * API would answer with (JEF-523). Show it only when `useFeatureLocked` says
- * the plan withholds the feature, never from a plan name. The sample is
- * decorative and hidden from assistive technology.
- */
-export function LockedFeaturePreview({ feature, className }: LockedFeaturePreviewProps) {
+/** One crop in both themes; the stylesheet shows the one that matches. Decorative, so no alt text. */
+function Shot({ name }: { name: ScreenshotName }) {
+  const light = getScreenshot(name, 'light');
+  const dark = getScreenshot(name, 'dark');
+  const common = 'h-auto w-full rounded-xl border';
   return (
-    <Card
-      data-testid="locked-feature-preview"
-      className={['relative min-h-56 overflow-hidden p-6', className ?? '']
-        .filter(Boolean)
-        .join(' ')}
-    >
-      <div aria-hidden="true" className="pointer-events-none blur-sm select-none">
-        {feature === 'analytics' ? <SampleAnalytics /> : <SampleOffers />}
-      </div>
-      <div className="absolute inset-0 flex items-center justify-center bg-white/60 p-4 dark:bg-stone-900/60">
-        <LockedMessage feature={feature} />
-      </div>
-    </Card>
+    <>
+      <img
+        src={light.src}
+        width={light.width}
+        height={light.height}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        className={`${common} border-stone-200 dark:hidden`}
+      />
+      <img
+        src={dark.src}
+        width={dark.width}
+        height={dark.height}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        className={`${common} hidden border-stone-700 dark:block`}
+      />
+    </>
   );
 }
 
 interface LockedFeatureOverlayProps {
   feature: LockedPreviewFeature;
-  /** A fictional stand-in for the whole page, drawn blurred behind the message. */
-  children: ReactNode;
 }
 
 /**
- * Covers a whole page for a Free user: `children` is blurred, inert and hidden
- * from assistive technology, and one message card sits over it, kept in view
- * while the page scrolls (JEF-523). Use it where the feature is the page,
- * rather than one section of it.
+ * Covers a whole page for a Free user (JEF-523): a dimmed, inert picture of the real
+ * page, hidden from assistive technology, with one message card over it that stays in
+ * view while the page scrolls. Show it only when `useFeatureLocked` says the plan
+ * withholds the feature, never from a plan name.
  */
-export function LockedFeatureOverlay({ feature, children }: LockedFeatureOverlayProps) {
+export function LockedFeatureOverlay({ feature }: LockedFeatureOverlayProps) {
   return (
-    <div data-testid="locked-feature-overlay" className="relative">
-      <div aria-hidden="true" inert className="pointer-events-none blur-md select-none">
-        {children}
+    <div data-testid="locked-feature-overlay" className="relative min-h-80">
+      <div
+        aria-hidden="true"
+        inert
+        className="pointer-events-none space-y-4 opacity-40 select-none dark:opacity-30"
+      >
+        {LOCKED_SHOTS[feature].map((name) => (
+          <Shot key={name} name={name} />
+        ))}
       </div>
-      <div className="absolute inset-0 bg-white/50 dark:bg-stone-900/50">
+      <div className="absolute inset-0">
         <div className="sticky top-24 flex justify-center px-4 pt-16">
           <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-lg dark:border-stone-700 dark:bg-stone-800">
             <LockedMessage feature={feature} />

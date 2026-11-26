@@ -25,7 +25,8 @@ export type ScreenshotScene =
   | 'new-application'
   | 'notifications'
   | 'applications'
-  | 'settings-ai';
+  | 'settings-ai'
+  | 'offers';
 
 export interface ScreenshotScreen {
   name: string;
@@ -197,6 +198,15 @@ export const SCREENSHOT_SCREENS = [
     viewport: CROP_VIEWPORT,
     crop: { width: 796, height: 300 },
     altKey: 'screenshots.cropChannels.alt',
+  },
+  // The Offers page behind the locked preview for a Free user (JEF-693).
+  {
+    name: 'crop-offers',
+    scene: 'offers',
+    target: 'offers-list',
+    viewport: CROP_VIEWPORT,
+    crop: { width: 828, height: 184 },
+    altKey: 'screenshots.cropOffers.alt',
   },
   // Phone variants (JEF-684): the same scenes in a 390 px viewport, served
   // below the `sm` breakpoint in place of the desktop image they stand in for.

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { gqlClient } from '#/graphql/client';
 import { ErrorState } from '#/components/ErrorState';
-import { LockedFeaturePreview } from '#/features/plans/components/LockedFeaturePreview';
+import { LockedFeatureOverlay } from '#/features/plans/components/LockedFeaturePreview';
 import { useFeatureLocked } from '#/features/plans/lib/billingStatus';
 import { useLocale } from '#/lib/i18n';
 import { GitCompareArrowsIcon, CheckIcon } from 'lucide-react';
@@ -60,7 +60,7 @@ export function OffersPage() {
         <h1 className="text-2xl font-medium text-stone-900 dark:text-stone-100">
           {t('offers.title')}
         </h1>
-        <LockedFeaturePreview feature="offers" />
+        <LockedFeatureOverlay feature="offers" />
       </div>
     );
   }
@@ -103,7 +103,7 @@ export function OffersPage() {
         <EmptyState className="py-12" message={t('offerCompare.noOffersToCompare')} />
       ) : (
         <>
-          <div className="mb-6">
+          <div className="mb-6" data-screenshot="offers-list">
             <div className="mb-3 flex items-center justify-between">
               <p className="text-sm text-stone-600 dark:text-stone-400">
                 {t('offerCompare.selectHint')}

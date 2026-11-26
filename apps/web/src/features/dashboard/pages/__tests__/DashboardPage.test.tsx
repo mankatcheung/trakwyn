@@ -114,6 +114,57 @@ describe('DashboardPage', () => {
     });
   });
 
+  describe('the weekly goal (JEF-693)', () => {
+    function serveGoal(goal: { currentWeekCount: number; streakWeeks: number }) {
+      mockGqlRequest.mockImplementation((document: unknown) => {
+        const query = JSON.stringify(document);
+        if (query.includes('WeeklyApplicationGoal')) {
+          return Promise.resolve({
+            weeklyApplicationGoal: { weeklyApplicationGoal: 5, ...goal },
+          });
+        }
+        if (query.includes('calendarEvents')) return Promise.resolve({ calendarEvents: [] });
+        return Promise.resolve({ applications: [] });
+      });
+      render(<DashboardPage />, { wrapper: Wrapper });
+    }
+
+    it('says "2-week streak", and shows nothing for a streak of zero', async () => {
+      serveGoal({ currentWeekCount: 2, streakWeeks: 2 });
+      expect(await screen.findByText('2-week streak')).toBeInTheDocument();
+    });
+
+    it('hides the streak at zero, not "0 weeks streak"', async () => {
+      serveGoal({ currentWeekCount: 2, streakWeeks: 0 });
+      await screen.findByRole('progressbar');
+      expect(screen.queryByText(/streak/)).not.toBeInTheDocument();
+    });
+
+    it('fills the bar in the accent while the goal is open', async () => {
+      serveGoal({ currentWeekCount: 2, streakWeeks: 1 });
+      const open = (await screen.findByRole('progressbar')).firstChild as HTMLElement;
+      expect(open.className).toContain('bg-blue-800');
+    });
+
+    it('goes quiet, with a check, once the goal is met', async () => {
+      serveGoal({ currentWeekCount: 5, streakWeeks: 1 });
+      const bar = (await screen.findByRole('progressbar')).firstChild as HTMLElement;
+      expect(bar.className).toContain('bg-stone-400');
+      expect(bar.className).not.toContain('bg-blue');
+      expect(document.querySelector('svg.lucide-check')).not.toBeNull();
+    });
+  });
+
+  it('lays the five stats out as a two-column grid on a phone, not a scrolling strip', async () => {
+    mockGqlRequest.mockResolvedValue({ applications: [] });
+    render(<DashboardPage />, { wrapper: Wrapper });
+
+    const total = await screen.findByText('Total');
+    const grid = total.closest('div.grid') as HTMLElement;
+    expect(grid.className).toContain('grid-cols-2');
+    expect(grid.className).not.toContain('overflow-x-auto');
+  });
+
   it('renders an Upcoming section for future interviews and follow-ups only', async () => {
     const future = new Date(Date.now() + 86_400_000).toISOString();
     const past = new Date(Date.now() - 86_400_000).toISOString();
