@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.21.2](https://github.com/mankatcheung/trakwyn/compare/web-v0.21.1...web-v0.21.2) (2026-11-27)
+
+
+### Bug Fixes
+
+* **web:** frame the phone hero screenshot as a device on narrow screens ([#1664](https://github.com/mankatcheung/trakwyn/issues/1664)) ([2104fa7](https://github.com/mankatcheung/trakwyn/commit/2104fa7637ad94b2d6cb9d92e9f12c803955f413))
+* **web:** show the progress-bar track and fill finished bars green (JEF-695) ([#1667](https://github.com/mankatcheung/trakwyn/issues/1667)) ([52191e4](https://github.com/mankatcheung/trakwyn/commit/52191e42dfb666a334854bac4c26517da9a372d1))
+
 ## [0.21.1](https://github.com/mankatcheung/trakwyn/compare/web-v0.21.0...web-v0.21.1) (2026-11-25)
 
 
