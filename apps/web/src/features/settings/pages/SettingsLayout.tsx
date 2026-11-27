@@ -1,15 +1,6 @@
 import { Link, Outlet, useLocation } from '@tanstack/react-router';
 import { useLocale } from '#/lib/i18n';
-import {
-  UserIcon,
-  ShieldIcon,
-  PlugIcon,
-  BellIcon,
-  DatabaseIcon,
-  GemIcon,
-  KeyRoundIcon,
-  AlertTriangleIcon,
-} from 'lucide-react';
+import { SETTINGS_SECTIONS } from '../lib/settingsSections';
 
 /**
  * The frame around every Settings page: the heading, the section nav (shown
@@ -18,18 +9,6 @@ import {
 export function SettingsLayout() {
   const { t } = useLocale();
   const { pathname } = useLocation();
-  const SETTINGS_NAV = [
-    { to: '/settings/profile', label: t('settings.profile'), icon: UserIcon },
-    { to: '/settings/security', label: t('settings.security'), icon: ShieldIcon },
-    { to: '/settings/ai', label: t('settings.ai'), icon: KeyRoundIcon },
-    { to: '/settings/integrations', label: t('settings.integrations'), icon: PlugIcon },
-    { to: '/settings/notifications', label: t('settings.notifications'), icon: BellIcon },
-    { to: '/settings/plan', label: t('settings.plan'), icon: GemIcon },
-    { to: '/settings/data', label: t('settings.data'), icon: DatabaseIcon },
-    // Last, deliberately: the only irreversible action in Settings.
-    { to: '/settings/danger-zone', label: t('settings.dangerZone'), icon: AlertTriangleIcon },
-  ] as const;
-
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-10">
       <h1 className="mb-6 text-2xl font-medium text-stone-900 dark:text-stone-100">
@@ -37,7 +16,7 @@ export function SettingsLayout() {
       </h1>
       <div className="flex flex-col gap-8 lg:flex-row">
         <nav className="hidden shrink-0 space-y-1 lg:block lg:w-48">
-          {SETTINGS_NAV.map((item) => {
+          {SETTINGS_SECTIONS.map((item) => {
             const active = pathname.startsWith(item.to);
             return (
               <Link
@@ -50,7 +29,7 @@ export function SettingsLayout() {
                 }`}
               >
                 <item.icon size={16} />
-                {item.label}
+                {t(item.labelKey)}
               </Link>
             );
           })}

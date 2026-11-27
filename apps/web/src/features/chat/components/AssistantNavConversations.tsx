@@ -40,7 +40,7 @@ export function AssistantNavConversations({
         to="/assistant"
         search={{}}
         onClick={onNavigate}
-        className="sidebar-nav-item flex items-center gap-2 rounded-r-lg py-1.5 pr-3 pl-4 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-700 dark:hover:text-stone-100"
+        className="flex items-center gap-2 rounded-r-lg py-1.5 pr-3 pl-4 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-700 dark:hover:text-stone-100"
       >
         <PlusIcon size={14} />
         {t('assistant.newConversation')}
@@ -55,7 +55,7 @@ export function AssistantNavConversations({
             onClick={onNavigate}
             aria-current={isActive ? 'page' : undefined}
             title={c.title ?? t('assistant.newConversation')}
-            className={`sidebar-nav-item block truncate rounded-r-lg py-1.5 pr-3 pl-4 text-sm transition-colors ${
+            className={`block truncate rounded-r-lg py-1.5 pr-3 pl-4 text-sm transition-colors ${
               isActive
                 ? 'bg-blue-50 font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
                 : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-100'
@@ -68,7 +68,7 @@ export function AssistantNavConversations({
       <Link
         to="/assistant/history"
         onClick={onNavigate}
-        className="sidebar-nav-item flex items-center gap-2 rounded-r-lg py-1.5 pr-3 pl-4 text-sm text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-100"
+        className="flex items-center gap-2 rounded-r-lg py-1.5 pr-3 pl-4 text-sm text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-100"
       >
         <MessageCircleIcon size={14} />
         {t('assistant.allChats')}

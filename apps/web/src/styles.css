@@ -178,48 +178,6 @@ body * {
 
 /* Sidebar animations */
 
-@keyframes sidebar-desktop-enter {
-  from {
-    opacity: 0;
-    transform: translateX(-16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.sidebar-desktop-entrance {
-  animation: sidebar-desktop-enter 350ms ease-out;
-}
-
-@keyframes sidebar-nav-item-enter {
-  from {
-    opacity: 0;
-    transform: translateX(-12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.sidebar-nav-item {
-  animation: sidebar-nav-item-enter 300ms ease-out both;
-}
-
-.sidebar-entrance-item {
-  animation: sidebar-nav-item-enter 300ms ease-out both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sidebar-desktop-entrance,
-  .sidebar-nav-item,
-  .sidebar-entrance-item {
-    animation: none;
-  }
-}
-
 /* NProgress customizations */
 #nprogress .bar {
   background: #1e40af;

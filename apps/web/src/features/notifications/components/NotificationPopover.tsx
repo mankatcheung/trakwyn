@@ -21,13 +21,10 @@ const RECENT_LIMIT = 5;
 
 /**
  * Portaled to `document.body` with a computed fixed position, rather than a
- * plain `absolute` sibling of the trigger — the sidebar header's entrance
- * animation (`sidebar-entrance-item`, `styles.css`) animates transform, which
- * creates a new stacking context for that header. A same-context `absolute`
- * popover was getting visually trapped under the nav list below it (later in
- * DOM order, same top-level stacking) no matter how high its own z-index
- * was — the same class of problem the old backdrop modal already portaled
- * around.
+ * plain `absolute` sibling of the trigger, so no stacking context in the
+ * sidebar can trap it under the nav list below (later in DOM order, same
+ * top-level stacking) however high its own z-index is — the same class of
+ * problem the old backdrop modal already portaled around.
  */
 /* eslint-disable react-hooks/immutability -- opted out below with 'use no memo'; the reason is there */
 export function NotificationPopover({
