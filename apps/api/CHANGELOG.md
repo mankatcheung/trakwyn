@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.2](https://github.com/mankatcheung/trakwyn/compare/api-v0.21.1...api-v0.21.2) (2026-11-27)
+
+
+### Bug Fixes
+
+* **api:** make account-deletion and token-revocation writes atomic (JEF-694) ([#1662](https://github.com/mankatcheung/trakwyn/issues/1662)) ([5c34c37](https://github.com/mankatcheung/trakwyn/commit/5c34c37b96f3c4a924cc4690d93dbd58599a521f))
+
 ## [0.21.1](https://github.com/mankatcheung/trakwyn/compare/api-v0.21.0...api-v0.21.1) (2026-11-25)
 
 
