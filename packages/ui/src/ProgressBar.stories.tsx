@@ -28,7 +28,7 @@ export const Empty: Story = {
 export const Complete: Story = {
   render: () => (
     <div className="w-64">
-      <ProgressBar value={5} max={5} />
+      <ProgressBar value={5} max={5} tone="complete" />
     </div>
   ),
 };

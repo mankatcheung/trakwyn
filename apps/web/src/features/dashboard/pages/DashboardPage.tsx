@@ -25,9 +25,9 @@ import {
 } from '#/features/dashboard/graphql/dashboardQueries';
 
 const UPCOMING_EVENT_ICON: Record<CalendarEventKind, React.ReactNode> = {
-  interview: <CalendarIcon size={13} className="shrink-0 text-purple-500" />,
-  followUp: <AlertCircleIcon size={13} className="shrink-0 text-amber-500" />,
-  applied: <FileTextIcon size={13} className="shrink-0 text-blue-500" />,
+  interview: <CalendarIcon size={16} className="shrink-0 text-purple-500" />,
+  followUp: <AlertCircleIcon size={16} className="shrink-0 text-amber-500" />,
+  applied: <FileTextIcon size={16} className="shrink-0 text-blue-500" />,
 };
 
 export function DashboardPage() {
@@ -91,7 +91,7 @@ export function DashboardPage() {
           to="/applications/new"
           className="flex items-center gap-1.5 rounded-lg bg-blue-800 dark:bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-900 dark:hover:bg-blue-700"
         >
-          <PlusIcon size={15} />
+          <PlusIcon size={16} />
           <span className="hidden sm:inline">{t('dashboard.newApplication')}</span>
         </Link>
       </div>
@@ -119,15 +119,21 @@ export function DashboardPage() {
               <h2 className="text-lg font-medium text-stone-900 dark:text-stone-100">
                 {t('dashboard.weeklyGoalTitle')}
               </h2>
-              <p className="mt-1 flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-300">
+              <div className="mt-1 flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-300">
                 {goal.currentWeekCount >= goal.weeklyApplicationGoal && (
-                  <CheckIcon size={15} aria-hidden="true" className="shrink-0 text-stone-500" />
+                  <CheckIcon
+                    size={16}
+                    aria-hidden="true"
+                    className="shrink-0 text-green-600 dark:text-green-500"
+                  />
                 )}
-                {t('dashboard.weeklyGoalProgress', {
-                  current: goal.currentWeekCount,
-                  goal: goal.weeklyApplicationGoal,
-                })}
-              </p>
+                <p className="tabular-nums">
+                  {t('dashboard.weeklyGoalProgress', {
+                    current: goal.currentWeekCount,
+                    goal: goal.weeklyApplicationGoal,
+                  })}
+                </p>
+              </div>
             </div>
             {goal.streakWeeks > 0 && (
               <p className="text-sm font-medium text-stone-700 dark:text-stone-300">
@@ -137,7 +143,7 @@ export function DashboardPage() {
           </div>
           <ProgressBar
             className="mt-4"
-            tone={goal.currentWeekCount >= goal.weeklyApplicationGoal ? 'quiet' : 'accent'}
+            tone={goal.currentWeekCount >= goal.weeklyApplicationGoal ? 'complete' : 'accent'}
             value={goal.currentWeekCount}
             max={goal.weeklyApplicationGoal}
             aria-label={t('dashboard.weeklyGoalProgress', {
@@ -169,11 +175,11 @@ export function DashboardPage() {
                 key={event.id}
                 to="/applications/$applicationId"
                 params={{ applicationId: event.applicationId }}
-                className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-3 transition-colors hover:border-blue-300 sm:min-w-[220px] sm:flex-1 dark:border-stone-700 dark:bg-stone-800 dark:hover:border-blue-600"
+                className="block rounded-lg border border-stone-200 bg-white px-4 py-3 transition-colors hover:border-blue-300 sm:min-w-[220px] sm:flex-1 dark:border-stone-700 dark:bg-stone-800 dark:hover:border-blue-600"
               >
-                {UPCOMING_EVENT_ICON[event.type]}
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-stone-500 dark:text-stone-400">
+                  <p className="flex items-center gap-1.5 text-xs font-medium text-stone-500 dark:text-stone-400">
+                    {UPCOMING_EVENT_ICON[event.type]}
                     {UPCOMING_EVENT_LABEL[event.type]} · {dates.day(event.date)}
                   </p>
                   <p className="truncate text-sm font-medium text-stone-900 dark:text-stone-100">
@@ -228,10 +234,10 @@ export function DashboardPage() {
                 >
                   <div className="flex min-w-0 items-center gap-2">
                     {app.starred && (
-                      <StarIcon size={13} className="shrink-0 fill-yellow-400 text-yellow-400" />
+                      <StarIcon size={16} className="shrink-0 fill-yellow-400 text-yellow-400" />
                     )}
                     {isOverdue && (
-                      <AlertCircleIcon size={13} className="shrink-0 text-orange-500" />
+                      <AlertCircleIcon size={16} className="shrink-0 text-orange-500" />
                     )}
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-stone-900 dark:text-stone-100">
@@ -268,7 +274,9 @@ function StatCard({
       {loading ? (
         <div className="mb-1 h-7 w-12 animate-pulse rounded-sm bg-stone-100 dark:bg-stone-700" />
       ) : (
-        <p className="text-2xl font-medium text-stone-900 dark:text-stone-100">{value}</p>
+        <p className="text-2xl font-medium tabular-nums text-stone-900 dark:text-stone-100">
+          {value}
+        </p>
       )}
     </Card>
   );

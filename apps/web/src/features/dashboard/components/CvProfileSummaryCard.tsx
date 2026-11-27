@@ -38,14 +38,14 @@ export function CvProfileSummaryCard() {
     <Card className="mb-10 p-5" data-testid="cv-profile-card">
       <div className="mb-4 flex items-center justify-between gap-4">
         <h2 className="flex items-center gap-2 text-lg font-medium text-stone-900 dark:text-stone-100">
-          <IdCardIcon size={18} /> {t('dashboard.cvProfileTitle')}
+          <IdCardIcon size={16} /> {t('dashboard.cvProfileTitle')}
         </h2>
         {!profile.isLoading && !isEmpty && (
           <Link
             to="/profile"
             className="flex items-center gap-1.5 text-sm font-medium text-blue-800 hover:underline dark:text-blue-400"
           >
-            <PencilIcon size={14} /> {t('dashboard.cvProfileEdit')}
+            <PencilIcon size={16} /> {t('dashboard.cvProfileEdit')}
           </Link>
         )}
       </div>

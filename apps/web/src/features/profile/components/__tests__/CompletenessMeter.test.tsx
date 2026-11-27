@@ -38,7 +38,7 @@ describe('CompletenessMeter', () => {
     );
   });
 
-  it('fills in the accent while incomplete and goes quiet at 100% (JEF-693)', () => {
+  it('fills in the accent while incomplete and turns green at 100% (JEF-695)', () => {
     const { unmount } = meter(60, 'skills');
     expect((screen.getByRole('progressbar').firstChild as HTMLElement).className).toContain(
       'bg-blue-800',
@@ -47,7 +47,7 @@ describe('CompletenessMeter', () => {
 
     meter(100, null);
     const fill = screen.getByRole('progressbar').firstChild as HTMLElement;
-    expect(fill.className).toContain('bg-stone-400');
+    expect(fill.className).toContain('bg-green-600');
     expect(fill.className).not.toContain('bg-blue');
   });
 
@@ -65,10 +65,11 @@ describe('CompletenessMeter', () => {
     expect(new Set(Object.values(CHECK_SECTION)).size).toBe(3);
   });
 
-  it('shows the complete message instead of a link when nothing is missing', () => {
+  it('says "complete" once, with no link, when nothing is missing (JEF-695)', () => {
     meter(100, null);
     expect(screen.queryByRole('link')).toBeNull();
-    expect(document.querySelector('p.text-green-700 svg')).toBeInTheDocument();
+    expect(screen.getAllByText(/complete/i)).toHaveLength(1);
+    expect(screen.getByText('Profile 100% complete')).toBeInTheDocument();
   });
 
   it('keeps the same output for the same props and follows changed ones', () => {
