@@ -28,15 +28,24 @@ describe('ProgressBar', () => {
     expect(fill.style.width).toBe('0%');
   });
 
-  it('fills in the accent by default and in stone when quiet (JEF-693)', () => {
+  it('draws a track that shows on a white card (JEF-695)', () => {
+    render(<ProgressBar value={0} max={5} />);
+    const track = screen.getByRole('progressbar');
+    expect(track.className).toContain('bg-stone-200');
+    expect(track.className).toContain('dark:bg-stone-700');
+    expect(track.className).not.toContain('bg-white');
+  });
+
+  it('fills in the accent by default and in green when complete (JEF-695)', () => {
     const { rerender } = render(<ProgressBar value={5} max={5} />);
     expect((screen.getByRole('progressbar').firstChild as HTMLElement).className).toContain(
       'bg-blue-800',
     );
 
-    rerender(<ProgressBar value={5} max={5} tone="quiet" />);
+    rerender(<ProgressBar value={5} max={5} tone="complete" />);
     const fill = screen.getByRole('progressbar').firstChild as HTMLElement;
-    expect(fill.className).toContain('bg-stone-400');
+    expect(fill.className).toContain('bg-green-600');
+    expect(fill.className).toContain('dark:bg-green-500');
     expect(fill.className).not.toContain('bg-blue');
   });
 });

@@ -146,12 +146,34 @@ describe('DashboardPage', () => {
       expect(open.className).toContain('bg-blue-800');
     });
 
-    it('goes quiet, with a check, once the goal is met', async () => {
+    it('turns green, with a green check, once the goal is met (JEF-695)', async () => {
       serveGoal({ currentWeekCount: 5, streakWeeks: 1 });
       const bar = (await screen.findByRole('progressbar')).firstChild as HTMLElement;
-      expect(bar.className).toContain('bg-stone-400');
+      expect(bar.className).toContain('bg-green-600');
       expect(bar.className).not.toContain('bg-blue');
-      expect(document.querySelector('svg.lucide-check')).not.toBeNull();
+      const check = document.querySelector('svg.lucide-check');
+      expect(check?.getAttribute('class')).toContain('text-green-600');
+      expect(check?.getAttribute('width')).toBe('16');
+    });
+  });
+
+  it('sets the goal count and stat figures in tabular numbers (JEF-695)', async () => {
+    mockGqlRequest.mockImplementation((document: unknown) => {
+      const query = JSON.stringify(document);
+      if (query.includes('WeeklyApplicationGoal')) {
+        return Promise.resolve({
+          weeklyApplicationGoal: { currentWeekCount: 2, weeklyApplicationGoal: 5, streakWeeks: 0 },
+        });
+      }
+      if (query.includes('calendarEvents')) return Promise.resolve({ calendarEvents: [] });
+      return Promise.resolve({ applications: [] });
+    });
+    render(<DashboardPage />, { wrapper: Wrapper });
+
+    const count = await screen.findByText('2 of 5 applications this week');
+    expect(count.className).toContain('tabular-nums');
+    await waitFor(() => {
+      expect(screen.getByText('Total').nextElementSibling?.className).toContain('tabular-nums');
     });
   });
 

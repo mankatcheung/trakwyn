@@ -107,8 +107,8 @@ describe('CvProfileSummaryCard', () => {
     });
     render(<CvProfileSummaryCard />, { wrapper: Wrapper });
 
-    expect(await screen.findByText('Your profile is complete.')).toBeInTheDocument();
-    expect(screen.getByText('Profile 100% complete')).toBeInTheDocument();
+    expect(await screen.findByText('Profile 100% complete')).toBeInTheDocument();
+    expect(screen.getAllByText(/complete/i)).toHaveLength(1);
   });
 
   it('renders nothing when the profile cannot be loaded', async () => {

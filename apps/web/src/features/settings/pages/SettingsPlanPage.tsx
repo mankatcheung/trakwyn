@@ -23,13 +23,11 @@ import { useHostedAiAvailable } from '#/features/ai/lib/aiCredits';
 import { AiCreditsMeter } from '#/features/ai/components/AiCreditsMeter';
 import { Alert, Badge, Button, Card, ProgressBar } from '@trakwyn/ui';
 
-// The bar's default track is white-on-tint, which vanishes on a white card.
-const TRACK = 'bg-stone-200! dark:bg-stone-700!';
-const BAR_COLOR: Record<UsageLevel, string> = {
-  unlimited: TRACK,
-  ok: TRACK,
-  warning: `${TRACK} [&>div]:bg-amber-500`,
-  full: `${TRACK} [&>div]:bg-red-600`,
+const BAR_COLOR: Record<UsageLevel, string | undefined> = {
+  unlimited: undefined,
+  ok: undefined,
+  warning: '[&>div]:bg-amber-500',
+  full: '[&>div]:bg-red-600',
 };
 
 const FEATURE_ROWS: Array<{ feature: keyof PlanFeatures; labelKey: string }> = [

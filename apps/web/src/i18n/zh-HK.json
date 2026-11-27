@@ -788,7 +788,6 @@
   "cvImport.invalidSelection": "請修正標示咗嘅行，或者取消剔選之後繼續。",
   "cvImport.success": "已由履歷加入：{{work}} 項工作經驗、{{education}} 項教育背景、{{skills}} 項技能。",
   "profile.completeness": "履歷已完成 {{percent}}%",
-  "profile.complete": "你嘅履歷已經完整。",
   "profile.next.role": "新增一份你做過嘅工作",
   "profile.next.roleDescription": "描述你喺其中一份工作做過啲乜",
   "profile.next.education": "新增你嘅教育背景",

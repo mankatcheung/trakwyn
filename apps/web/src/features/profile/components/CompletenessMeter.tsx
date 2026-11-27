@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { ArrowRightIcon, CheckCircle2Icon } from 'lucide-react';
+import { ArrowRightIcon } from 'lucide-react';
 import { ProgressBar } from '@trakwyn/ui';
 import { useLocale } from '#/lib/i18n';
 import {
@@ -43,22 +43,18 @@ export function CompletenessMeter({ completeness }: CompletenessMeterProps) {
       <ProgressBar
         value={percent}
         max={100}
-        tone={percent >= 100 ? 'quiet' : 'accent'}
+        tone={percent >= 100 ? 'complete' : 'accent'}
         aria-label={label}
       />
-      {nextStep ? (
+      {nextStep && (
         <Link
           to="/profile"
           hash={CHECK_SECTION[nextStep]}
           className="inline-flex items-center gap-1 text-sm font-medium text-blue-800 hover:underline dark:text-blue-400"
         >
           {t(CHECK_LABEL_KEY[nextStep], { min: MIN_SKILLS_FOR_COMPLETE_PROFILE })}
-          <ArrowRightIcon size={14} />
+          <ArrowRightIcon size={16} />
         </Link>
-      ) : (
-        <p className="flex items-center gap-1.5 text-sm text-green-700 dark:text-green-400">
-          <CheckCircle2Icon size={14} /> {t('profile.complete')}
-        </p>
       )}
     </div>
   );
