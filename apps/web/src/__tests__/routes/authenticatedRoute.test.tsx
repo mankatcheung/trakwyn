@@ -80,8 +80,6 @@ describe('_authenticated route guard', () => {
     mockCheckSessionGate.mockResolvedValue(gate());
   });
 
-  // The server renders the pending component of an `ssr: false` route, which
-  // is what puts the frame in the first HTML.
   it('shows the app frame while loading, without the default minimum delay', async () => {
     const { Route } = await import('#/routes/_authenticated/route');
     const { AppShellPending } = await import('#/features/app-shell/pages/AppShellPending');

@@ -1,6 +1,6 @@
 /**
  * The boxes of the signed-in frame, shared by `AuthenticatedLayout` and its
- * server-rendered placeholder `AppShellPending`, so swapping one for the other
+ * placeholder `AppShellPending`, so swapping one for the other
  * moves nothing.
  */
 export const SHELL_CLASS = 'flex h-dvh bg-stone-50 dark:bg-stone-900';
