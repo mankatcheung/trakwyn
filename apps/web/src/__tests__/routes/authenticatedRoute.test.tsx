@@ -24,6 +24,10 @@ vi.mock('#/features/app-shell/pages/AuthenticatedLayout', () => ({
   AuthenticatedLayout: () => null,
 }));
 
+vi.mock('#/features/app-shell/pages/AppShellPending', () => ({
+  AppShellPending: () => null,
+}));
+
 type RedirectError = Error & { redirectOpts?: { to: string; search?: unknown } };
 
 /** Mirrors TanStack Router: `redirect` aborts navigation by throwing. */
@@ -74,6 +78,20 @@ describe('_authenticated route guard', () => {
     vi.clearAllMocks();
     mockHasSessionCookie.mockReturnValue(false);
     mockCheckSessionGate.mockResolvedValue(gate());
+  });
+
+  // The server renders the pending component of an `ssr: false` route, which
+  // is what puts the frame in the first HTML.
+  it('shows the app frame while loading, without the default minimum delay', async () => {
+    const { Route } = await import('#/routes/_authenticated/route');
+    const { AppShellPending } = await import('#/features/app-shell/pages/AppShellPending');
+    const options =
+      (Route as unknown as { options?: Record<string, unknown> }).options ??
+      (Route as unknown as Record<string, unknown>);
+
+    expect(options.ssr).toBe(false);
+    expect(options.pendingComponent).toBe(AppShellPending);
+    expect(options.pendingMinMs).toBe(0);
   });
 
   it('redirects unauthenticated visitors to /login carrying where they were headed', async () => {

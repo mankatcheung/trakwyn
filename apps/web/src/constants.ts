@@ -9,6 +9,12 @@
  * be turned into dynamic property lookups.
  */
 
+/**
+ * Non-HttpOnly hint cookie the API sets beside the real HttpOnly token cookies.
+ * Must match COOKIES.LOGGED_IN there.
+ */
+export const SESSION_HINT_COOKIE = 'trakwyn_logged_in';
+
 /** GraphQL error `extensions.code` values surfaced by the API. */
 export const ERROR_CODES = {
   UNAUTHORIZED: 'UNAUTHORIZED',

@@ -161,6 +161,8 @@ describe('ApplicationDetailPage', () => {
     render(<ApplicationDetailPage />, { wrapper: Wrapper });
     // Loading state - skeleton is shown, no app data
     expect(screen.queryByText('Stripe')).not.toBeInTheDocument();
+    // The section sider's shape stays up, as it was in the server-rendered frame.
+    expect(screen.getByTestId('application-sider-pending')).toBeInTheDocument();
   });
 
   it('renders application company and role when data loads', async () => {

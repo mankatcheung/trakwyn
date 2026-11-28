@@ -4,6 +4,7 @@ import { hasSessionCookie } from '#/graphql/client';
 import { needsWelcome } from '#/features/onboarding/graphql/onboardingQueries';
 import { checkSessionGate, type SessionGate } from '#/features/auth/graphql/sessionGate';
 import { AuthenticatedLayout } from '../../features/app-shell/pages/AuthenticatedLayout';
+import { AppShellPending } from '../../features/app-shell/pages/AppShellPending';
 import { prefetchDashboard } from '../../features/dashboard/graphql/dashboardQueries';
 
 export const Route = createFileRoute('/_authenticated')({
@@ -29,6 +30,11 @@ export const Route = createFileRoute('/_authenticated')({
     return checkSessionGate().then((gate) => applyGate(gate, location.pathname));
   },
   component: AuthenticatedLayout,
+  // With `ssr: false` this is what the server renders, so the frame is on
+  // screen before the JavaScript and the session gate. No minimum time: the
+  // default (500ms) would hold it after the app is ready.
+  pendingComponent: AppShellPending,
+  pendingMinMs: 0,
 });
 
 function startPagePrefetch(queryClient: QueryClient | undefined, pathname: string): void {

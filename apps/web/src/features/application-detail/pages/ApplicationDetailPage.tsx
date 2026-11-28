@@ -7,7 +7,7 @@ import { deleteApplicationWithUndo } from '../../applications/lib/deleteWithUndo
 import { ErrorState } from '#/components/ErrorState';
 import { useLocale } from '#/lib/i18n';
 import { useMediaQuery } from '#/hooks/useMediaQuery';
-import { Card, Skeleton, useIsWideViewport } from '@trakwyn/ui';
+import { Card, useIsWideViewport } from '@trakwyn/ui';
 import { StatusBadge } from '../../applications/components/StatusBadge';
 import { applicationQueryOptions, type Application } from '../graphql/applicationQuery';
 import type { BoardApplication } from '../../applications/graphql/boardQueries';
@@ -23,6 +23,8 @@ import {
 import { SectionIndex } from '../components/sections/SectionIndex';
 import { SectionNav } from '../components/sections/SectionNav';
 import { SectionPanes } from '../components/sections/SectionPanes';
+import { ApplicationDetailSkeleton } from '../components/ApplicationDetailSkeleton';
+import { DETAIL_PAGE_WIDTH } from '../lib/pageWidth';
 import {
   sectionById,
   type ApiSectionCounts,
@@ -44,7 +46,6 @@ import {
 const WIDE_QUERY = '(min-width: 1024px)';
 
 /** Wide screens get a wider page, which pays for the section sidebar's width (JEF-402, JEF-411). */
-const PAGE_WIDTH = 'mx-auto max-w-3xl p-4 sm:p-8 lg:max-w-6xl xl:max-w-7xl';
 
 const route = getRouteApi('/_authenticated/applications/$applicationId/');
 
@@ -219,18 +220,13 @@ export function ApplicationDetailPage() {
 
   if (isAppError) {
     return (
-      <div className={PAGE_WIDTH}>
+      <div className={DETAIL_PAGE_WIDTH}>
         <ErrorState error={appError} onRetry={() => refetchApp()} />
       </div>
     );
   }
 
-  if (!app)
-    return (
-      <div className="p-4 sm:p-8">
-        <Skeleton className="h-8 w-64 rounded-sm" />
-      </div>
-    );
+  if (!app) return <ApplicationDetailSkeleton />;
 
   if (app.deletedAt) return <TrashedApplicationView app={app} />;
 
@@ -255,7 +251,7 @@ export function ApplicationDetailPage() {
   };
 
   return (
-    <div className={PAGE_WIDTH}>
+    <div className={DETAIL_PAGE_WIDTH}>
       {/*
         Phone only, and only when drilled into a section: Back returns to the
         index rather than leaving the application, and the company stays on

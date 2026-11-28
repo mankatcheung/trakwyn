@@ -89,13 +89,10 @@ test.describe('Accessibility scans – marketing pages (JEF-681)', () => {
 
 test.describe('Accessibility scans – authenticated pages', () => {
   test.beforeEach(async ({ page }) => {
-    // The sidebar staggers its nav items in with a fade/slide entrance
-    // animation. Scanning mid-animation catches elements at a transient,
-    // partial opacity and reports false-positive color-contrast violations
-    // that aren't representative of the settled page. Respecting
-    // prefers-reduced-motion scans the same steady state a motion-sensitive
-    // user would see — the app's own CSS already disables these animations
-    // for that preference (see .sidebar-entrance-item in styles.css).
+    // Pages fade and slide in (`.route-transition`). Scanning mid-animation
+    // catches elements at a transient, partial opacity and reports false
+    // color-contrast violations. Reduced motion scans the settled page, since
+    // the app's CSS turns the animation off for that preference.
     // Using `page.emulateMedia` directly rather than the `reducedMotion`
     // test/context option — the latter didn't reliably flip
     // `prefers-reduced-motion` for this app's CSS in practice.

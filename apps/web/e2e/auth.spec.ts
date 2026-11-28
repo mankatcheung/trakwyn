@@ -54,6 +54,18 @@ test.describe('Authentication flows', () => {
     await expect(page).toHaveURL(/dashboard/);
   });
 
+  // The raw HTML, before any script runs. The frame is for a session only: a
+  // signed-out visitor is redirected before hydration, which it would not match.
+  test('the server renders the app frame only for a visitor with a session', async ({ page }) => {
+    const signedOut = await (await page.request.get('/dashboard')).text();
+    expect(signedOut).not.toContain('app-shell-pending');
+
+    await registerAndLogin(page, { email: uniqueEmail('frame'), password: 'SecurePass123' });
+
+    const signedIn = await (await page.request.get('/dashboard')).text();
+    expect(signedIn).toContain('app-shell-pending');
+  });
+
   test('unauthenticated users are redirected to /login from protected routes', async ({ page }) => {
     await page.goto('/dashboard');
     await expect(page).toHaveURL(/login/);

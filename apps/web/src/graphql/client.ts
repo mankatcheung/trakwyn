@@ -1,6 +1,6 @@
 import { GraphQLClient } from 'graphql-request';
 import { queryClient } from '#/lib/queryClient';
-import { DEFAULT_API_URL, ERROR_CODES } from '#/constants';
+import { DEFAULT_API_URL, ERROR_CODES, SESSION_HINT_COOKIE } from '#/constants';
 import {
   captureException,
   isApiRequest,
@@ -49,13 +49,6 @@ export const CV_IMPORT_URL = resolveClientUrl(API_URL.replace(/\/graphql$/, '/pr
 // (`__integration__/rawDocuments.test.ts`): codegen cannot see a plain string.
 export const REFRESH_MUTATION = `mutation { refreshToken }`;
 
-// Non-HttpOnly hint cookie the API sets alongside the real HttpOnly
-// trakwyn_access_token/trakwyn_refresh_token cookies (apps/api's setAuthCookies()) —
-// must match COOKIES.LOGGED_IN there. The web app can never read the real
-// tokens (by design), so this is how it knows a session likely exists
-// without a network round-trip.
-const LOGGED_IN_COOKIE = 'trakwyn_logged_in';
-
 /**
  * Synchronous, no network call: used by route beforeLoad guards to decide
  * whether to redirect to /login before rendering. This only needs to be
@@ -66,7 +59,7 @@ const LOGGED_IN_COOKIE = 'trakwyn_logged_in';
  * responseMiddleware regardless of what this returned.
  */
 export function hasSessionCookie(): boolean {
-  return document.cookie.split('; ').some((entry) => entry.startsWith(`${LOGGED_IN_COOKIE}=`));
+  return document.cookie.split('; ').some((entry) => entry.startsWith(`${SESSION_HINT_COOKIE}=`));
 }
 
 // Path the API sets the hint cookie on (COOKIE_PATH there). A cookie is only
@@ -84,7 +77,7 @@ const LOGGED_IN_COOKIE_PATH = '/';
  * not apply.
  */
 function clearSessionHint(): void {
-  const expired = `${LOGGED_IN_COOKIE}=; Max-Age=0; path=${LOGGED_IN_COOKIE_PATH}`;
+  const expired = `${SESSION_HINT_COOKIE}=; Max-Age=0; path=${LOGGED_IN_COOKIE_PATH}`;
   document.cookie = expired;
   const labels = (window.location.hostname ?? '').split('.').filter(Boolean);
   for (let i = 0; i < labels.length - 1; i++) {

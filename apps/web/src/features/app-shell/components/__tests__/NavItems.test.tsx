@@ -50,16 +50,6 @@ describe('NavItem', () => {
     rerender(<NavItem to="/a" icon={icon} label="A" active={false} />);
     expect(screen.getByRole('link')).not.toHaveClass('bg-blue-50');
   });
-
-  it.each([
-    [{}, '0ms'],
-    [{ staggerIndex: 3 }, '150ms'],
-    [{ staggerIndex: 3, staggerDelay: 40 }, '40ms'],
-    [{ staggerDelay: 0 }, '0ms'],
-  ])('animates with %j after %s', (props, delay) => {
-    render(<NavItem to="/a" icon={icon} label="A" active={false} {...props} />);
-    expect(screen.getByRole('link')).toHaveStyle({ animationDelay: delay });
-  });
 });
 
 describe('BottomNavItem', () => {
@@ -85,7 +75,7 @@ describe('re-rendering with the same props', () => {
     const ui = () => (
       <>
         <AccountAvatarIcon avatarUrl="https://img.test/a.png" size={24} />
-        <NavItem to="/a" icon={icon} label="A" active staggerIndex={1} />
+        <NavItem to="/a" icon={icon} label="A" active />
         <BottomNavItem to="/b" icon={icon} label="B" active={false} />
       </>
     );

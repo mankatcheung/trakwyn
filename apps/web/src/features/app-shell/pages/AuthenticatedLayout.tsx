@@ -39,6 +39,16 @@ import {
   NavItem,
 } from '#/features/app-shell/components/NavItems';
 import { MAIN_NAV, SETTINGS_NAV } from '#/features/app-shell/lib/navItems';
+import {
+  BOTTOM_NAV_CLASS,
+  BRAND_CLASS,
+  MAIN_CLASS,
+  MOBILE_HEADER_CLASS,
+  SHELL_CLASS,
+  SIDER_BRAND_ROW_CLASS,
+  SIDER_CLASS,
+  SIDER_FOOTER_CLASS,
+} from '#/features/app-shell/lib/shellClasses';
 
 export function AuthenticatedLayout() {
   const { t } = useLocale();
@@ -103,14 +113,13 @@ export function AuthenticatedLayout() {
   // entry (JEF-229), but only while the section is open — the same accordion
   // treatment Settings gets in the drawer.
   const renderMainNavItems = () =>
-    MAIN_NAV.map((item, i) => (
+    MAIN_NAV.map((item) => (
       <div key={item.to}>
         <NavItem
           to={item.to}
           icon={<item.icon size={18} />}
           label={t(item.labelKey)}
           active={pathname.startsWith(item.to)}
-          staggerIndex={i}
         />
         {item.to === '/assistant' && inAssistantSection && (
           <AssistantNavConversations activeId={search.conversation} onNavigate={closeSidebar} />
@@ -155,7 +164,7 @@ export function AuthenticatedLayout() {
           is showing (100vh is the *largest* viewport). Pinning the shell to
           h-dvh lets a page say "fill the space" instead of computing its
           own total to subtract chrome from. */}
-      <div className="flex h-dvh bg-stone-50 dark:bg-stone-900">
+      <div className={SHELL_CLASS}>
         <LazyCommandPalette />
         <LazyShortcutCheatSheet isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 
@@ -177,7 +186,7 @@ export function AuthenticatedLayout() {
             }`}
           >
             <div className="flex items-center justify-between border-b border-stone-200 p-4 dark:border-stone-700">
-              <span className="flex items-center gap-2 text-lg font-medium text-stone-900 dark:text-stone-100">
+              <span className={BRAND_CLASS}>
                 <LogoMark size={22} />
                 Trakwyn
               </span>
@@ -202,16 +211,15 @@ export function AuthenticatedLayout() {
                   {t('nav.settings')}
                 </div>
                 <div className="ml-2 space-y-0.5">
-                  {SETTINGS_NAV.map((item, i) => (
+                  {SETTINGS_NAV.map((item) => (
                     <Link
                       key={item.to}
                       to={item.to}
-                      className={`sidebar-nav-item flex items-center gap-2 rounded-lg py-1.5 pr-3 pl-5 text-sm transition-colors ${
+                      className={`flex items-center gap-2 rounded-lg py-1.5 pr-3 pl-5 text-sm transition-colors ${
                         pathname.startsWith(item.to)
                           ? 'bg-blue-50 font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
                           : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-100'
                       }`}
-                      style={{ animationDelay: `${(MAIN_NAV.length + i) * 50}ms` }}
                     >
                       <item.icon size={14} />
                       {t(item.labelKey)}
@@ -236,7 +244,7 @@ export function AuthenticatedLayout() {
         )}
 
         {/* Mobile top header */}
-        <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b border-stone-200 bg-white px-4 lg:hidden dark:border-stone-700 dark:bg-stone-800">
+        <header className={MOBILE_HEADER_CLASS}>
           <div className="flex items-center gap-2">
             <button
               onClick={openSidebar}
@@ -245,7 +253,7 @@ export function AuthenticatedLayout() {
             >
               <MenuIcon size={18} />
             </button>
-            <span className="flex items-center gap-2 text-lg font-medium text-stone-900 dark:text-stone-100">
+            <span className={BRAND_CLASS}>
               <LogoMark size={22} />
               Trakwyn
             </span>
@@ -254,9 +262,9 @@ export function AuthenticatedLayout() {
         </header>
 
         {/* Desktop sidebar */}
-        <aside className="sidebar-desktop-entrance hidden w-60 shrink-0 flex-col border-r border-stone-200 bg-white lg:flex lg:h-full dark:border-stone-700 dark:bg-stone-800">
-          <div className="sidebar-entrance-item flex items-center justify-between border-b border-stone-200 px-6 py-5 dark:border-stone-700">
-            <span className="flex items-center gap-2 text-lg font-medium text-stone-900 dark:text-stone-100">
+        <aside className={SIDER_CLASS}>
+          <div className={SIDER_BRAND_ROW_CLASS}>
+            <span className={BRAND_CLASS}>
               <LogoMark size={22} />
               Trakwyn
             </span>
@@ -268,27 +276,22 @@ export function AuthenticatedLayout() {
           </nav>
 
           <div className="space-y-1 px-3 pb-2">
-            <div
-              className="sidebar-entrance-item"
-              style={{ animationDelay: `${MAIN_NAV.length * 50}ms` }}
-            >
+            <div>
               <NavItem
                 to="/settings/profile"
                 icon={<AccountAvatarIcon avatarUrl={avatarUrl} size={18} />}
                 label={t('nav.settings')}
                 active={pathname.startsWith('/settings')}
-                staggerDelay={MAIN_NAV.length * 50}
               />
             </div>
           </div>
 
-          <div className="mt-auto shrink-0 space-y-1 border-t border-stone-200 px-3 py-4 dark:border-stone-700">
+          <div className={SIDER_FOOTER_CLASS}>
             <button
               onClick={() => setShortcutsOpen(true)}
               onMouseEnter={preloadShortcutCheatSheet}
               onFocus={preloadShortcutCheatSheet}
-              className="sidebar-entrance-item flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-100"
-              style={{ animationDelay: `${(MAIN_NAV.length + 1) * 50}ms` }}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-100"
               title={t('shortcuts.showShortcuts')}
             >
               <KeyboardIcon size={18} />
@@ -297,10 +300,7 @@ export function AuthenticatedLayout() {
                 {getKeyModifier()}+/
               </kbd>
             </button>
-            <div
-              className="sidebar-entrance-item"
-              style={{ animationDelay: `${(MAIN_NAV.length + 2) * 50}ms` }}
-            >
+            <div>
               <button
                 onClick={handleLogout}
                 data-testid="desktop-sidebar-logout"
@@ -314,7 +314,7 @@ export function AuthenticatedLayout() {
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1 overflow-auto pt-14 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pt-0 lg:pb-12">
+        <main className={MAIN_CLASS}>
           {/* Opt-in, not the default. `h-full` is a *definite* height, which is
               what lets a page fill the viewport exactly — flex only distributes
               space a container actually has, so with an auto height this box
@@ -336,10 +336,7 @@ export function AuthenticatedLayout() {
         {/* Mobile bottom nav. Height = 4rem content + safe-area-inset-bottom.
           The main element's pb already matches this total so content doesn't
           overlap. */}
-        <nav
-          aria-label={t('authenticatedLayout.bottomNavigation')}
-          className="fixed inset-x-0 bottom-0 z-40 flex h-[calc(4rem+env(safe-area-inset-bottom))] items-center border-t border-stone-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden dark:border-stone-700 dark:bg-stone-800"
-        >
+        <nav aria-label={t('authenticatedLayout.bottomNavigation')} className={BOTTOM_NAV_CLASS}>
           <BottomNavItem
             to="/dashboard"
             icon={<LayoutDashboardIcon size={20} />}

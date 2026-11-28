@@ -28,27 +28,20 @@ export function NavItem({
   icon,
   label,
   active,
-  staggerIndex,
-  staggerDelay,
 }: {
   to: string;
   icon: React.ReactNode;
   label: string;
   active: boolean;
-  staggerIndex?: number;
-  staggerDelay?: number;
 }) {
-  const delay = staggerDelay ?? (staggerIndex !== undefined ? staggerIndex * 50 : 0);
-
   return (
     <Link
       to={to}
-      className={`sidebar-nav-item flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors duration-200 ${
+      className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors duration-200 ${
         active
           ? 'bg-blue-50 font-medium text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
           : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-700 dark:hover:text-stone-100'
       }`}
-      style={{ animationDelay: `${delay}ms` }}
     >
       {icon}
       {label}
