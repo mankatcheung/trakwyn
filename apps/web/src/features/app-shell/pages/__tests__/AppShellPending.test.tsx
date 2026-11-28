@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { render } from '@testing-library/react';
 import { renderToString } from 'react-dom/server';
 import { SECTION_GROUPS } from '#/features/application-detail/lib/sections';
 import { SETTINGS_SECTIONS } from '#/features/settings/lib/settingsSections';
@@ -6,30 +7,29 @@ import { AppShellPending } from '../AppShellPending';
 
 const { mockPathname } = vi.hoisted(() => ({ mockPathname: vi.fn(() => '/dashboard') }));
 
-const { mockHasSessionHint } = vi.hoisted(() => ({ mockHasSessionHint: vi.fn(() => true) }));
+const { mockHasSessionCookie } = vi.hoisted(() => ({ mockHasSessionCookie: vi.fn(() => true) }));
 
-vi.mock('#/features/auth/lib/sessionHint', () => ({ hasSessionHint: mockHasSessionHint }));
+vi.mock('#/graphql/client', () => ({ hasSessionCookie: mockHasSessionCookie }));
 
-vi.mock('@tanstack/react-router', () => ({
+vi.mock('@tanstack/react-router', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tanstack/react-router')>()),
   useRouterState: ({ select }: { select: (s: { location: { pathname: string } }) => unknown }) =>
     select({ location: { pathname: mockPathname() } }),
 }));
 
-// Rendered to a string with no providers at all: this is what the server sends,
+// Rendered with no providers at all: the frame is up before the app is ready,
 // so it may not depend on the language, theme or query client.
-function serverRender(pathname: string): HTMLElement {
+function browserRender(pathname: string): HTMLElement {
   mockPathname.mockReturnValue(pathname);
-  const container = document.createElement('div');
-  container.innerHTML = renderToString(<AppShellPending />);
-  return container;
+  return render(<AppShellPending />).container;
 }
 
 const sectionSider = (root: HTMLElement) =>
   root.querySelector('[data-testid$="-sider-pending"]')?.getAttribute('data-testid') ?? null;
 
 describe('AppShellPending', () => {
-  it('server-renders the sider, the mobile header and the bottom bar, marked busy', () => {
-    const root = serverRender('/dashboard');
+  it('renders the sider, the mobile header and the bottom bar, marked busy', () => {
+    const root = browserRender('/dashboard');
 
     expect(root.querySelector('[aria-busy="true"]')).not.toBeNull();
     expect(root.querySelector('aside')).not.toBeNull();
@@ -38,24 +38,27 @@ describe('AppShellPending', () => {
   });
 
   it.each(['/dashboard', '/settings/ai', '/profile', '/applications/abc'])(
-    'carries no translatable text on %s, since the server cannot know the language',
+    'carries no translatable text on %s, since its labels are placeholders',
     (pathname) => {
-      const text = serverRender(pathname).textContent ?? '';
+      const text = browserRender(pathname).textContent ?? '';
 
       expect(text.replaceAll('Trakwyn', '').trim()).toBe('');
     },
   );
 
-  // A signed-out visitor is redirected to /login before React hydrates, so a
-  // frame in the server HTML would not match what the client renders.
-  it('renders nothing without the session hint', () => {
-    mockHasSessionHint.mockReturnValueOnce(false);
+  it('renders nothing on the server, even with a session', () => {
+    expect(renderToString(<AppShellPending />)).toBe('');
+  });
 
-    expect(serverRender('/dashboard').innerHTML).toBe('');
+  // The guard redirects a signed-out visitor to /login.
+  it('renders nothing without the session cookie', () => {
+    mockHasSessionCookie.mockReturnValueOnce(false);
+
+    expect(browserRender('/dashboard').innerHTML).toBe('');
   });
 
   it('marks the nav item of the current page', () => {
-    const root = serverRender('/calendar');
+    const root = browserRender('/calendar');
 
     expect(root.querySelector('aside [data-active="true"]')?.getAttribute('data-nav')).toBe(
       '/calendar',
@@ -74,11 +77,11 @@ describe('AppShellPending', () => {
     ['/applications/trash', null],
     ['/applications/abc123/edit', null],
   ])('picks the section sider for %s', (pathname, expected) => {
-    expect(sectionSider(serverRender(pathname))).toBe(expected);
+    expect(sectionSider(browserRender(pathname))).toBe(expected);
   });
 
   it('draws one settings row per settings section', () => {
-    const root = serverRender('/settings/ai');
+    const root = browserRender('/settings/ai');
 
     expect(root.querySelectorAll('[data-testid="settings-sider-pending"] [data-row]')).toHaveLength(
       SETTINGS_SECTIONS.length,
@@ -86,7 +89,7 @@ describe('AppShellPending', () => {
   });
 
   it('draws one row per application section', () => {
-    const root = serverRender('/applications/abc123');
+    const root = browserRender('/applications/abc123');
 
     expect(
       root.querySelectorAll('[data-testid="application-sider-pending"] [data-row]'),

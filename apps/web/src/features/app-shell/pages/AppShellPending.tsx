@@ -1,4 +1,4 @@
-import { useRouterState } from '@tanstack/react-router';
+import { ClientOnly, useRouterState } from '@tanstack/react-router';
 import { Skeleton } from '@trakwyn/ui';
 import {
   BellIcon,
@@ -12,7 +12,7 @@ import {
   UserIcon,
 } from 'lucide-react';
 import { LogoMark } from '#/components/LogoMark';
-import { hasSessionHint } from '#/features/auth/lib/sessionHint';
+import { hasSessionCookie } from '#/graphql/client';
 import { PagePlaceholder } from '../components/PagePlaceholder';
 import { MAIN_NAV } from '../lib/navItems';
 import {
@@ -76,21 +76,27 @@ interface SiderRowProps {
 }
 
 /**
- * The signed-in frame before the app can run. `/_authenticated` is `ssr: false`,
- * so the server renders this, its `pendingComponent`, and the client keeps it up
- * until the session gate answers.
+ * The signed-in frame while the session gate is asked: `/_authenticated`'s
+ * `pendingComponent`. Browser only, so the server does no work for it and the
+ * screen stays blank until the app has hydrated.
  *
- * It has no text beyond the brand and reads no theme, language or query: the
- * server knows none of them, and anything it guessed would flash or fail to
- * hydrate.
- *
- * Without the session hint it renders nothing: the guard sends that visitor to
- * /login before React hydrates, and a frame in the server HTML would then not
- * match what the client renders.
+ * It has no text beyond the brand and reads no theme, language or query, so it
+ * can render before any of them is ready.
  */
 export function AppShellPending() {
+  // The server renders the pending component of an `ssr: false` route;
+  // `ClientOnly` keeps the frame out of that HTML without a hydration mismatch.
+  return (
+    <ClientOnly fallback={null}>
+      <AppShellFrame />
+    </ClientOnly>
+  );
+}
+
+function AppShellFrame() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  if (!hasSessionHint()) return null;
+  // The guard sends this visitor to /login.
+  if (!hasSessionCookie()) return null;
 
   return (
     <div className={SHELL_CLASS} aria-busy="true" data-testid="app-shell-pending">

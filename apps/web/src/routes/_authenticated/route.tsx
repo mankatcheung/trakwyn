@@ -30,9 +30,8 @@ export const Route = createFileRoute('/_authenticated')({
     return checkSessionGate().then((gate) => applyGate(gate, location.pathname));
   },
   component: AuthenticatedLayout,
-  // With `ssr: false` this is what the server renders, so the frame is on
-  // screen before the JavaScript and the session gate. No minimum time: the
-  // default (500ms) would hold it after the app is ready.
+  // The frame is on screen while the session gate is asked. No minimum time:
+  // the default (500ms) would hold it after the app is ready.
   pendingComponent: AppShellPending,
   pendingMinMs: 0,
 });

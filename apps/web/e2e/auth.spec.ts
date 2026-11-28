@@ -54,16 +54,28 @@ test.describe('Authentication flows', () => {
     await expect(page).toHaveURL(/dashboard/);
   });
 
-  // The raw HTML, before any script runs. The frame is for a session only: a
-  // signed-out visitor is redirected before hydration, which it would not match.
-  test('the server renders the app frame only for a visitor with a session', async ({ page }) => {
-    const signedOut = await (await page.request.get('/dashboard')).text();
-    expect(signedOut).not.toContain('app-shell-pending');
-
+  // The frame is drawn by the browser: never in the raw HTML, and on screen for
+  // as long as the session gate takes to answer.
+  test('the app frame is rendered by the browser while the session gate answers', async ({
+    page,
+  }) => {
     await registerAndLogin(page, { email: uniqueEmail('frame'), password: 'SecurePass123' });
 
-    const signedIn = await (await page.request.get('/dashboard')).text();
-    expect(signedIn).toContain('app-shell-pending');
+    const html = await (await page.request.get('/dashboard')).text();
+    expect(html).not.toContain('app-shell-pending');
+
+    let release = () => {};
+    const held = new Promise<void>((resolve) => (release = resolve));
+    await page.route('**/graphql', async (route) => {
+      await held;
+      await route.continue();
+    });
+
+    await page.goto('/dashboard');
+    await expect(page.getByTestId('app-shell-pending')).toBeVisible();
+
+    release();
+    await expect(page.getByTestId('app-shell-pending')).toBeHidden();
   });
 
   test('unauthenticated users are redirected to /login from protected routes', async ({ page }) => {
